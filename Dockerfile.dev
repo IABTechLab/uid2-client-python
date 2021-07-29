@@ -1,0 +1,3 @@
+FROM python:3.6
+COPY . /build
+RUN pip install --no-cache-dir -e /build[dev]
