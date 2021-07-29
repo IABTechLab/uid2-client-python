@@ -1,5 +1,7 @@
 # Uid2 Client Python
 
+UID2 Project and its components are managed by the IAB Tech Lab Addressability Working Group and Privacy & Rearc Commit Group. Please review the governance guidelines [here](https://github.com/IABTechLab/uid2-core/blob/master/Software%20Development%20and%20Release%20Procedures.md)
+
 Client SDK for working with UID2 services.
 
 SDK supports Python 3.6 and above.
