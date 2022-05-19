@@ -45,6 +45,7 @@ This determines the size of initialization vectors (IV), required data padding, 
 class _PayloadType(Enum):
     """Enum for types of payload that can be encoded in opaque strings"""
     ENCRYPTED_DATA = 128
+    ENCRYPTED_DATA_V3 = 96
 
 
 def decrypt_token(token, keys, now=dt.datetime.utcnow()):
@@ -66,7 +67,7 @@ def decrypt_token(token, keys, now=dt.datetime.utcnow()):
     try:
         return _decrypt_token(token, keys, now)
     except Exception as exc:
-        if exc is EncryptionError:
+        if isinstance(exc, EncryptionError):
             raise
         raise EncryptionError('invalid payload') from exc
 
@@ -77,10 +78,15 @@ def _decrypt_token(token, keys, now):
 
     token_bytes = base64.b64decode(token)
 
-    version = token_bytes[0]
-    if version != 2:
+    if token_bytes[0] == 2:
+        return _decrypt_token_v2(token_bytes, keys, now)
+    elif token_bytes[1] == 112:
+        return _decrypt_token_v3(token_bytes, keys, now)
+    else:
         raise EncryptionError('token version not supported')
 
+
+def _decrypt_token_v2(token_bytes, keys, now):
     master_key_id = int.from_bytes(token_bytes[1:5], 'big')
     master_key = keys.get(master_key_id)
     if master_key is None:
@@ -114,13 +120,54 @@ def _decrypt_token(token, keys, now):
     return DecryptedToken(id_str, established, site_id)
 
 
-def encrypt_data(data, **kwargs):
+def _decrypt_token_v3(token_bytes, keys, now):
+    master_key_id = int.from_bytes(token_bytes[2:6], 'big')
+    master_key = keys.get(master_key_id)
+    if master_key is None:
+        raise EncryptionError("not authorized for master key")
+
+    master_payload = _decrypt_gcm(token_bytes[6:], master_key.secret)
+
+    expires_ms = int.from_bytes(master_payload[:8], 'big')
+    expires = dt.datetime.utcfromtimestamp(expires_ms / 1000.0)
+    if expires < now:
+        raise EncryptionError("token expired")
+
+    # created 8:16
+    # operator site id 16:20
+    # operator type 20
+    # operator version 21:25
+    # operator key id 25:29
+
+    site_key_id = int.from_bytes(master_payload[29:33], 'big')
+    site_key = keys.get(site_key_id)
+    if site_key is None:
+        raise EncryptionError("not authorized for site key")
+
+    site_payload = _decrypt_gcm(master_payload[33:], site_key.secret)
+
+    site_id = int.from_bytes(site_payload[0:4], 'big')
+    # publisher id 4:12
+    # client key id 12:16
+    # privacy bits 16:20
+    established_ms = int.from_bytes(site_payload[20:28], 'big')
+    established = dt.datetime.utcfromtimestamp(established_ms / 1000.0)
+    # refreshed_ms 28:36
+
+    id_bytes = site_payload[36:]
+    id_str = base64.b64encode(id_bytes).decode('ascii')
+
+    return DecryptedToken(id_str, established, site_id)
+
+
+def encrypt_data(data, identity_scope, **kwargs):
     """Encrypt arbitrary binary data.
 
     The data can be decrypted with decrypt_data() function.
 
     Args:
         data (bytes): data to encrypt
+        identity_scope (IdentityScope): scope of the unified ID
         **kwargs: additional keyword arguments as per below
 
     Keyword Args:
@@ -180,13 +227,17 @@ def encrypt_data(data, **kwargs):
 
     iv = kwargs.get("iv")
     if iv is None:
-        iv = os.urandom(encryption_block_size)
+        iv = os.urandom(12)
 
-    result = int.to_bytes(_PayloadType.ENCRYPTED_DATA.value, 1, 'big')  # 0
-    result += int.to_bytes(1, 1, 'big') # version                 # 1
-    result += int.to_bytes(int(now.timestamp() * 1000), 8, 'big') # 2-9
-    result += int.to_bytes(site_id, 4, 'big')                     # 10-13
-    result += _encrypt_data_v1(data, key, iv)                     # 14-
+    payload = int.to_bytes(int(now.timestamp() * 1000), 8, 'big')
+    payload += int.to_bytes(site_id, 4, 'big')
+    payload += data
+
+    result = int.to_bytes(_PayloadType.ENCRYPTED_DATA_V3.value | (identity_scope.value << 4) | 0xB, 1, 'big')
+    result += int.to_bytes(112, 1, 'big')  # version
+    result += int.to_bytes(key.key_id, 4, 'big')
+    result += _encrypt_gcm(payload, iv, key.secret)
+
     return base64.b64encode(result).decode('ascii')
 
 
@@ -211,13 +262,20 @@ def decrypt_data(encrypted_data, keys):
     try:
         return _decrypt_data(encrypted_data, keys)
     except Exception as exc:
-        if exc is EncryptionError:
+        if isinstance(exc, EncryptionError):
             raise
         raise EncryptionError('invalid payload') from exc
 
 
 def _decrypt_data(encrypted_data, keys):
     encrypted_bytes = base64.b64decode(encrypted_data)
+    if (encrypted_bytes[0] & 224) == _PayloadType.ENCRYPTED_DATA_V3.value:
+        return _decrypt_data_v3(encrypted_bytes, keys)
+    else:
+        return _decrypt_data_v2(encrypted_bytes, keys)
+
+
+def _decrypt_data_v2(encrypted_bytes, keys):
     if encrypted_bytes[0] != _PayloadType.ENCRYPTED_DATA.value:
         raise EncryptionError("incorrect content type")
 
@@ -233,6 +291,25 @@ def _decrypt_data(encrypted_data, keys):
     encrypted_ms = int.from_bytes(encrypted_bytes[2:10], 'big')
     encrypted_at = dt.datetime.utcfromtimestamp(encrypted_ms / 1000.0)
     return DecryptedData(data, encrypted_at)
+
+
+def _decrypt_data_v3(encrypted_bytes, keys):
+    version = encrypted_bytes[1]
+    if version != 112:
+        raise EncryptionError("unsupported encrypted data format/version")
+
+    key_id = int.from_bytes(encrypted_bytes[2:6], 'big')
+    key = keys.get(key_id)
+    if key is None:
+        raise EncryptionError("not authorized for key")
+
+    payload = _decrypt_gcm(encrypted_bytes[6:], key.secret)
+    encrypted_ms = int.from_bytes(payload[:8], 'big')
+    encrypted_at = dt.datetime.utcfromtimestamp(encrypted_ms / 1000.0)
+
+    # site id 8:12
+
+    return DecryptedData(payload[12:], encrypted_at)
 
 
 def _add_pkcs7_padding(data, block_size):
@@ -251,6 +328,21 @@ def _decrypt(encrypted, iv, key):
     # remove pkcs7 padding
     pad_len = data[-1]
     return data[:-pad_len]
+
+
+def _encrypt_gcm(data, iv, secret):
+    if iv is None:
+        iv = os.urandom(12)
+    elif len(iv) != 12:
+        raise ValueError("iv must be 12 bytes")
+    cipher = AES.new(secret, AES.MODE_GCM, nonce=iv)
+    ciphertext, tag = cipher.encrypt_and_digest(data)
+    return cipher.nonce + ciphertext + tag
+
+
+def _decrypt_gcm(encrypted, secret):
+    cipher = AES.new(secret, AES.MODE_GCM, nonce=encrypted[:12])
+    return cipher.decrypt_and_verify(encrypted[12:-16], encrypted[-16:])
 
 
 class EncryptionError(Exception):

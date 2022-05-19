@@ -24,30 +24,31 @@
 import base64
 import sys
 
-from uid2_client import Uid2Client
+from uid2_client import Uid2Client, IdentityScope
 from uid2_client import encrypt_data, decrypt_data
 
 
 def _usage():
-    print('Usage: python3 sample_encryption.py <base_url> <auth_key> <ad_token> <data>', file=sys.stderr)
+    print('Usage: python3 sample_encryption.py <base_url> <auth_key> <secret_key> <ad_token> <data>', file=sys.stderr)
     sys.exit(1)
 
 
-if len(sys.argv) <= 3:
+if len(sys.argv) <= 5:
     _usage()
 
 base_url = sys.argv[1]
 auth_key = sys.argv[2]
-ad_token = sys.argv[3]
-str_data = sys.argv[4]
+secret_key = sys.argv[3]
+ad_token = sys.argv[4]
+str_data = sys.argv[5]
 
-client = Uid2Client(base_url, auth_key)
+client = Uid2Client(base_url, auth_key, secret_key)
 keys = client.refresh_keys()
 
 data = bytes(str_data, 'utf-8')
-encrypted = encrypt_data(data, keys=keys, advertising_token=ad_token)
+encrypted = encrypt_data(data, IdentityScope.UID2, keys=keys, advertising_token=ad_token)
 decrypted = decrypt_data(encrypted, keys)
 
-print('Encrypted = ', encrypted)
+print('Encrypted =', encrypted)
 print('Decrypted =', decrypted.data)
-print('Encrypted at (UTC) = ', decrypted.encrypted_at)
+print('Encrypted at (UTC) =', decrypted.encrypted_at)
