@@ -31,18 +31,19 @@ from uid2_client import decrypt_token
 
 
 def _usage():
-    print('Usage: python3 sample_auto_refresh.py <base_url> <auth_key> <ad_token>', file=sys.stderr)
+    print('Usage: python3 sample_auto_refresh.py <base_url> <auth_key> <secret_key> <ad_token>', file=sys.stderr)
     sys.exit(1)
 
 
-if len(sys.argv) <= 3:
+if len(sys.argv) <= 4:
     _usage()
 
 base_url = sys.argv[1]
 auth_key = sys.argv[2]
-ad_token = sys.argv[3]
+secret_key = sys.argv[3]
+ad_token = sys.argv[4]
 
-client = Uid2Client(base_url, auth_key)
+client = Uid2Client(base_url, auth_key, secret_key)
 with EncryptionKeysAutoRefresher(client, dt.timedelta(seconds=4), dt.timedelta(seconds=7)) as refresher:
     for i in range(0, 20):
         refresh_result = refresher.current_result()
