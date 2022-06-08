@@ -38,6 +38,7 @@ _master_key_id = 164
 _site_key_id = 165
 _test_site_key_id = 166
 _site_id = 2001
+_site_id2 = 2
 
 _uid2 = 'ywsvDNINiZOVSsfkHpLpSJzXzhr6Jx9Z/4Q0+lsEUvM='
 _now = dt.datetime.utcnow()
@@ -242,6 +243,17 @@ class TestEncryptionFunctions(unittest.TestCase):
         self.assertEqual(data, decrypted.data)
 
 
+    def test_encrypt_data_site_id_from_token_custom_site_key_site_id(self):
+        data = b'123456'
+        key = _test_site_key
+        keys = EncryptionKeysCollection([_master_key, key])
+        token = _encrypt_token_v3(_uid2, _master_key, key, site_id=_site_id2)
+        encrypted = encrypt_data(data, IdentityScope.UID2, advertising_token=token, keys=keys)
+        self.assertTrue(len(data) + encryption_block_size < len(encrypted))
+        decrypted = decrypt_data(encrypted, keys)
+        self.assertEqual(data, decrypted.data)
+
+
     def test_encrypt_data_keys_and_specific_key_set(self):
         data = b'123456'
         key = _test_site_key
@@ -265,6 +277,15 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _test_site_key])
         with self.assertRaises(EncryptionError):
             encrypt_data(data, IdentityScope.UID2, keys=keys, advertising_token="bogus-token")
+
+
+    def test_encrypt_data_token_decrypt_key_expired(self):
+        data = b'123456'
+        key = EncryptionKey(101, _site_id2, _now - dt.timedelta(days=2), _now - dt.timedelta(days=2), _now - dt.timedelta(days=1), encryption_block_size * b'9')
+        keys = EncryptionKeysCollection([_master_key, key])
+        token = _encrypt_token_v3(_uid2, _master_key, key, site_id=_site_id)
+        with self.assertRaises(EncryptionError):
+            encrypt_data(data, IdentityScope.UID2, advertising_token=token, keys=keys)
 
 
     def test_encrypt_data_key_expired(self):
