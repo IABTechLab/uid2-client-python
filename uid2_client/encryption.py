@@ -117,7 +117,7 @@ def _decrypt_token_v2(token_bytes, keys, now):
     established_ms = int.from_bytes(identity[idx:idx+8], 'big')
     established = dt.datetime.utcfromtimestamp(established_ms / 1000.0)
 
-    return DecryptedToken(id_str, established, site_id)
+    return DecryptedToken(id_str, established, site_id, site_key.site_id)
 
 
 def _decrypt_token_v3(token_bytes, keys, now):
@@ -157,7 +157,7 @@ def _decrypt_token_v3(token_bytes, keys, now):
     id_bytes = site_payload[36:]
     id_str = base64.b64encode(id_bytes).decode('ascii')
 
-    return DecryptedToken(id_str, established, site_id)
+    return DecryptedToken(id_str, established, site_id, site_key.site_id)
 
 
 def encrypt_data(data, identity_scope, **kwargs):
@@ -208,16 +208,18 @@ def encrypt_data(data, identity_scope, **kwargs):
         raise ValueError("only one of keys and key can be specified")
     if key is None:
         site_id = kwargs.get("site_id")
+        site_key_site_id = site_id
         advertising_token = kwargs.get("advertising_token")
         if site_id is not None and advertising_token is not None:
             raise ValueError("only one of site_id and advertising_token can be specified")
         if advertising_token is not None:
             decrypted_token = decrypt_token(advertising_token, keys, now)
             site_id = decrypted_token.site_id
+            site_key_site_id = decrypted_token.site_key_site_id
 
-        key = keys.get_active_site_key(site_id, now)
+        key = keys.get_active_site_key(site_key_site_id, now)
         if key is None:
-            raise EncryptionError("no key for the specified site")
+            raise EncryptionError("not authorized for key for the specified site")
     elif not key.is_active(now):
         raise EncryptionError("key is either expired or not active yet")
     else:
@@ -354,13 +356,15 @@ class DecryptedToken:
 
     Attrs:
         uid2 (str): universal ID string
-        site_id (int): site ID which the token is originating from
         established (datetime): UTC date/time for when the token was first generated
+        site_id (int): site ID which the token is originating from
+        site_key_site_id (int): site ID of the site key which the token is encrypted with
     """
-    def __init__(self, uid2, established, site_id):
+    def __init__(self, uid2, established, site_id, site_key_site_id):
         self.uid2 = uid2
         self.established = established
         self.site_id = site_id
+        self.site_key_site_id = site_key_site_id
 
 
 class DecryptedData:
