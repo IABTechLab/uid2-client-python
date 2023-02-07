@@ -61,13 +61,14 @@ def _decrypt_token(token, keys, now):
     base64_special_chars = {"+", "/"}
     index = next((i for i, ch in enumerate(header_str) if ch in base64_special_chars), None)
     is_base64url = (index is not None)
-    token_bytes = base64.b64decode(token) if is_base64url else base64.urlsafe_b64decode(token)
+    token_bytes = base64.urlsafe_b64decode(token) if is_base64url else base64.b64decode(token)
 
     if token_bytes[0] == 2:
         return _decrypt_token_v2(base64.b64decode(token), keys, now)
     elif token_bytes[1] == _AdvertisingTokenCode.ADVERTISING_TOKEN_V3:
         return _decrypt_token_v3(base64.b64decode(token), keys, now)
     elif token_bytes[1] == _AdvertisingTokenCode.ADVERTISING_TOKEN_V4:
+        # same as V3 but use Base64URL encoding
         return _decrypt_token_v3(base64.urlsafe_b64decode(token), keys, now)
     else:
         raise EncryptionError('token version not supported')
