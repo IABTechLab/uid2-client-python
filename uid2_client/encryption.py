@@ -24,6 +24,10 @@ class _PayloadType(Enum):
     ENCRYPTED_DATA = 128
     ENCRYPTED_DATA_V3 = 96
 
+class _AdvertisingTokenCode(Enum):
+    ADVERTISING_TOKEN_V3 = 112
+    ADVERTISING_TOKEN_V4 = 118
+
 
 def decrypt_token(token, keys, now=dt.datetime.utcnow()):
     """Decrypt advertising token to extract UID2 details.
@@ -53,12 +57,18 @@ def _decrypt_token(token, keys, now):
     if not keys.valid(now):
         raise EncryptionError('no keys available or all keys have expired; refresh the latest keys from UID2 service')
 
-    token_bytes = base64.b64decode(token)
+    header_str = token(0, 4)
+    base64_special_chars = {"+", "/"}
+    index = next((i for i, ch in enumerate(header_str) if ch in base64_special_chars), None)
+    is_base64url = (index is not None)
+    token_bytes = base64.b64decode(token) if is_base64url else base64.urlsafe_b64decode(token)
 
     if token_bytes[0] == 2:
-        return _decrypt_token_v2(token_bytes, keys, now)
-    elif token_bytes[1] == 112:
-        return _decrypt_token_v3(token_bytes, keys, now)
+        return _decrypt_token_v2(base64.b64decode(token), keys, now)
+    elif token_bytes[1] == _AdvertisingTokenCode.ADVERTISING_TOKEN_V3:
+        return _decrypt_token_v3(base64.b64decode(token), keys, now)
+    elif token_bytes[1] == _AdvertisingTokenCode.ADVERTISING_TOKEN_V4:
+        return _decrypt_token_v3(base64.urlsafe_b64decode(token), keys, now)
     else:
         raise EncryptionError('token version not supported')
 
