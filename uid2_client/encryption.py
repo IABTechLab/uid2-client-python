@@ -28,6 +28,7 @@ class _AdvertisingTokenCode(Enum):
     ADVERTISING_TOKEN_V3 = 112
     ADVERTISING_TOKEN_V4 = 118
 
+base64_url_special_chars = {"-", "_"}
 
 def decrypt_token(token, keys, now=dt.datetime.utcnow()):
     """Decrypt advertising token to extract UID2 details.
@@ -58,10 +59,9 @@ def _decrypt_token(token, keys, now):
         raise EncryptionError('no keys available or all keys have expired; refresh the latest keys from UID2 service')
 
     header_str = token(0, 4)
-    base64_special_chars = {"+", "/"}
-    index = next((i for i, ch in enumerate(header_str) if ch in base64_special_chars), None)
-    is_base64url = (index is not None)
-    token_bytes = base64.urlsafe_b64decode(token) if is_base64url else base64.b64decode(token)
+    index = next((i for i, ch in enumerate(header_str) if ch in base64_url_special_chars), None)
+    is_base64_url_encoding = (index is not None)
+    token_bytes = base64.urlsafe_b64decode(token) if is_base64_url_encoding else base64.b64decode(token)
 
     if token_bytes[0] == 2:
         return _decrypt_token_v2(base64.b64decode(token), keys, now)
