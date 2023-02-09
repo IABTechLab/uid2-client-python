@@ -1,5 +1,6 @@
 import base64
 import datetime as dt
+from datetime import timezone
 import os
 import unittest
 from Crypto.Cipher import AES
@@ -18,11 +19,10 @@ _site_id = 2001
 _site_id2 = 2
 
 _uid2 = 'ywsvDNINiZOVSsfkHpLpSJzXzhr6Jx9Z/4Q0+lsEUvM='
-_now = dt.datetime.utcnow()
+_now = dt.datetime.now(tz=timezone.utc)
 _master_key = EncryptionKey(_master_key_id, -1, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _master_secret)
 _site_key = EncryptionKey(_site_key_id, _site_id, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _site_secret)
-_test_site_key = EncryptionKey(_test_site_key_id, _site_id, dt.datetime(2020, 1, 1, 0, 0, 0), dt.datetime(2021, 1, 1, 0, 0, 0), _now + dt.timedelta(days=1), encryption_block_size * b'9')
-
+_test_site_key = EncryptionKey(_test_site_key_id, _site_id, dt.datetime(2020, 1, 1, tzinfo=timezone.utc), dt.datetime(2020, 1, 1, tzinfo=timezone.utc), _now + dt.timedelta(days=1), encryption_block_size * b'9')
 
 class TestEncryptionFunctions(unittest.TestCase):
 
@@ -81,7 +81,7 @@ class TestEncryptionFunctions(unittest.TestCase):
 
 
     def test_decrypt_token_custom_now(self):
-        expiry = dt.datetime(2021, 3, 22, 9, 1, 2)
+        expiry = dt.datetime(2021, 3, 22, 9, 1, 2, tzinfo=timezone.utc)
         token = _encrypt_token_v3(_uid2, _master_key, _site_key, expiry=expiry)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
@@ -157,7 +157,7 @@ class TestEncryptionFunctions(unittest.TestCase):
 
 
     def test_decrypt_token_v2_custom_now(self):
-        expiry = dt.datetime(2021, 3, 22, 9, 1, 2)
+        expiry = dt.datetime(2021, 3, 22, 9, 1, 2, tzinfo=timezone.utc)
         token = _encrypt_token_v2(_uid2, _master_key, _site_key, expiry=expiry)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
@@ -325,7 +325,7 @@ class TestEncryptionFunctions(unittest.TestCase):
     def test_encrypt_data_site_key_expired_custom_now(self):
         data = b'123456'
         site_id = 205
-        now = dt.datetime.utcnow() - dt.timedelta(days=1)
+        now = dt.datetime.now(tz=timezone.utc) - dt.timedelta(days=1)
         key = EncryptionKey(101, site_id, now, now, now + dt.timedelta(seconds=1), encryption_block_size * b'9')
         keys = EncryptionKeysCollection([key])
         encrypted = encrypt_data(data, IdentityScope.UID2, site_id=site_id, keys=keys, now=now)
@@ -346,7 +346,7 @@ class TestEncryptionFunctions(unittest.TestCase):
 
     def test_encrypt_data_expired_token_custom_now(self):
         data = b'123456'
-        expiry = dt.datetime(2021, 3, 22, 9, 1, 2)
+        expiry = dt.datetime(2021, 3, 22, 9, 1, 2, tzinfo=timezone.utc)
         key = _test_site_key
         keys = EncryptionKeysCollection([_master_key, key])
         token = _encrypt_token_v3(_uid2, _master_key, key, site_id=key.site_id, expiry=expiry)
@@ -409,7 +409,7 @@ class TestEncryptionFunctions(unittest.TestCase):
 
     def test_decrypt_data_v2(self):
         data = b'123456'
-        now = dt.datetime.utcnow() - dt.timedelta(days=1)
+        now = dt.datetime.now(tz=timezone.utc) - dt.timedelta(days=1)
         key = _test_site_key
         keys = EncryptionKeysCollection([key])
         encrypted = _encrypt_data_v2(data, key=key, site_id=12345, now=now)
@@ -424,11 +424,11 @@ def _encrypt_token_v2(id_str, master_key, site_key, version=2, expiry=dt.timedel
     identity += int.to_bytes(len(id), 4, 'big')
     identity += id
     identity += int.to_bytes(privacy_bits, 4, 'big')
-    identity += int.to_bytes(int((dt.datetime.utcnow() - dt.timedelta(hours=1)).timestamp()) * 1000, 8, 'big')
+    identity += int.to_bytes(int((dt.datetime.now(tz=timezone.utc) - dt.timedelta(hours=1)).timestamp()) * 1000, 8, 'big')
     identity_iv = bytes([10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
     if not isinstance(expiry, dt.datetime):
-        expiry = dt.datetime.utcnow() + expiry
+        expiry = dt.datetime.now(tz=timezone.utc) + expiry
     master_payload = int.to_bytes(int(expiry.timestamp()) * 1000, 8, 'big')
     master_payload += _encrypt_data_v1(identity, key=site_key, iv=identity_iv)
     master_iv = bytes([21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36])
@@ -447,14 +447,14 @@ def _encrypt_token_v3(id_str, master_key, site_key, identity_type=0, version=112
     site_payload += int.to_bytes(0, 4, 'big')  # client key id
 
     site_payload += int.to_bytes(0, 4, 'big')  # privacy bits
-    site_payload += int.to_bytes(int((dt.datetime.utcnow() - dt.timedelta(hours=1)).timestamp()) * 1000, 8, 'big')  # established
-    site_payload += int.to_bytes(int((dt.datetime.utcnow() - dt.timedelta(hours=1)).timestamp()) * 1000, 8, 'big')  # refreshed
+    site_payload += int.to_bytes(int((dt.datetime.now(tz=timezone.utc) - dt.timedelta(hours=1)).timestamp()) * 1000, 8, 'big')  # established
+    site_payload += int.to_bytes(int((dt.datetime.now(tz=timezone.utc) - dt.timedelta(hours=1)).timestamp()) * 1000, 8, 'big')  # refreshed
     site_payload += id
 
     if not isinstance(expiry, dt.datetime):
-        expiry = dt.datetime.utcnow() + expiry
+        expiry = dt.datetime.now(tz=timezone.utc) + expiry
     master_payload = int.to_bytes(int(expiry.timestamp()) * 1000, 8, 'big')
-    master_payload += int.to_bytes(int((dt.datetime.utcnow()).timestamp()) * 1000, 8, 'big')  # created
+    master_payload += int.to_bytes(int((dt.datetime.now(tz=timezone.utc)).timestamp()) * 1000, 8, 'big')  # created
 
     master_payload += int.to_bytes(0, 4, 'big')  # operator site id
     master_payload += int.to_bytes(0, 1, 'big')  # operator type
