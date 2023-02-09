@@ -12,7 +12,6 @@ import os
 from Crypto.Cipher import AES
 from enum import Enum
 
-
 encryption_block_size = AES.block_size
 """int: block size for encryption routines
 
@@ -65,7 +64,7 @@ def _decrypt_token(token, keys, now):
     header_str = token[0:4]
     index = next((i for i, ch in enumerate(header_str) if ch in base64_url_special_chars), None)
     is_base64_url_encoding = (index is not None)
-    token_bytes = base64.urlsafe_b64decode(token) if is_base64_url_encoding else base64.b64decode(token)
+    token_bytes = base64.urlsafe_b64decode(header_str) if is_base64_url_encoding else base64.b64decode(header_str)
 
     if token_bytes[0] == 2:
         return _decrypt_token_v2(base64.b64decode(token), keys, now)
@@ -73,6 +72,14 @@ def _decrypt_token(token, keys, now):
         return _decrypt_token_v3(base64.b64decode(token), keys, now)
     elif token_bytes[1] == _AdvertisingTokenCode.ADVERTISING_TOKEN_V4.value:
         # same as V3 but use Base64URL encoding
+        input_size_mod4 = len(token) % 4;
+        if input_size_mod4 > 0:
+            padding_needed = 4 - input_size_mod4
+            padding = ""
+            for i in range(padding_needed):
+                padding = padding + "="
+            padded_token = token + padding
+            return _decrypt_token_v3(base64.urlsafe_b64decode(padded_token), keys, now)
         return _decrypt_token_v3(base64.urlsafe_b64decode(token), keys, now)
     else:
         raise EncryptionError('token version not supported')

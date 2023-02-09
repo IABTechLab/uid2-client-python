@@ -9,6 +9,13 @@ from uid2_client import decrypt_token, encrypt_data, decrypt_data, encryption_bl
 from uid2_client.encryption import _encrypt_data_v1, _encrypt_gcm, _PayloadType
 from uid2_client.keys import *
 
+from enum import Enum
+class _AdvertisingTokenCode(Enum):
+    # showing as "AHA..." in the Base64 Encoding (Base64 'H' is 000111 and 112 is 01110000)
+    ADVERTISING_TOKEN_V3 = 112
+    # showing as "AIA..." in the Base64URL Encoding ('H' is followed by 'I' hence
+    # this choice for the next token version) (Base64 'I' is 001000 and 128 is 10000000)
+    ADVERTISING_TOKEN_V4 = 128
 
 _master_secret = bytes([139, 37, 241, 173, 18, 92, 36, 232, 165, 168, 23, 18, 38, 195, 123, 92, 160, 136, 185, 40, 91, 173, 165, 221, 168, 16, 169, 164, 38, 139, 8, 155])
 _site_secret =   bytes([32, 251, 7, 194, 132, 154, 250, 86, 202, 116, 104, 29, 131, 192, 139, 215, 48, 164, 11, 65, 226, 110, 167, 14, 108, 51, 254, 125, 65, 24, 23, 133])
@@ -26,7 +33,82 @@ _test_site_key = EncryptionKey(_test_site_key_id, _site_id, dt.datetime(2020, 1,
 
 class TestEncryptionFunctions(unittest.TestCase):
 
-    def test_decrypt_token(self):
+    def test_decrypt_token_v4(self):
+        token = _encrypt_token_v4(_uid2, _master_key, _site_key)
+
+        keys = EncryptionKeysCollection([_master_key, _site_key])
+        result = decrypt_token(token, keys)
+
+        self.assertEqual(_uid2, result.uid2)
+
+
+    def test_decrypt_token_v4_empty_keys(self):
+        token = _encrypt_token_v4(_uid2, _master_key, _site_key)
+
+        keys = EncryptionKeysCollection([])
+
+        with self.assertRaises(EncryptionError):
+            result = decrypt_token(token, keys)
+
+
+    def test_decrypt_token_v4_no_master_key(self):
+        token = _encrypt_token_v4(_uid2, _master_key, _site_key)
+
+        keys = EncryptionKeysCollection([_site_key])
+
+        with self.assertRaises(EncryptionError):
+            result = decrypt_token(token, keys)
+
+
+    def test_decrypt_token_v4_no_site_key(self):
+        token = _encrypt_token_v4(_uid2, _master_key, _site_key)
+
+        keys = EncryptionKeysCollection([_master_key])
+
+        with self.assertRaises(EncryptionError):
+            result = decrypt_token(token, keys)
+
+    def test_decrypt_token_v4_invalid_version(self):
+        token = _encrypt_token_with_debug_info(_uid2, _master_key, _site_key, 0, 1, dt.timedelta(hours=1), 0, 0, False)
+
+        keys = EncryptionKeysCollection([_master_key, _site_key])
+
+        with self.assertRaises(EncryptionError):
+            result = decrypt_token(token, keys)
+
+
+    def test_decrypt_token_v4_expired(self):
+        token = _encrypt_token_v4(_uid2, _master_key, _site_key, expiry=dt.timedelta(seconds=-1))
+
+        keys = EncryptionKeysCollection([_master_key, _site_key])
+
+        with self.assertRaises(EncryptionError):
+            result = decrypt_token(token, keys)
+
+
+    def test_decrypt_token_v4_custom_now(self):
+        expiry = dt.datetime(2021, 3, 22, 9, 1, 2, tzinfo=timezone.utc)
+        token = _encrypt_token_v4(_uid2, _master_key, _site_key, expiry=expiry)
+
+        keys = EncryptionKeysCollection([_master_key, _site_key])
+
+        with self.assertRaises(EncryptionError):
+            result = decrypt_token(token, keys, now=expiry+dt.timedelta(seconds=1))
+
+        result = decrypt_token(token, keys, now=expiry-dt.timedelta(seconds=1))
+        self.assertEqual(_uid2, result.uid2)
+
+
+    def test_decrypt_token_v4_invalid_payload(self):
+        token = _encrypt_token_v4(_uid2, _master_key, _site_key, expiry=dt.timedelta(seconds=-1))
+
+        keys = EncryptionKeysCollection([_master_key, _site_key])
+
+        with self.assertRaises(EncryptionError):
+            result = decrypt_token(token[:-3], keys)
+
+
+    def test_decrypt_token_v3(self):
         token = _encrypt_token_v3(_uid2, _master_key, _site_key)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
@@ -35,7 +117,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         self.assertEqual(_uid2, result.uid2)
 
 
-    def test_decrypt_token_empty_keys(self):
+    def test_decrypt_token_v3_empty_keys(self):
         token = _encrypt_token_v3(_uid2, _master_key, _site_key)
 
         keys = EncryptionKeysCollection([])
@@ -44,7 +126,7 @@ class TestEncryptionFunctions(unittest.TestCase):
             result = decrypt_token(token, keys)
 
 
-    def test_decrypt_token_no_master_key(self):
+    def test_decrypt_token_v3_no_master_key(self):
         token = _encrypt_token_v3(_uid2, _master_key, _site_key)
 
         keys = EncryptionKeysCollection([_site_key])
@@ -53,7 +135,7 @@ class TestEncryptionFunctions(unittest.TestCase):
             result = decrypt_token(token, keys)
 
 
-    def test_decrypt_token_no_site_key(self):
+    def test_decrypt_token_v3_no_site_key(self):
         token = _encrypt_token_v3(_uid2, _master_key, _site_key)
 
         keys = EncryptionKeysCollection([_master_key])
@@ -61,9 +143,8 @@ class TestEncryptionFunctions(unittest.TestCase):
         with self.assertRaises(EncryptionError):
             result = decrypt_token(token, keys)
 
-
-    def test_decrypt_token_invalid_version(self):
-        token = _encrypt_token_v3(_uid2, _master_key, _site_key, version=1)
+    def test_decrypt_token_v3_invalid_version(self):
+        token = _encrypt_token_with_debug_info(_uid2, _master_key, _site_key, 0, 1, dt.timedelta(hours=1), 0, 0, False)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
@@ -71,7 +152,7 @@ class TestEncryptionFunctions(unittest.TestCase):
             result = decrypt_token(token, keys)
 
 
-    def test_decrypt_token_expired(self):
+    def test_decrypt_token_v3_expired(self):
         token = _encrypt_token_v3(_uid2, _master_key, _site_key, expiry=dt.timedelta(seconds=-1))
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
@@ -80,7 +161,7 @@ class TestEncryptionFunctions(unittest.TestCase):
             result = decrypt_token(token, keys)
 
 
-    def test_decrypt_token_custom_now(self):
+    def test_decrypt_token_v3_custom_now(self):
         expiry = dt.datetime(2021, 3, 22, 9, 1, 2, tzinfo=timezone.utc)
         token = _encrypt_token_v3(_uid2, _master_key, _site_key, expiry=expiry)
 
@@ -93,7 +174,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         self.assertEqual(_uid2, result.uid2)
 
 
-    def test_decrypt_token_invalid_payload(self):
+    def test_decrypt_token_v3_invalid_payload(self):
         token = _encrypt_token_v3(_uid2, _master_key, _site_key, expiry=dt.timedelta(seconds=-1))
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
@@ -439,7 +520,15 @@ def _encrypt_token_v2(id_str, master_key, site_key, version=2, expiry=dt.timedel
     return base64.b64encode(token).decode('ascii')
 
 
-def _encrypt_token_v3(id_str, master_key, site_key, identity_type=0, version=112, expiry=dt.timedelta(hours=1), site_id=0, privacy_bits=0):
+def _encrypt_token_v3(id_str, master_key, site_key, identity_type=0, expiry=dt.timedelta(hours=1), site_id=0, privacy_bits=0):
+    return _encrypt_token_with_debug_info(id_str, master_key, site_key, identity_type, _AdvertisingTokenCode.ADVERTISING_TOKEN_V3.value, expiry, site_id, privacy_bits, False)
+
+
+def _encrypt_token_v4(id_str, master_key, site_key, identity_type=0, expiry=dt.timedelta(hours=1), site_id=0, privacy_bits=0):
+    return _encrypt_token_with_debug_info(id_str, master_key, site_key, identity_type, _AdvertisingTokenCode.ADVERTISING_TOKEN_V4.value, expiry, site_id, privacy_bits, True)
+
+
+def _encrypt_token_with_debug_info(id_str, master_key, site_key, identity_type, version, expiry, site_id, privacy_bits, is_v4_token):
     id = base64.b64decode(id_str)
 
     site_payload = int.to_bytes(site_id, 4, 'big')
@@ -469,7 +558,17 @@ def _encrypt_token_v3(id_str, master_key, site_key, identity_type=0, version=112
     token += int.to_bytes(master_key.key_id, 4, 'big')
     token += _encrypt_gcm(master_payload, None, master_key.secret)
 
-    return base64.b64encode(token).decode('ascii')
+    if is_v4_token:
+        encoded_token = base64.urlsafe_b64encode(token).decode('ascii')
+        # urlsafe_b64encode doesn't remove the '=' padding per the spec so we should remove it
+        # as '=' is a reserved char in URL spec
+        count = 0
+        for i in range(3):
+            if encoded_token[len(encoded_token) - 1 - i] == '=':
+                count = count + 1
+        return encoded_token[:-count]
+    else:
+        return base64.b64encode(token).decode('ascii')
 
 
 def _encrypt_data_v2(data, key, site_id, now):
