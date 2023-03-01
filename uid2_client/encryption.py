@@ -12,6 +12,7 @@ import os
 from Crypto.Cipher import AES
 from enum import Enum
 
+from uid2_client.advertising_token_version import AdvertisingTokenVersion
 from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
 
 encryption_block_size = AES.block_size
@@ -70,9 +71,9 @@ def _decrypt_token(token, keys, now):
 
     if token_bytes[0] == 2:
         return _decrypt_token_v2(base64.b64decode(token), keys, now)
-    elif token_bytes[1] == _AdvertisingTokenCode.ADVERTISING_TOKEN_V3.value:
+    elif token_bytes[1] == AdvertisingTokenVersion.ADVERTISING_TOKEN_V3.value:
         return _decrypt_token_v3(base64.b64decode(token), keys, now)
-    elif token_bytes[1] == _AdvertisingTokenCode.ADVERTISING_TOKEN_V4.value:
+    elif token_bytes[1] == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4.value:
         # same as V3 but use Base64URL encoding
         return _decrypt_token_v3(Uid2Base64UrlCoder.decode(token), keys, now)
     else:
