@@ -2,9 +2,11 @@ import base64
 
 from datetime import timezone
 import os
-from uid2_client import encryption_block_size, IdentityScope, IdentityType
+from uid2_client import encryption_block_size
 from uid2_client.advertising_token_version import AdvertisingTokenVersion
 from uid2_client.encryption import _encrypt_data_v1, _encrypt_gcm, _PayloadType
+from uid2_client.identity_scope import IdentityScope
+from uid2_client.identity_type import IdentityType
 from uid2_client.keys import *
 from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
 
