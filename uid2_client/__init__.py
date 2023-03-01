@@ -20,3 +20,8 @@ class IdentityScope(Enum):
     """Enum for types of unified ID"""
     UID2 = 0
     EUID = 1
+
+class IdentityType(Enum):
+    """Enum for types of ID source"""
+    Email = 0
+    Phone = 1
