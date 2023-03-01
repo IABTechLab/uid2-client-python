@@ -4,8 +4,8 @@ from datetime import timezone
 import unittest
 
 from tests.uid2_token_generator import UID2TokenGenerator, Params
-from uid2_client import decrypt_token, encrypt_data, decrypt_data, encryption_block_size, EncryptionError, \
-    IdentityScope, Uid2Base64UrlCoder, AdvertisingTokenVersion
+from uid2_client import decrypt_token, encrypt_data, decrypt_data, encryption_block_size, EncryptionError, Uid2Base64UrlCoder, AdvertisingTokenVersion
+from uid2_client.identity_scope import IdentityScope
 from uid2_client.keys import *
 
 _master_secret = bytes([139, 37, 241, 173, 18, 92, 36, 232, 165, 168, 23, 18, 38, 195, 123, 92, 160, 136, 185, 40, 91, 173, 165, 221, 168, 16, 169, 164, 38, 139, 8, 155])

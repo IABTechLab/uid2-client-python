@@ -6,3 +6,4 @@ class AdvertisingTokenVersion(Enum):
     # showing as "AIA..." in the Base64URL Encoding ('H' is followed by 'I' hence
     # this choice for the next token version) (Base64 'I' is 001000 and 128 is 10000000)
     ADVERTISING_TOKEN_V4 = 128
+
