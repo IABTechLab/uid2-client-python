@@ -4,7 +4,8 @@ from datetime import timezone
 import unittest
 
 from tests.uid2_token_generator import UID2TokenGenerator
-from uid2_client import decrypt_token, encrypt_data, decrypt_data, encryption_block_size, EncryptionError, IdentityScope
+from uid2_client import decrypt_token, encrypt_data, decrypt_data, encryption_block_size, EncryptionError, \
+    IdentityScope, Uid2Base64UrlCoder
 from uid2_client.keys import *
 
 _master_secret = bytes([139, 37, 241, 173, 18, 92, 36, 232, 165, 168, 23, 18, 38, 195, 123, 92, 160, 136, 185, 40, 91, 173, 165, 221, 168, 16, 169, 164, 38, 139, 8, 155])
@@ -23,20 +24,75 @@ _test_site_key = EncryptionKey(_test_site_key_id, _site_id, dt.datetime(2020, 1,
 
 class TestEncryptionFunctions(unittest.TestCase):
 
-    # def crossPlatformConsistencyCheck_Base64UrlTestCases(self):
-    #     case1 = bytes([ 0xff, 0xE0, 0x88, 0xFF, 0xEE, 0x99, 0x99])
-    #     # the Base64 equivalent is "/+CI/+6ZmQ=="
-    #     # and we want the Base64URL encoded to remove 2 '=' paddings at the back
-    #     # String case1Base64Encoded = Base64.getEncoder().encodeToString(intArrayToByteArray(case1));
-    #     self.crossPlatformConsistencyCheck_Base64UrlTest(case1, "_-CI_-6ZmQ");
-    #
-    #
-    #
-    # def crossPlatformConsistencyCheck_Base64UrlTest(self, raw_input, expected_base64_url_str):
-    #     base64UrlEncodedStr = UID2Base64UrlCoder.encode(writer.array());
-    #     assertEquals(expectedBase64URLStr, base64UrlEncodedStr);
+    def test_cross_platform_consistency_check_base64_url_test_cases(self):
+        case1 = bytes([ 0xff, 0xE0, 0x88, 0xFF, 0xEE, 0x99, 0x99])
+        # the Base64 equivalent is "/+CI/+6ZmQ=="
+        # and we want the Base64URL encoded to remove 2 '=' paddings at the back
+        # String case1Base64Encoded = Base64.getEncoder().encodeToString(intArrayToByteArray(case1));
+        self.cross_platform_consistency_check_base64_url_test(case1, "_-CI_-6ZmQ")
+
+        # the Base64 equivalent is "/+CI/+6ZmZk=" to remove 1 padding
+        case2 = bytes([0xff, 0xE0, 0x88, 0xFF, 0xEE, 0x99, 0x99, 0x99])
+        self.cross_platform_consistency_check_base64_url_test(case2, "_-CI_-6ZmZk")
+
+        # the Base64 equivalent is "/+CI/+6Z" which requires no padding removal
+        case3 = bytes([0xff, 0xE0, 0x88, 0xFF, 0xEE, 0x99])
+        self.cross_platform_consistency_check_base64_url_test(case3, "_-CI_-6Z")
 
 
+    def cross_platform_consistency_check_base64_url_test(self, raw_input, expected_base64_url_str):
+        base64_url_encoded_str = Uid2Base64UrlCoder.encode(raw_input)
+        self.assertEqual(expected_base64_url_str, base64_url_encoded_str)
+
+        decoded = Uid2Base64UrlCoder.decode(base64_url_encoded_str)
+        self.assertEqual(decoded, raw_input)
+
+    # def test_cross_platform_consistency_decrypt(self):
+    #     crossPlatformAdvertisingToken = "AIAAAACkOqJj9VoxXJNnuX3v-ymceRf8_Av0vA5asOj9YBZJc1kV1vHdmb0AIjlzWnFF-gxIlgXqhRFhPo3iXpugPBl3gv4GKnGkw-Zgm2QqMsDPPLpMCYiWrIUqHPm8hQiq9PuTU-Ba9xecRsSIAN0WCwKLwA_EDVdzmnLJu64dQoeYmuu3u1G2EuTkuMrevmP98tJqSUePKwnfK73-0Zdshw";
+    #     # Sunday, 1 January 2023 1:01:01 AM UTC
+    #     referenceTimestampMs = 1672534861000
+    #     # 1 hour before ref timestamp
+    #     establishedMs = referenceTimestampMs - (3600 * 1000);
+    #     lastRefreshedMs = referenceTimestampMs;
+    #     tokenCreatedMs = referenceTimestampMs;
+    #
+    #     _master_key = EncryptionKey(_master_key_id, -1, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1),
+    #                                 _master_secret)
+    #
+    #
+    #     masterKeyCreated = Instant.ofEpochMilli(referenceTimestampMs).minus(1, ChronoUnit.DAYS);
+    #     siteKeyCreated = Instant.ofEpochMilli(referenceTimestampMs).minus(10, ChronoUnit.DAYS);
+    #     masterKeyActivates = Instant.ofEpochMilli(referenceTimestampMs);
+    #     siteKeyActivates = Instant.ofEpochMilli(referenceTimestampMs).minus(1, ChronoUnit.DAYS);
+    #     # for the next ~20 years ...
+    #     masterKeyExpires = Instant.ofEpochMilli(referenceTimestampMs).plus(1 * 365 * 20, ChronoUnit.DAYS);
+    #     siteKeyExpires = Instant.ofEpochMilli(referenceTimestampMs).plus(1 * 365 * 20, ChronoUnit.DAYS);
+    #     UID2TokenGenerator.Params
+    #     params = UID2TokenGenerator.defaultParams().withTokenExpiry(
+    #         Instant.ofEpochMilli(referenceTimestampMs).plus(1 * 365 * 20, ChronoUnit.DAYS));
+    #
+    #     masterKey = new Key(MASTER_KEY_ID, -1, masterKeyCreated, masterKeyActivates, masterKeyExpires, getMasterSecret());
+    #     siteKey = new Key(SITE_KEY_ID, SITE_ID, siteKeyCreated, siteKeyActivates, siteKeyExpires, getSiteSecret());
+    #
+    #     # UID2Client client = new
+    #     # UID2Client("ep", "ak", CLIENT_SECRET, IdentityScope.UID2);
+    #     # client.refreshJson(keySetToJson(masterKey, siteKey));
+    #     # # verify that the dynamically created ad token can be decrypted
+    #     # String
+    #     # runtimeAdvertisingToken = UID2TokenGenerator.generateUid2TokenV4(EXAMPLE_UID, masterKey, SITE_ID, siteKey,
+    #     #                                                                  params);
+    #     # # best effort check as the token might simply just not require padding
+    #     # assertEquals(-1, runtimeAdvertisingToken.indexOf('='));
+    #     #
+    #     # assertEquals(-1, runtimeAdvertisingToken.indexOf('+'));
+    #     # assertEquals(-1, runtimeAdvertisingToken.indexOf('/'));
+    #     #
+    #     # DecryptionResponse
+    #     # res = client.decrypt(runtimeAdvertisingToken);
+    #     # assertEquals(EXAMPLE_UID, res.getUid());
+    #     # # can also decrypt a known token generated from other SDK
+    #     # res = client.decrypt(crossPlatformAdvertisingToken);
+    #     # assertEquals(EXAMPLE_UID, res.getUid());
 
 
     def test_decrypt_token_v4(self):

@@ -15,7 +15,10 @@ class Uid2Base64UrlCoder:
         for i in range(3):
             if encoded_token[len(encoded_token) - 1 - i] == '=':
                 count = count + 1
-        return encoded_token[:-count]
+        # encoded_token[:-0] will empty the whole string!
+        if count > 0:
+            return encoded_token[:-count]
+        return encoded_token
 
     @staticmethod
     def decode(token):
