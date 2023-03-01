@@ -19,13 +19,13 @@ class Params:
             self.token_expiry = dt.datetime.now(tz=timezone.utc) + expiry
 
 
-def defaultParams():
+def default_params():
     return Params()
 
 
 class UID2TokenGenerator:
     @staticmethod
-    def generate_uid2_token_v2(id_str, master_key, site_id, site_key, params = defaultParams(), version=2):
+    def generate_uid2_token_v2(id_str, master_key, site_id, site_key, params = default_params(), version=2):
         id = bytes(id_str, 'utf-8')
         identity = int.to_bytes(site_id, 4, 'big')
         identity += int.to_bytes(len(id), 4, 'big')
@@ -46,19 +46,17 @@ class UID2TokenGenerator:
         return base64.b64encode(token).decode('ascii')
 
     @staticmethod
-    def generate_uid2_token_v3(id_str, master_key, site_key, identity_type=0, expiry=dt.timedelta(hours=1), site_id=0,
-                                privacy_bits=0):
-        return UID2TokenGenerator.generate_uid2_token_with_debug_info(id_str, master_key, site_key, identity_type,
-                                                    AdvertisingTokenVersion.ADVERTISING_TOKEN_V3.value, expiry, site_id)
+    def generate_uid2_token_v3(id_str, master_key, site_id, site_key, params = default_params()):
+        return UID2TokenGenerator.generate_uid2_token_with_debug_info(id_str, master_key, site_id, site_key, params,
+                                                    AdvertisingTokenVersion.ADVERTISING_TOKEN_V3.value)
 
     @staticmethod
-    def generate_uid2_token_v4(id_str, master_key, site_key, identity_type=0, expiry=dt.timedelta(hours=1), site_id=0,
-                                privacy_bits=0):
-        return UID2TokenGenerator.generate_uid2_token_with_debug_info(id_str, master_key, site_key, identity_type,
-                                                    AdvertisingTokenVersion.ADVERTISING_TOKEN_V4.value, expiry, site_id)
+    def generate_uid2_token_v4(id_str, master_key, site_id, site_key, params = default_params()):
+        return UID2TokenGenerator.generate_uid2_token_with_debug_info(id_str, master_key, site_id, site_key, params,
+                                                    AdvertisingTokenVersion.ADVERTISING_TOKEN_V4.value)
 
     @staticmethod
-    def generate_uid2_token_with_debug_info(id_str, master_key, site_key, identity_type, version, expiry, site_id):
+    def generate_uid2_token_with_debug_info(id_str, master_key, site_id, site_key, params, version):
         id = base64.b64decode(id_str)
 
         site_payload = int.to_bytes(site_id, 4, 'big')
@@ -72,8 +70,7 @@ class UID2TokenGenerator:
                                      8, 'big')  # refreshed
         site_payload += id
 
-        if not isinstance(expiry, dt.datetime):
-            expiry = dt.datetime.now(tz=timezone.utc) + expiry
+        expiry = params.token_expiry
         master_payload = int.to_bytes(int(expiry.timestamp()) * 1000, 8, 'big')
         master_payload += int.to_bytes(int((dt.datetime.now(tz=timezone.utc)).timestamp()) * 1000, 8, 'big')  # created
 
@@ -85,7 +82,7 @@ class UID2TokenGenerator:
         master_payload += int.to_bytes(site_key.key_id, 4, 'big')
         master_payload += _encrypt_gcm(site_payload, None, site_key.secret)
 
-        token = int.to_bytes(identity_type << 4, 1, 'big')
+        token = int.to_bytes((params.identity_scope << 4 | params.identity_type << 2), 1, 'big')
         token += int.to_bytes(version, 1, 'big')
         token += int.to_bytes(master_key.key_id, 4, 'big')
         token += _encrypt_gcm(master_payload, None, master_key.secret)
