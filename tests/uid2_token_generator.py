@@ -87,7 +87,7 @@ class UID2TokenGenerator:
         token += int.to_bytes(master_key.key_id, 4, 'big')
         token += _encrypt_gcm(master_payload, None, master_key.secret)
 
-        if version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4:
+        if version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4.value:
             return Uid2Base64UrlCoder.encode(token)
         else:
             return base64.b64encode(token).decode('ascii')
