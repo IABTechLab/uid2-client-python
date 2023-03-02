@@ -6,6 +6,7 @@ Do not use this module directly, import from uid2_client instead, e.g.
 
 
 import datetime as dt
+from datetime import timezone
 import sys
 import threading
 
@@ -131,7 +132,7 @@ class EncryptionKeysAutoRefresher(threading.Thread):
 
 
     def _make_success_result(self, keys):
-        return EncryptionKeysAutoRefreshResult(keys, None, dt.datetime.utcnow())
+        return EncryptionKeysAutoRefreshResult(keys, None, dt.datetime.now(tz=timezone.utc))
 
 
     def __enter__(self):

@@ -7,10 +7,13 @@ Do not use this module directly, import from uid2_client instead, e.g.
 
 import base64
 import datetime as dt
+from datetime import timezone
 import os
 from Crypto.Cipher import AES
 from enum import Enum
 
+from uid2_client.advertising_token_version import AdvertisingTokenVersion
+from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
 
 encryption_block_size = AES.block_size
 """int: block size for encryption routines
@@ -24,8 +27,9 @@ class _PayloadType(Enum):
     ENCRYPTED_DATA = 128
     ENCRYPTED_DATA_V3 = 96
 
+base64_url_special_chars = {"-", "_"}
 
-def decrypt_token(token, keys, now=dt.datetime.utcnow()):
+def decrypt_token(token, keys, now=dt.datetime.now(tz=timezone.utc)):
     """Decrypt advertising token to extract UID2 details.
 
     Args:
@@ -53,12 +57,18 @@ def _decrypt_token(token, keys, now):
     if not keys.valid(now):
         raise EncryptionError('no keys available or all keys have expired; refresh the latest keys from UID2 service')
 
-    token_bytes = base64.b64decode(token)
+    header_str = token[0:4]
+    index = next((i for i, ch in enumerate(header_str) if ch in base64_url_special_chars), None)
+    is_base64_url_encoding = (index is not None)
+    token_bytes = Uid2Base64UrlCoder.decode(header_str) if is_base64_url_encoding else base64.b64decode(header_str)
 
     if token_bytes[0] == 2:
-        return _decrypt_token_v2(token_bytes, keys, now)
-    elif token_bytes[1] == 112:
-        return _decrypt_token_v3(token_bytes, keys, now)
+        return _decrypt_token_v2(base64.b64decode(token), keys, now)
+    elif token_bytes[1] == AdvertisingTokenVersion.ADVERTISING_TOKEN_V3.value:
+        return _decrypt_token_v3(base64.b64decode(token), keys, now)
+    elif token_bytes[1] == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4.value:
+        # same as V3 but use Base64URL encoding
+        return _decrypt_token_v3(Uid2Base64UrlCoder.decode(token), keys, now)
     else:
         raise EncryptionError('token version not supported')
 
@@ -73,7 +83,7 @@ def _decrypt_token_v2(token_bytes, keys, now):
     master_payload = _decrypt(token_bytes[21:], master_iv, master_key)
 
     expires_ms = int.from_bytes(master_payload[:8], 'big')
-    expires = dt.datetime.utcfromtimestamp(expires_ms / 1000.0)
+    expires = dt.datetime.fromtimestamp(expires_ms / 1000.0, tz=timezone.utc)
     if expires < now:
         raise EncryptionError("token expired")
 
@@ -92,7 +102,7 @@ def _decrypt_token_v2(token_bytes, keys, now):
 
     idx = 8 + id_len + 4
     established_ms = int.from_bytes(identity[idx:idx+8], 'big')
-    established = dt.datetime.utcfromtimestamp(established_ms / 1000.0)
+    established = dt.datetime.fromtimestamp(established_ms / 1000.0, tz=timezone.utc)
 
     return DecryptedToken(id_str, established, site_id, site_key.site_id)
 
@@ -106,7 +116,7 @@ def _decrypt_token_v3(token_bytes, keys, now):
     master_payload = _decrypt_gcm(token_bytes[6:], master_key.secret)
 
     expires_ms = int.from_bytes(master_payload[:8], 'big')
-    expires = dt.datetime.utcfromtimestamp(expires_ms / 1000.0)
+    expires = dt.datetime.fromtimestamp(expires_ms / 1000.0, tz=timezone.utc)
     if expires < now:
         raise EncryptionError("token expired")
 
@@ -128,7 +138,7 @@ def _decrypt_token_v3(token_bytes, keys, now):
     # client key id 12:16
     # privacy bits 16:20
     established_ms = int.from_bytes(site_payload[20:28], 'big')
-    established = dt.datetime.utcfromtimestamp(established_ms / 1000.0)
+    established = dt.datetime.fromtimestamp(established_ms / 1000.0, tz=timezone.utc)
     # refreshed_ms 28:36
 
     id_bytes = site_payload[36:]
@@ -178,7 +188,7 @@ def encrypt_data(data, identity_scope, **kwargs):
     """
     now = kwargs.get("now")
     if now is None:
-        now = dt.datetime.utcnow()
+        now = dt.datetime.now(tz=timezone.utc)
     keys = kwargs.get("keys")
     key = kwargs.get("key")
     if keys is not None and key is not None:
@@ -268,7 +278,7 @@ def _decrypt_data_v2(encrypted_bytes, keys):
     iv = encrypted_bytes[18:34]
     data = _decrypt(encrypted_bytes[34:], iv, key)
     encrypted_ms = int.from_bytes(encrypted_bytes[2:10], 'big')
-    encrypted_at = dt.datetime.utcfromtimestamp(encrypted_ms / 1000.0)
+    encrypted_at = dt.datetime.fromtimestamp(encrypted_ms / 1000.0, tz=timezone.utc)
     return DecryptedData(data, encrypted_at)
 
 
@@ -284,7 +294,7 @@ def _decrypt_data_v3(encrypted_bytes, keys):
 
     payload = _decrypt_gcm(encrypted_bytes[6:], key.secret)
     encrypted_ms = int.from_bytes(payload[:8], 'big')
-    encrypted_at = dt.datetime.utcfromtimestamp(encrypted_ms / 1000.0)
+    encrypted_at = dt.datetime.fromtimestamp(encrypted_ms / 1000.0, tz=timezone.utc)
 
     # site id 8:12
 

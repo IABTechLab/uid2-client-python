@@ -1,4 +1,5 @@
 import datetime as dt
+from datetime import timezone
 import unittest
 
 from uid2_client.keys import *
@@ -22,7 +23,7 @@ class TestKeys(unittest.TestCase):
 
     def test_empty_keys_collection(self):
         keys = EncryptionKeysCollection([])
-        self.assertFalse(keys.valid(dt.datetime.utcnow()))
+        self.assertFalse(keys.valid(dt.datetime.now(tz=timezone.utc)))
         self.assertEqual(len(keys), 0)
         self.assertEqual(len(keys.key_ids()), 0)
         self.assertEqual(len(keys.values()), 0)
@@ -30,11 +31,11 @@ class TestKeys(unittest.TestCase):
         self.assertIsNone(keys.get(123))
         with self.assertRaises(KeyError):
             keys[123]
-        self.assertIsNone(keys.get_active_site_key(22, dt.datetime.utcnow()))
+        self.assertIsNone(keys.get_active_site_key(22, dt.datetime.now(tz=timezone.utc)))
 
 
     def test_multiple_keys_in_collection(self):
-        now = dt.datetime.utcnow()
+        now = dt.datetime.now(tz=timezone.utc)
         keys = EncryptionKeysCollection([
             EncryptionKey(123, 201, now - dt.timedelta(days=5), now - dt.timedelta(days=4), now - dt.timedelta(days=3), b'123456'),
             EncryptionKey(124, 202, now - dt.timedelta(days=1), now, now + dt.timedelta(days=1), b'234567')])
@@ -59,7 +60,7 @@ class TestKeys(unittest.TestCase):
 
 
     def test_site_keys(self):
-        now = dt.datetime.utcnow()
+        now = dt.datetime.now(tz=timezone.utc)
         keys = EncryptionKeysCollection([
             EncryptionKey(122, 200, now, now - dt.timedelta(days=1), now + dt.timedelta(days=3), b'000000'),
             EncryptionKey(123, 201, now, now - dt.timedelta(days=5), now + dt.timedelta(days=3), b'111111'),
@@ -89,7 +90,7 @@ class TestKeys(unittest.TestCase):
 
 
     def test_non_site_keys(self):
-        now = dt.datetime.utcnow()
+        now = dt.datetime.now(tz=timezone.utc)
         keys = EncryptionKeysCollection([
             EncryptionKey(122, -1, now, now - dt.timedelta(days=9), now + dt.timedelta(days=3), b'000000'),
             EncryptionKey(123, -1, now, now - dt.timedelta(days=5), now + dt.timedelta(days=3), b'111111'),
@@ -103,7 +104,7 @@ class TestKeys(unittest.TestCase):
 
 
     def test_all_keys_in_collection_expired(self):
-        now = dt.datetime.utcnow()
+        now = dt.datetime.now(tz=timezone.utc)
         keys = EncryptionKeysCollection([
             EncryptionKey(123, 201, now, now - dt.timedelta(days=5), now - dt.timedelta(days=3), b'123456'),
             EncryptionKey(124, 202, now, now - dt.timedelta(days=1), now - dt.timedelta(days=1), b'234567')])

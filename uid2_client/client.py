@@ -8,6 +8,7 @@ Do not use this module directly, import through uid2_client module instead, e.g.
 
 import base64
 import datetime as dt
+from datetime import timezone
 import json
 import os
 import urllib.request as request
@@ -17,7 +18,7 @@ from .encryption import _decrypt_gcm, _encrypt_gcm
 
 
 def _make_dt(timestamp):
-    return dt.datetime.utcfromtimestamp(timestamp)
+    return dt.datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
 
 class Uid2Client:
@@ -63,7 +64,7 @@ class Uid2Client:
         Returns:
             EncryptionKeysCollection containing the keys
         """
-        req, nonce = self._make_v2_request(dt.datetime.utcnow())
+        req, nonce = self._make_v2_request(dt.datetime.now(tz=timezone.utc))
         print(req)
         resp = self._post('/v2/key/latest', headers=self._auth_headers(), data=req)
         keys = [EncryptionKey(k['id'], k.get('site_id', -1), _make_dt(k['created']), _make_dt(k['activates']), _make_dt(k['expires']), base64.b64decode(k['secret']))
