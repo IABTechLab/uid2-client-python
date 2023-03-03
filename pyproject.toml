@@ -4,3 +4,21 @@ requires = [
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "uid2_client"
+version = "1.0.0"
+authors = [
+    { name = "Cody Constine", email = "cody.constine@thetradedesk.com" }
+]
+description = "UID2 sdk for the UID2 and EUID apis"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/IABTechLab/uid2-client-python"
+"Bug Tracker" = "https://github.com/IABTechLab/uid2-client-python/issues"
