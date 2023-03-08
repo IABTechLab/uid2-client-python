@@ -1,0 +1,19 @@
+name: Publish
+
+on: [workflow_dispatch, push]
+
+jobs:
+  Publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: |
+          python3 -m pip install --upgrade build
+          python3 -m build
+      - name: Publish
+        run: |
+          python3 -m pip install --upgrade twine
+          python3 -m twine upload --repository testpypi dist/*
+

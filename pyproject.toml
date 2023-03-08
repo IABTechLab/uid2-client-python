@@ -18,6 +18,9 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "pycrypto"
+]
 
 [project.urls]
 "Homepage" = "https://github.com/IABTechLab/uid2-client-python"
