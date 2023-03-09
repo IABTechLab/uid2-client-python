@@ -13,9 +13,8 @@ from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
 
 class Params:
     def __init__(self, expiry=dt.datetime.now(tz=timezone.utc) + dt.timedelta(hours=1),
-                 identity_scope=IdentityScope.UID2.value, identity_type=IdentityType.Email.value):
+                 identity_scope=IdentityScope.UID2.value):
         self.identity_scope = identity_scope
-        self.identity_type = identity_type
         self.token_expiry = expiry
         if not isinstance(expiry, dt.datetime):
             self.token_expiry = dt.datetime.now(tz=timezone.utc) + expiry
@@ -84,7 +83,13 @@ class UID2TokenGenerator:
         master_payload += int.to_bytes(site_key.key_id, 4, 'big')
         master_payload += _encrypt_gcm(site_payload, None, site_key.secret)
 
-        token = int.to_bytes((params.identity_scope << 4 | params.identity_type << 2), 1, 'big')
+        first_char = id_str[0]
+        # see UID2-79+Token+and+ID+format+v3
+        identity_type = IdentityType.Email.value
+        if (first_char == 'F') or (first_char == 'B'):
+            identity_type = IdentityType.Phone.value
+
+        token = int.to_bytes((params.identity_scope << 4 | identity_type << 2), 1, 'big')
         token += int.to_bytes(version, 1, 'big')
         token += int.to_bytes(master_key.key_id, 4, 'big')
         token += _encrypt_gcm(master_payload, None, master_key.secret)
