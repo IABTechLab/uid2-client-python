@@ -6,6 +6,7 @@ import unittest
 from tests.uid2_token_generator import UID2TokenGenerator, Params
 from uid2_client import decrypt_token, encrypt_data, decrypt_data, encryption_block_size, EncryptionError, Uid2Base64UrlCoder, AdvertisingTokenVersion
 from uid2_client.identity_scope import IdentityScope
+from uid2_client.identity_type import IdentityType
 from uid2_client.keys import *
 
 _master_secret = bytes([139, 37, 241, 173, 18, 92, 36, 232, 165, 168, 23, 18, 38, 195, 123, 92, 160, 136, 185, 40, 91, 173, 165, 221, 168, 16, 169, 164, 38, 139, 8, 155])
@@ -566,6 +567,38 @@ class TestEncryptionFunctions(unittest.TestCase):
         decrypted = decrypt_data(encrypted, keys)
         self.assertEqual(data, decrypted.data)
         self.assertEqual(format_time(now), format_time(decrypted.encrypted_at))
+
+
+    def test_raw_uid_produces_correct_identity_type_in_token(self):
+        #v2 +12345678901. Although this was generated from a phone number, it's a v2 raw UID which doesn't encode this
+        # information, so token assumes email by default.
+        self.verify_identity_type("Q4bGug8t1xjsutKLCNjnb5fTlXSvIQukmahYDJeLBtk=",
+                                                      IdentityType.Email.value)
+        self.verify_identity_type("BEOGxroPLdcY7LrSiwjY52+X05V0ryELpJmoWAyXiwbZ",
+                                                      IdentityType.Phone.value) #v3 +12345678901
+        self.verify_identity_type("oKg0ZY9ieD/CGMEjAA0kcq+8aUbLMBG0MgCT3kWUnJs=",
+                                                      IdentityType.Email.value) #v2 test@example.com
+        self.verify_identity_type("AKCoNGWPYng/whjBIwANJHKvvGlGyzARtDIAk95FlJyb",
+                                                      IdentityType.Email.value) #v3 test@example.com
+        self.verify_identity_type("EKCoNGWPYng/whjBIwANJHKvvGlGyzARtDIAk95FlJyb",
+                                                      IdentityType.Email.value) #v3 EUID test@example.com
+
+    def verify_identity_type(self, raw_uid, expected_identity_type):
+        token = UID2TokenGenerator.generate_uid2_token_v4(raw_uid, _master_key, _site_id, _site_key)
+        keys = EncryptionKeysCollection([_master_key, _site_key])
+        result = decrypt_token(token, keys)
+        self.assertEqual(raw_uid, result.uid2)
+        self.assertEqual(expected_identity_type, get_token_identity_type(token))
+
+
+def get_token_identity_type(id):
+    firstChar = id[0]
+    if 'A' == firstChar or 'E' == firstChar: #from UID2-79+Token+ and +ID+format+v3
+        return IdentityType.Email.value
+    elif 'F' == firstChar or 'B' == firstChar:
+        return IdentityType.Phone.value
+
+    raise Exception("unknown IdentityType")
 
 def format_time(t):
     s = t.strftime('%Y-%m-%d %H:%M:%S.%f')
