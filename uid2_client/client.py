@@ -5,7 +5,6 @@ Do not use this module directly, import through uid2_client module instead, e.g.
 >>> from uid2_client import Uid2Client
 """
 
-
 import base64
 import datetime as dt
 from datetime import timezone
@@ -53,7 +52,6 @@ class Uid2Client:
         self._auth_key = auth_key
         self._secret_key = base64.b64decode(secret_key)
 
-
     def refresh_keys(self):
         """Get the latest encryption keys for advertising tokens.
 
@@ -66,19 +64,20 @@ class Uid2Client:
         """
         req, nonce = self._make_v2_request(dt.datetime.now(tz=timezone.utc))
         print(req)
-        resp = self._post('/v2/key/latest', headers=self._auth_headers(), data=req)
-        keys = [EncryptionKey(k['id'], k.get('site_id', -1), _make_dt(k['created']), _make_dt(k['activates']), _make_dt(k['expires']), base64.b64decode(k['secret']))
-            for k in json.loads(self._parse_v2_response(resp.read(), nonce)).get('body')]
-        return EncryptionKeysCollection(keys)
+        resp = self._post('/v2/key/sharing', headers=self._auth_headers(), data=req)
+        resp_body = json.loads(self._parse_v2_response(resp.read(), nonce)).get('body')
+        keys = [EncryptionKey(k['id'], k.get('site_id', -1), _make_dt(k['created']), _make_dt(k['activates']),
+                              _make_dt(k['expires']), base64.b64decode(k['secret']), k['keyset_id'])
+                for k in resp_body["keys"]]
 
+        return EncryptionKeysCollection(keys, resp_body["caller_site_id"], resp_body["master_keyset_id"],
+                                        resp_body["default_keyset_id"], resp_body["token_expiry_seconds"])
 
     def _make_url(self, path):
         return self._base_url + path
 
-
     def _auth_headers(self):
         return {'Authorization': 'Bearer ' + self._auth_key}
-
 
     def _make_v2_request(self, now):
         payload = int.to_bytes(int(now.timestamp() * 1000), 8, 'big')
@@ -90,13 +89,11 @@ class Uid2Client:
 
         return base64.b64encode(envelope), nonce
 
-
     def _parse_v2_response(self, encrypted, nonce):
         payload = _decrypt_gcm(base64.b64decode(encrypted), self._secret_key)
         if nonce != payload[8:16]:
             raise ValueError("nonce mismatch")
         return payload[16:]
-
 
     def _post(self, path, headers, data):
         req = request.Request(self._make_url(path), headers=headers, method='POST', data=data)

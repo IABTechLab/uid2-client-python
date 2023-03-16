@@ -4,7 +4,7 @@ from datetime import timezone
 import unittest
 
 from tests.uid2_token_generator import UID2TokenGenerator, Params
-from uid2_client import decrypt_token, encrypt_data, decrypt_data, encryption_block_size, EncryptionError, Uid2Base64UrlCoder, AdvertisingTokenVersion
+from uid2_client import *
 from uid2_client.identity_scope import IdentityScope
 from uid2_client.identity_type import IdentityType
 from uid2_client.keys import *
@@ -19,8 +19,9 @@ _site_id2 = 2
 
 _example_id = 'ywsvDNINiZOVSsfkHpLpSJzXzhr6Jx9Z/4Q0+lsEUvM='
 _now = dt.datetime.now(tz=timezone.utc)
-_master_key = EncryptionKey(_master_key_id, -1, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _master_secret)
+_master_key = EncryptionKey(_master_key_id, -1, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _master_secret, keyset_id=9999)
 _site_key = EncryptionKey(_site_key_id, _site_id, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _site_secret)
+_keyset_key = EncryptionKey(_site_key_id, _site_id, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _site_secret, keyset_id=20)
 _test_site_key = EncryptionKey(_test_site_key_id, _site_id, dt.datetime(2020, 1, 1, tzinfo=timezone.utc), dt.datetime(2020, 1, 1, tzinfo=timezone.utc), _now + dt.timedelta(days=1), encryption_block_size * b'9')
 
 class TestEncryptionFunctions(unittest.TestCase):
@@ -316,6 +317,20 @@ class TestEncryptionFunctions(unittest.TestCase):
         result = decrypt_token(token, keys, now=expiry-dt.timedelta(seconds=1))
         self.assertEqual(_example_id, result.uid2)
 
+
+    def test_encrypt_token_v3(self):
+        uid2 = "Y29keWlzZ3JlYXQ="
+        identity_scope = IdentityScope.UID2
+        now = dt.datetime.now(tz=timezone.utc)
+
+        keys = EncryptionKeysCollection([_master_key, _site_key, _keyset_key], default_keyset_id=20,
+                                        master_keyset_id=9999, caller_site_id=20)
+
+        result = encrypt_key(uid2, identity_scope, keys, now=now)
+        print(result)
+        final = decrypt_token(result, keys, now=now)
+
+        self.assertEqual(uid2, final.uid2)
 
     def test_decrypt_token_v2_invalid_payload(self):
         params = Params(dt.datetime.now(tz=timezone.utc) + dt.timedelta(seconds=-1))

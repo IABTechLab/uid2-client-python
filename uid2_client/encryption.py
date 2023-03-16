@@ -146,6 +146,71 @@ def _decrypt_token_v3(token_bytes, keys, now):
 
     return DecryptedToken(id_str, established, site_id, site_key.site_id)
 
+def _encrypt_token_v3(uid2, identity_scope, master_key, site_key, site_id, now, token_expiry):
+    site_payload = bytearray(128)
+    #Site id
+    site_payload[0:4] = int.to_bytes(site_id, byteorder='big', length=4)
+    site_payload[4:12] = int.to_bytes(0, byteorder='big', length=8)
+    site_payload[12:16] = int.to_bytes(0, byteorder='big', length=4)
+    site_payload[16:20] = int.to_bytes(0, byteorder='big', length=4)
+    site_payload[20:28] = int.to_bytes(int(now.timestamp())*1000, byteorder='big', length=8)
+    site_payload[36:] = bytes(base64.b64decode(uid2))
+
+    id_payload = _encrypt_gcm(bytes(site_payload), None, site_key.secret)
+
+    master_payload = bytearray(256)
+    master_payload[:8] = int.to_bytes(int(token_expiry.timestamp())*1000, byteorder='big', length=8)
+    master_payload[8:16] = int.to_bytes(int(now.timestamp()), byteorder='big', length=8)
+    master_payload[16:20] = int.to_bytes(0, byteorder='big', length=4)
+    master_payload[20:21] = int.to_bytes(1, byteorder='big', length=1)
+    master_payload[21:25] = int.to_bytes(0, byteorder='big', length=4)
+    master_payload[25:29] = int.to_bytes(0, byteorder='big', length=4)
+    master_payload[29:33] = int.to_bytes(site_key.key_id, byteorder='big', length=4)
+    master_payload[33:] = bytes(id_payload)
+
+    encrypted_master_payload = _encrypt_gcm(bytes(master_payload), None, master_key.secret)
+
+    root_writer = bytearray(len(encrypted_master_payload)+6)
+    root_writer[0:1] = int.to_bytes(0, byteorder='big', length=1)
+    root_writer[1:2] = int.to_bytes(112, byteorder='big', length=1)
+    root_writer[2:6] = int.to_bytes(master_key.key_id, byteorder='big', length=4)
+    root_writer[6:] = bytes(encrypted_master_payload)
+
+    return base64.b64encode(root_writer)
+
+
+
+def encrypt_key(uid2, indentity_scope, keys, keyset_id=None, **kwargs):
+    """ Encrypt an uid2 into a sharing token
+
+    Args:
+        uid2: the uid2 to be encrypted
+        keys (EncryptionKeysCollection): collection of keys to choose from for encryption
+        keyset_id (int) : An optional keyset id to use for the encryption. Will use default keyset if left blank
+
+    Returns (str): Sharing Token
+
+    """
+    now = kwargs.get("now")
+    if now is None:
+        now = dt.datetime.now(tz=timezone.utc)
+    key = keys.get_default_keyset_key(now) if keyset_id is None else keys.get_by_keyset_key(keyset_id, now)
+    master_key = keys.get_by_keyset_key(9999, now)
+
+    token_expiry = now + dt.timedelta(days=30) if keys.get_token_expiry_seconds() is None \
+        else now + dt.timedelta(seconds=keys.get_token_expiry_seconds())
+
+    site_id = keys.get_caller_site_id()
+    if site_id is None:
+        print("No Site ID in keys")
+        return
+
+    if key is None:
+        print("No Keyset Key found")
+        return
+
+    return _encrypt_token_v3(uid2, indentity_scope, master_key, key, site_id, now, token_expiry)
+
 
 def encrypt_data(data, identity_scope, **kwargs):
     """Encrypt arbitrary binary data.
@@ -307,7 +372,7 @@ def _add_pkcs7_padding(data, block_size):
 
 
 def _encrypt(data, iv, key):
-    cipher = AES.new(key.secret, AES.MODE_CBC, iv=iv)
+    cipher = AES.new(key.secret, AES.MODE_CBC, IV=iv)
     return cipher.encrypt(_add_pkcs7_padding(data, AES.block_size))
 
 

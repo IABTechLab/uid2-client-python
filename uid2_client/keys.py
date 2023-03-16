@@ -6,7 +6,7 @@ Do not use this module directly, import from uid2_client instead, e.g.
 
 
 import datetime as dt
-from bisect import bisect_right
+from bisect import bisect_right, bisect_left
 
 
 class EncryptionKey:
@@ -21,7 +21,7 @@ class EncryptionKey:
         secret (bytes): the actual encryption key
     """
 
-    def __init__(self, key_id, site_id, created, activates, expires, secret):
+    def __init__(self, key_id, site_id, created, activates, expires, secret, keyset_id=None):
         """Create a new encryption key."""
         self._id = key_id
         self._site_id = site_id
@@ -29,6 +29,7 @@ class EncryptionKey:
         self._activates = activates
         self._expires = expires
         self._secret = secret
+        self._keyset_id = keyset_id
 
 
     @property
@@ -41,6 +42,11 @@ class EncryptionKey:
     def site_id(self):
         """int: id of the site the key belongs to."""
         return self._site_id
+
+    @property
+    def keyset_id(self):
+        """int: keyset id, can be None"""
+        return self._keyset_id
 
 
     @property
@@ -94,19 +100,28 @@ class EncryptionKeysCollection:
     used for decoding UID2 advertising tokens.
     """
 
-    def __init__(self, keys):
+    def __init__(self, keys, caller_site_id=None, master_keyset_id=None, default_keyset_id=None, token_expiry_seconds=None):
         self._latest_expires = None
         self._keys = dict()
         self._keys_by_site = dict()
+        self._keys_by_keyset = dict()
+        self.set_keys(keys)
+        self._caller_site_id = caller_site_id
+        self._master_keyset_id = master_keyset_id
+        self._default_keyset_id = default_keyset_id
+        self._token_expiry_seconds = token_expiry_seconds
+
+    def set_keys(self, keys):
         for key in keys:
             self._keys[key.key_id] = key
             if key.site_id > 0:
                 self._keys_by_site.setdefault(key.site_id, []).append(key)
+            if key.keyset_id is not None:
+                self._keys_by_keyset.setdefault(key.keyset_id, []).append(key)
             if self._latest_expires is None or key.expires > self._latest_expires:
                 self._latest_expires = key.expires
         for _, site_keys in self._keys_by_site.items():
             site_keys.sort(key=lambda x: x.activates)
-
 
     def __len__(self):
         return len(self._keys)
@@ -118,6 +133,18 @@ class EncryptionKeysCollection:
 
     def __getitem__(self, key_id):
         return self._keys[key_id]
+
+    def get_caller_site_id(self):
+        return self._caller_site_id
+
+    def get_master_keyset_id(self):
+        return self._master_keyset_id
+
+    def get_default_keyset_id(self):
+        return self._default_keyset_id
+
+    def get_token_expiry_seconds(self):
+        return self._token_expiry_seconds
 
 
     def get(self, key_id, default=None):
@@ -134,6 +161,29 @@ class EncryptionKeysCollection:
         """Get all encryption keys in the collection as a list."""
         return self._keys.values()
 
+
+    def get_default_keyset_key(self, now):
+        return self.get_by_keyset_key(self._default_keyset_id, now)
+
+    def get_by_keyset_key(self, keyset_id, now):
+        """ Gets Active Key by keyset_id
+
+        Args:
+            keyset_id: the keyset id to get
+
+        Returns: EncryptionKey: active keyset key or None
+
+        """
+        keyset_keys = self._keys_by_keyset.get(keyset_id)
+        if keyset_keys is None or len(keyset_keys) == 0:
+            return None
+        i = bisect_right(_SiteKeyActivatesList(keyset_keys), now)
+        while i > 0:
+            i -= 1
+            key = keyset_keys[i]
+            if key.is_active(now):
+                return key
+        return None
 
     def get_active_site_key(self, site_id, now):
         """Get active encryption key for the specified site, else None.
