@@ -63,12 +63,21 @@ class Uid2Client:
             EncryptionKeysCollection containing the keys
         """
         req, nonce = self._make_v2_request(dt.datetime.now(tz=timezone.utc))
-        print(req)
         resp = self._post('/v2/key/sharing', headers=self._auth_headers(), data=req)
         resp_body = json.loads(self._parse_v2_response(resp.read(), nonce)).get('body')
-        keys = [EncryptionKey(k['id'], k.get('site_id', -1), _make_dt(k['created']), _make_dt(k['activates']),
-                              _make_dt(k['expires']), base64.b64decode(k['secret']), k['keyset_id'])
-                for k in resp_body["keys"]]
+        keys = []
+        for key in resp_body["keys"]:
+            keyset_id = None
+            if "keyset_id" in key:
+                keyset_id = key["keyset_id"]
+            key = EncryptionKey(key['id'],
+                                key.get('site_id', -1),
+                                _make_dt(key['created']),
+                                _make_dt(key['activates']),
+                                _make_dt(key['expires']),
+                                base64.b64decode(key['secret']),
+                                keyset_id)
+            keys.append(key)
 
         return EncryptionKeysCollection(keys, resp_body["caller_site_id"], resp_body["master_keyset_id"],
                                         resp_body["default_keyset_id"], resp_body["token_expiry_seconds"])

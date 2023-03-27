@@ -326,8 +326,20 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key, _keyset_key], default_keyset_id=20,
                                         master_keyset_id=9999, caller_site_id=20)
 
+        result = encrypt_key(uid2, identity_scope, keys, now=now, ad_token_version=AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
+        final = decrypt_token(result, keys, now=now)
+
+        self.assertEqual(uid2, final.uid2)
+
+    def test_encrypt_token_v4(self):
+        uid2 = "Y29keWlzZ3JlYXQ="
+        identity_scope = IdentityScope.UID2
+        now = dt.datetime.now(tz=timezone.utc)
+
+        keys = EncryptionKeysCollection([_master_key, _site_key, _keyset_key], default_keyset_id=20,
+                                        master_keyset_id=9999, caller_site_id=20)
+
         result = encrypt_key(uid2, identity_scope, keys, now=now)
-        print(result)
         final = decrypt_token(result, keys, now=now)
 
         self.assertEqual(uid2, final.uid2)

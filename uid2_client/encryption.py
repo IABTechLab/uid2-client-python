@@ -14,6 +14,8 @@ from enum import Enum
 
 from uid2_client.advertising_token_version import AdvertisingTokenVersion
 from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
+from uid2_client.identity_type import IdentityType
+from uid2_client.identity_scope import IdentityScope
 
 encryption_block_size = AES.block_size
 """int: block size for encryption routines
@@ -146,7 +148,8 @@ def _decrypt_token_v3(token_bytes, keys, now):
 
     return DecryptedToken(id_str, established, site_id, site_key.site_id)
 
-def _encrypt_token_v3(uid2, identity_scope, master_key, site_key, site_id, now, token_expiry):
+
+def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, token_expiry, ad_token_version):
     site_payload = bytearray(128)
     #Site id
     site_payload[0:4] = int.to_bytes(site_id, byteorder='big', length=4)
@@ -171,10 +174,15 @@ def _encrypt_token_v3(uid2, identity_scope, master_key, site_key, site_id, now, 
     encrypted_master_payload = _encrypt_gcm(bytes(master_payload), None, master_key.secret)
 
     root_writer = bytearray(len(encrypted_master_payload)+6)
-    root_writer[0:1] = int.to_bytes(0, byteorder='big', length=1)
-    root_writer[1:2] = int.to_bytes(112, byteorder='big', length=1)
+    first_char = uid2[0]
+    identity_type = IdentityType.Phone if first_char == 'F' or first_char == 'B' else IdentityType.Email
+    root_writer[0:1] = int.to_bytes((int(identity_scope) << 4 | int(identity_type) << 2), byteorder='big', length=1)
+    root_writer[1:2] = int.to_bytes(ad_token_version, byteorder='big', length=1)
     root_writer[2:6] = int.to_bytes(master_key.key_id, byteorder='big', length=4)
     root_writer[6:] = bytes(encrypted_master_payload)
+
+    if ad_token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4:
+        return Uid2Base64UrlCoder.encode(root_writer)
 
     return base64.b64encode(root_writer)
 
@@ -185,8 +193,13 @@ def encrypt_key(uid2, indentity_scope, keys, keyset_id=None, **kwargs):
 
     Args:
         uid2: the uid2 to be encrypted
+        indentity_scope (IdentityScope): If the key will be uid2 or euid2
         keys (EncryptionKeysCollection): collection of keys to choose from for encryption
         keyset_id (int) : An optional keyset id to use for the encryption. Will use default keyset if left blank
+
+    Keyword Args:
+        now (Datetime): the datettime to use for now. Defaults to utc now
+        ad_token_version (AdvertisingTokenVersion): Defaults to v4
 
     Returns (str): Sharing Token
 
@@ -194,6 +207,11 @@ def encrypt_key(uid2, indentity_scope, keys, keyset_id=None, **kwargs):
     now = kwargs.get("now")
     if now is None:
         now = dt.datetime.now(tz=timezone.utc)
+
+    ad_token_version = kwargs.get("ad_token_version")
+    if ad_token_version is None:
+        ad_token_version = AdvertisingTokenVersion.ADVERTISING_TOKEN_V4
+
     key = keys.get_default_keyset_key(now) if keyset_id is None else keys.get_by_keyset_key(keyset_id, now)
     master_key = keys.get_by_keyset_key(9999, now)
 
@@ -209,7 +227,7 @@ def encrypt_key(uid2, indentity_scope, keys, keyset_id=None, **kwargs):
         print("No Keyset Key found")
         return
 
-    return _encrypt_token_v3(uid2, indentity_scope, master_key, key, site_id, now, token_expiry)
+    return _encrypt_token(uid2, indentity_scope, master_key, key, site_id, now, token_expiry, ad_token_version)
 
 
 def encrypt_data(data, identity_scope, **kwargs):
