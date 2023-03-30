@@ -138,13 +138,6 @@ class TestSharing(unittest.TestCase):
 
         self.assertRaises(EncryptionError, encrypt_key, _example_uid, IdentityScope.UID2, keys)
 
-#    def test_cannot_encrypt_if_theres_no_default_keyset_header(self):
-#        client = Uid2Client("endpoint", "authkey", _client_secret)
-#        json_body = self._key_set_to_json_for_sharing_with_header("", 99999, [_master_key, _site_key])
-#        keys = client.refresh_json(json_body)
-#
-#        self.assertRaises(EncryptionError, encrypt_key, _example_uid, IdentityScope.UID2, keys)
-
     def test_expiry_in_token_matches_expiry_in_reponse(self):
         client = Uid2Client("endpoint", "authkey", _client_secret)
         json_body = self._key_set_to_json_for_sharing_with_header('"default_keyset_id": 99999, "token_expiry_seconds": 2,', 99999, [_master_key, _site_key])

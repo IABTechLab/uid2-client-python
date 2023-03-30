@@ -11,6 +11,7 @@ from datetime import timezone
 import json
 import os
 import urllib.request as request
+import pkg_resources
 
 from .keys import EncryptionKey, EncryptionKeysCollection
 from .encryption import _decrypt_gcm, _encrypt_gcm
@@ -93,7 +94,7 @@ class Uid2Client:
         return self._base_url + path
 
     def _auth_headers(self):
-        return {'Authorization': 'Bearer ' + self._auth_key}
+        return {'Authorization': 'Bearer ' + self._auth_key, "X-UID2-Client-Version": pkg_resources.get_distribution("uid2_client").version}
 
     def _make_v2_request(self, now):
         payload = int.to_bytes(int(now.timestamp() * 1000), 8, 'big')
