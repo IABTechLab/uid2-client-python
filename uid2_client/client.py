@@ -65,6 +65,14 @@ class Uid2Client:
         req, nonce = self._make_v2_request(dt.datetime.now(tz=timezone.utc))
         resp = self._post('/v2/key/sharing', headers=self._auth_headers(), data=req)
         resp_body = json.loads(self._parse_v2_response(resp.read(), nonce)).get('body')
+        return self._parse_keys_json(resp_body)
+
+    def refresh_json(self, json_str):
+        body = json.loads(json_str)
+        return self._parse_keys_json(body['body'])
+
+
+    def _parse_keys_json(self, resp_body):
         keys = []
         for key in resp_body["keys"]:
             keyset_id = None
@@ -78,7 +86,6 @@ class Uid2Client:
                                 base64.b64decode(key['secret']),
                                 keyset_id)
             keys.append(key)
-
         return EncryptionKeysCollection(keys, resp_body["caller_site_id"], resp_body["master_keyset_id"],
                                         resp_body["default_keyset_id"], resp_body["token_expiry_seconds"])
 

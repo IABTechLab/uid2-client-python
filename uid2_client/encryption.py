@@ -224,8 +224,7 @@ def encrypt_key(uid2, indentity_scope, keys, keyset_id=None, **kwargs):
         return
 
     if key is None:
-        print("No Keyset Key found")
-        return
+        raise EncryptionError("No Keyset Key Found")
 
     return _encrypt_token(uid2, indentity_scope, master_key, key, site_id, now, token_expiry, ad_token_version)
 
