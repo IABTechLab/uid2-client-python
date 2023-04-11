@@ -4,7 +4,7 @@ import time
 
 from uid2_client import EncryptionKeysAutoRefresher
 from uid2_client import Uid2Client
-from uid2_client import decrypt_token
+from uid2_client import decrypt
 
 
 def _usage():
@@ -26,7 +26,7 @@ with EncryptionKeysAutoRefresher(client, dt.timedelta(seconds=4), dt.timedelta(s
         refresh_result = refresher.current_result()
         if refresh_result.ready:
             print('Keys are ready, last refreshed (UTC):', refresh_result.last_success_time, flush=True)
-            result = decrypt_token(ad_token, refresh_result.keys)
+            result = decrypt(ad_token, refresh_result.keys)
             print('UID2 =', result.uid2, flush=True)
         else:
             print('Keys are not ready yet, last error:', refresh_result.last_error[1], flush=True)

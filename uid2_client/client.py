@@ -35,7 +35,7 @@ class Uid2Client:
         >>> from uid2_client import *
         >>> client = Uid2Client('https://prod.uidapi.com', 'my-authorization-key', 'my-secret-key')
         >>> keys = client.refresh_keys()
-        >>> uid2 = decrypt_token('some-ad-token', keys).uid2
+        >>> uid2 = decrypt('some-ad-token', keys).uid2
     """
 
     def __init__(self, base_url, auth_key, secret_key):
@@ -88,13 +88,14 @@ class Uid2Client:
                                 keyset_id)
             keys.append(key)
         return EncryptionKeysCollection(keys, resp_body["caller_site_id"], resp_body["master_keyset_id"],
-                                        resp_body["default_keyset_id"], resp_body["token_expiry_seconds"])
+                                        resp_body.get("default_keyset_id", None), resp_body["token_expiry_seconds"])
 
     def _make_url(self, path):
         return self._base_url + path
 
     def _auth_headers(self):
-        return {'Authorization': 'Bearer ' + self._auth_key, "X-UID2-Client-Version": pkg_resources.get_distribution("uid2_client").version}
+        return {'Authorization': 'Bearer ' + self._auth_key,
+                "X-UID2-Client-Version": "uid2-client-python-" + pkg_resources.get_distribution("uid2_client").version}
 
     def _make_v2_request(self, now):
         payload = int.to_bytes(int(now.timestamp() * 1000), 8, 'big')

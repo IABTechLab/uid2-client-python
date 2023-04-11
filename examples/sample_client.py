@@ -1,7 +1,7 @@
 import sys
 
 from uid2_client import Uid2Client
-from uid2_client import decrypt_token
+from uid2_client import decrypt
 
 
 def _usage():
@@ -19,7 +19,7 @@ ad_token = sys.argv[4]
 
 client = Uid2Client(base_url, auth_key, secret_key)
 keys = client.refresh_keys()
-result = decrypt_token(ad_token, keys)
+result = decrypt(ad_token, keys)
 
 print('UID2 =', result.uid2)
 print('Established =', result.established)

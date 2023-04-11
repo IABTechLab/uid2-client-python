@@ -23,7 +23,7 @@ _master_key = EncryptionKey(_master_key_id, -1, _now - dt.timedelta(days=-1), _n
 _site_key = EncryptionKey(_site_key_id, _site_id, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1),
                           _site_secret, keyset_id=99999)
 
-_client_secret = "ywsvDNINiZOVSsfkHpLpSJzXzhr6Jx9Z/4Q0+lsEUvM="
+_client_secret = "ioG3wKxAokmp+rERx6A4kM/13qhyolUXIu14WN16Spo="
 _example_uid = "ywsvDNINiZOVSsfkHpLpSJzXzhr6Jx9Z/4Q0+lsEUvM="
 
 
@@ -33,7 +33,7 @@ class TestSharing(unittest.TestCase):
         json = self._key_set_to_json_for_sharing([_master_key, _site_key])
         keys = client.refresh_json(json)
 
-        ad_token = encrypt_key(_example_uid, id_scope, keys)
+        ad_token = encrypt(_example_uid, id_scope, keys)
 
         return ad_token, keys
 
@@ -70,7 +70,7 @@ class TestSharing(unittest.TestCase):
 
     def test_can_encrypt_and_decrypt_for_sharing(self):
         ad_token, keys = self.setup_sharing_and_encrypt()
-        results = decrypt_token(ad_token, keys)
+        results = decrypt(ad_token, keys)
         self.assertEqual(_example_uid, results.uid2)
 
     def test_can_decrypt_another_clients_encrypted_token(self):
@@ -80,7 +80,7 @@ class TestSharing(unittest.TestCase):
 
         receiving_keys = receiving_client.refresh_json(keys_json)
 
-        result = decrypt_token(ad_token, receiving_keys)
+        result = decrypt(ad_token, receiving_keys)
         self.assertEqual(_example_uid, result.uid2)
 
     def test_sharing_token_is_v4(self):
@@ -97,7 +97,7 @@ class TestSharing(unittest.TestCase):
         self.assertEqual("E", ad_token[0])
 
     def _get_token_identity_type(self, uid2, keys):
-        token = encrypt_key(uid2, IdentityScope.UID2, keys)
+        token = encrypt(uid2, IdentityScope.UID2, keys)
 
         first_char = token[0]
         if ('A' == first_char or 'E' == first_char):
@@ -125,9 +125,9 @@ class TestSharing(unittest.TestCase):
         json_body = self._key_set_to_json_for_sharing([_master_key, master_key2, _site_key, site_key2])
         keys = client.refresh_json(json_body)
 
-        ad_token = encrypt_key(_example_uid, IdentityScope.UID2, keys)
+        ad_token = encrypt(_example_uid, IdentityScope.UID2, keys)
 
-        result = decrypt_token(ad_token, keys)
+        result = decrypt(ad_token, keys)
 
         self.assertEqual(_example_uid, result.uid2)
 
@@ -136,7 +136,14 @@ class TestSharing(unittest.TestCase):
         json_body = self._key_set_to_json_for_sharing([_master_key])
         keys = client.refresh_json(json_body)
 
-        self.assertRaises(EncryptionError, encrypt_key, _example_uid, IdentityScope.UID2, keys)
+        self.assertRaises(EncryptionError, encrypt, _example_uid, IdentityScope.UID2, keys)
+
+    def test_cannot_encrypt_if_theres_to_default_keyset_header(self):
+        client = Uid2Client("endpoint", "authkey", _client_secret)
+        json_body = self._key_set_to_json_for_sharing_with_header("", _site_id, [_master_key, _site_key])
+        keys = client.refresh_json(json_body)
+        self.assertRaises(EncryptionError, encrypt, _example_uid, IdentityScope.UID2, keys)
+
 
     def test_expiry_in_token_matches_expiry_in_reponse(self):
         client = Uid2Client("endpoint", "authkey", _client_secret)
@@ -144,23 +151,23 @@ class TestSharing(unittest.TestCase):
         keys = client.refresh_json(json_body)
 
         now = dt.datetime.now(tz=timezone.utc)
-        ad_token = encrypt_key(_example_uid, IdentityScope.UID2, keys)
+        ad_token = encrypt(_example_uid, IdentityScope.UID2, keys)
 
-        result = decrypt_token(ad_token, keys, now=now+dt.timedelta(seconds=1))
+        result = decrypt(ad_token, keys, now=now + dt.timedelta(seconds=1))
         self.assertEqual(_example_uid, result.uid2)
 
-        self.assertRaises(EncryptionError, decrypt_token, ad_token, keys, now=now+dt.timedelta(seconds=3))
+        self.assertRaises(EncryptionError, decrypt, ad_token, keys, now=now + dt.timedelta(seconds=3))
 
     def test_encrypt_key_inactive(self):
         client = Uid2Client("endpoint", "authkey", _client_secret)
         key = EncryptionKey(245, _site_id, _now, _now + dt.timedelta(days=1), _now +dt.timedelta(days=2), _site_secret, keyset_id=99999)
         keys = client.refresh_json(self._key_set_to_json_for_sharing([_master_key, key]))
-        self.assertRaises(EncryptionError, encrypt_key, _example_uid, IdentityScope.UID2, keys)
+        self.assertRaises(EncryptionError, encrypt, _example_uid, IdentityScope.UID2, keys)
 
     def test_encrypt_key_expired(self):
         client = Uid2Client("endpoint", "authkey", _client_secret)
         key = EncryptionKey(245, _site_id, _now, _now, _now - dt.timedelta(days=1), _site_secret, keyset_id=99999)
         keys = client.refresh_json(self._key_set_to_json_for_sharing([_master_key, key]))
-        self.assertRaises(EncryptionError, encrypt_key, _example_uid, IdentityScope.UID2, keys)
+        self.assertRaises(EncryptionError, encrypt, _example_uid, IdentityScope.UID2, keys)
 
 

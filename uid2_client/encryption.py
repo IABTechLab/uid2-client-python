@@ -1,7 +1,7 @@
 """Internal module for keeping encryption/decryption logic.
 
 Do not use this module directly, import from uid2_client instead, e.g.
->>> from uid2_client import decrypt_token
+>>> from uid2_client import decrypt
 """
 
 
@@ -31,7 +31,7 @@ class _PayloadType(Enum):
 
 base64_url_special_chars = {"-", "_"}
 
-def decrypt_token(token, keys, now=dt.datetime.now(tz=timezone.utc)):
+def decrypt(token, keys, now=dt.datetime.now(tz=timezone.utc)):
     """Decrypt advertising token to extract UID2 details.
 
     Args:
@@ -151,24 +151,27 @@ def _decrypt_token_v3(token_bytes, keys, now):
 
 def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, token_expiry, ad_token_version):
     site_payload = bytearray(128)
-    #Site id
-    site_payload[0:4] = int.to_bytes(site_id, byteorder='big', length=4)
-    site_payload[4:12] = int.to_bytes(0, byteorder='big', length=8)
-    site_payload[12:16] = int.to_bytes(0, byteorder='big', length=4)
-    site_payload[16:20] = int.to_bytes(0, byteorder='big', length=4)
-    site_payload[20:28] = int.to_bytes(int(now.timestamp())*1000, byteorder='big', length=8)
+    # Publisher Data
+    site_payload[0:4] = int.to_bytes(site_id, byteorder='big', length=4)  # Site id
+    site_payload[4:12] = int.to_bytes(0, byteorder='big', length=8)  # Publisher ID
+    site_payload[12:16] = int.to_bytes(0, byteorder='big', length=4)  # Client Key ID
+    # User Identity Data
+    site_payload[16:20] = int.to_bytes(0, byteorder='big', length=4)  # Privacy Bits
+    site_payload[20:28] = int.to_bytes(int((now-dt.timedelta(hours=1)).timestamp())*1000, byteorder='big', length=8)  # Established
+    site_payload[28:36] = int.to_bytes(int(now.timestamp())*1000, byteorder='big', length=8)  # last refresh
     site_payload[36:] = bytes(base64.b64decode(uid2))
 
     id_payload = _encrypt_gcm(bytes(site_payload), None, site_key.secret)
 
+    # Operator Identity Data
     master_payload = bytearray(256)
-    master_payload[:8] = int.to_bytes(int(token_expiry.timestamp())*1000, byteorder='big', length=8)
-    master_payload[8:16] = int.to_bytes(int(now.timestamp()), byteorder='big', length=8)
-    master_payload[16:20] = int.to_bytes(0, byteorder='big', length=4)
-    master_payload[20:21] = int.to_bytes(1, byteorder='big', length=1)
-    master_payload[21:25] = int.to_bytes(0, byteorder='big', length=4)
-    master_payload[25:29] = int.to_bytes(0, byteorder='big', length=4)
-    master_payload[29:33] = int.to_bytes(site_key.key_id, byteorder='big', length=4)
+    master_payload[:8] = int.to_bytes(int(token_expiry.timestamp())*1000, byteorder='big', length=8)  # Expiry
+    master_payload[8:16] = int.to_bytes(int(now.timestamp()), byteorder='big', length=8)  # Token Created
+    master_payload[16:20] = int.to_bytes(0, byteorder='big', length=4)  # Site ID
+    master_payload[20:21] = int.to_bytes(1, byteorder='big', length=1)  # Operator Type
+    master_payload[21:25] = int.to_bytes(0, byteorder='big', length=4)  # Operator Version
+    master_payload[25:29] = int.to_bytes(0, byteorder='big', length=4)  # Operator Key ID
+    master_payload[29:33] = int.to_bytes(site_key.key_id, byteorder='big', length=4) # Site Key ID
     master_payload[33:] = bytes(id_payload)
 
     encrypted_master_payload = _encrypt_gcm(bytes(master_payload), None, master_key.secret)
@@ -188,7 +191,7 @@ def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, tok
 
 
 
-def encrypt_key(uid2, indentity_scope, keys, keyset_id=None, **kwargs):
+def encrypt(uid2, indentity_scope, keys, keyset_id=None, **kwargs):
     """ Encrypt an uid2 into a sharing token
 
     Args:
@@ -282,7 +285,7 @@ def encrypt_data(data, identity_scope, **kwargs):
         if site_id is not None and advertising_token is not None:
             raise ValueError("only one of site_id and advertising_token can be specified")
         if advertising_token is not None:
-            decrypted_token = decrypt_token(advertising_token, keys, now)
+            decrypted_token = decrypt(advertising_token, keys, now)
             site_id = decrypted_token.site_id
             site_key_site_id = decrypted_token.site_key_site_id
 
