@@ -216,7 +216,7 @@ def encrypt(uid2, indentity_scope, keys, keyset_id=None, **kwargs):
         ad_token_version = AdvertisingTokenVersion.ADVERTISING_TOKEN_V4
 
     key = keys.get_default_keyset_key(now) if keyset_id is None else keys.get_by_keyset_key(keyset_id, now)
-    master_key = keys.get_by_keyset_key(9999, now)
+    master_key = keys.get_by_keyset_key(keys.get_master_keyset_id(), now)
 
     token_expiry = now + dt.timedelta(days=30) if keys.get_token_expiry_seconds() is None \
         else now + dt.timedelta(seconds=keys.get_token_expiry_seconds())

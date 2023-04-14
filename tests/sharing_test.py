@@ -19,7 +19,7 @@ _site_id2 = 2
 _example_id = 'ywsvDNINiZOVSsfkHpLpSJzXzhr6Jx9Z/4Q0+lsEUvM='
 _now = dt.datetime.now(tz=timezone.utc)
 _master_key = EncryptionKey(_master_key_id, -1, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1),
-                            _master_secret, keyset_id=9999)
+                            _master_secret, keyset_id=1)
 _site_key = EncryptionKey(_site_key_id, _site_id, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1),
                           _site_secret, keyset_id=99999)
 
@@ -118,7 +118,7 @@ class TestSharing(unittest.TestCase):
 
     def test_multiple_keys_per_keyset(self):
         master_key2 = EncryptionKey(264, -1, _now - dt.timedelta(days=-2), _now - dt.timedelta(days=-1), _now - dt.timedelta(hours=-1),
-                            _master_secret, keyset_id=9999)
+                            _master_secret, keyset_id=1)
         site_key2 = EncryptionKey(_site_key_id, _site_id, _now - dt.timedelta(days=-2), _now - dt.timedelta(days=-1), _now - dt.timedelta(hours=-1),
                           _site_secret, keyset_id=99999)
         client = Uid2Client("endpoint", "authkey", _client_secret)
@@ -138,7 +138,7 @@ class TestSharing(unittest.TestCase):
 
         self.assertRaises(EncryptionError, encrypt, _example_uid, IdentityScope.UID2, keys)
 
-    def test_cannot_encrypt_if_theres_to_default_keyset_header(self):
+    def test_cannot_encrypt_if_theres_no_default_keyset_header(self):
         client = Uid2Client("endpoint", "authkey", _client_secret)
         json_body = self._key_set_to_json_for_sharing_with_header("", _site_id, [_master_key, _site_key])
         keys = client.refresh_json(json_body)
