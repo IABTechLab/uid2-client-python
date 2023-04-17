@@ -165,6 +165,10 @@ class EncryptionKeysCollection:
     def get_default_keyset_key(self, now):
         return self.get_by_keyset_key(self._default_keyset_id, now)
 
+    def get_master_key(self, now):
+        return self.get_by_keyset_key(self._master_keyset_id, now)
+
+
     def get_by_keyset_key(self, keyset_id, now):
         """ Gets Active Key by keyset_id
 
