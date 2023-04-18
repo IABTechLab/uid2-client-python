@@ -4,7 +4,7 @@ from datetime import timezone
 import unittest
 
 from tests.uid2_token_generator import UID2TokenGenerator, Params
-from uid2_client import decrypt_token, encrypt_data, decrypt_data, encryption_block_size, EncryptionError, Uid2Base64UrlCoder, AdvertisingTokenVersion
+from uid2_client import *
 from uid2_client.identity_scope import IdentityScope
 from uid2_client.identity_type import IdentityType
 from uid2_client.keys import *
@@ -19,8 +19,9 @@ _site_id2 = 2
 
 _example_id = 'ywsvDNINiZOVSsfkHpLpSJzXzhr6Jx9Z/4Q0+lsEUvM='
 _now = dt.datetime.now(tz=timezone.utc)
-_master_key = EncryptionKey(_master_key_id, -1, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _master_secret)
+_master_key = EncryptionKey(_master_key_id, -1, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _master_secret, keyset_id=9999)
 _site_key = EncryptionKey(_site_key_id, _site_id, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _site_secret)
+_keyset_key = EncryptionKey(_site_key_id, _site_id, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _site_secret, keyset_id=20)
 _test_site_key = EncryptionKey(_test_site_key_id, _site_id, dt.datetime(2020, 1, 1, tzinfo=timezone.utc), dt.datetime(2020, 1, 1, tzinfo=timezone.utc), _now + dt.timedelta(days=1), encryption_block_size * b'9')
 
 class TestEncryptionFunctions(unittest.TestCase):
@@ -83,18 +84,18 @@ class TestEncryptionFunctions(unittest.TestCase):
         self.assertEqual(-1, runtime_advertising_token.find('+'))
         self.assertEqual(-1, runtime_advertising_token.find('/'))
 
-        result = decrypt_token(runtime_advertising_token, EncryptionKeysCollection([_master_key, _site_key]))
+        result = decrypt(runtime_advertising_token, EncryptionKeysCollection([_master_key, _site_key]))
         self.assertEqual(_example_id, result.uid2)
 
         # can also decrypt a known token generated from other SDK
-        result = decrypt_token(crossPlatformAdvertisingToken, EncryptionKeysCollection([_master_key, _site_key]))
+        result = decrypt(crossPlatformAdvertisingToken, EncryptionKeysCollection([_master_key, _site_key]))
         self.assertEqual(_example_id, result.uid2)
 
     def test_decrypt_token_v4(self):
         token = UID2TokenGenerator.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
-        result = decrypt_token(token, keys)
+        result = decrypt(token, keys)
 
         self.assertEqual(_example_id, result.uid2)
 
@@ -105,7 +106,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v4_no_master_key(self):
@@ -114,7 +115,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v4_no_site_key(self):
@@ -123,7 +124,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
     def test_decrypt_token_v4_invalid_version(self):
         params = Params(dt.timedelta(hours=1))
@@ -132,7 +133,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v4_expired(self):
@@ -142,7 +143,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v4_custom_now(self):
@@ -153,9 +154,9 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys, now=expiry+dt.timedelta(seconds=1))
+            result = decrypt(token, keys, now=expiry + dt.timedelta(seconds=1))
 
-        result = decrypt_token(token, keys, now=expiry-dt.timedelta(seconds=1))
+        result = decrypt(token, keys, now=expiry - dt.timedelta(seconds=1))
         self.assertEqual(_example_id, result.uid2)
 
 
@@ -166,14 +167,14 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token[:-3], keys)
+            result = decrypt(token[:-3], keys)
 
 
     def test_decrypt_token_v3(self):
         token = UID2TokenGenerator.generate_uid2_token_v3(_example_id, _master_key, _site_id, _site_key)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
-        result = decrypt_token(token, keys)
+        result = decrypt(token, keys)
 
         self.assertEqual(_example_id, result.uid2)
 
@@ -184,7 +185,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v3_no_master_key(self):
@@ -193,7 +194,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v3_no_site_key(self):
@@ -202,7 +203,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
     def test_decrypt_token_v3_invalid_version(self):
         params = Params(dt.timedelta(hours=1))
@@ -211,7 +212,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v3_expired(self):
@@ -221,7 +222,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v3_custom_now(self):
@@ -232,9 +233,9 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys, now=expiry+dt.timedelta(seconds=1))
+            result = decrypt(token, keys, now=expiry + dt.timedelta(seconds=1))
 
-        result = decrypt_token(token, keys, now=expiry-dt.timedelta(seconds=1))
+        result = decrypt(token, keys, now=expiry - dt.timedelta(seconds=1))
         self.assertEqual(_example_id, result.uid2)
 
 
@@ -245,14 +246,14 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token[:-3], keys)
+            result = decrypt(token[:-3], keys)
 
 
     def test_decrypt_token_v2(self):
         token = UID2TokenGenerator.generate_uid2_token_v2(_example_id, _master_key, _site_id, _site_key)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
-        result = decrypt_token(token, keys)
+        result = decrypt(token, keys)
 
         self.assertEqual(_example_id, result.uid2)
 
@@ -263,7 +264,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v2_no_master_key(self):
@@ -272,7 +273,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v2_no_site_key(self):
@@ -281,7 +282,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v2_invalid_version(self):
@@ -290,7 +291,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v2_expired(self):
@@ -300,7 +301,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys)
+            result = decrypt(token, keys)
 
 
     def test_decrypt_token_v2_custom_now(self):
@@ -311,11 +312,37 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token, keys, now=expiry+dt.timedelta(seconds=1))
+            result = decrypt(token, keys, now=expiry + dt.timedelta(seconds=1))
 
-        result = decrypt_token(token, keys, now=expiry-dt.timedelta(seconds=1))
+        result = decrypt(token, keys, now=expiry - dt.timedelta(seconds=1))
         self.assertEqual(_example_id, result.uid2)
 
+
+    def test_smoke_token_v3(self):
+        uid2 = _example_id
+        identity_scope = IdentityScope.UID2
+        now = dt.datetime.now(tz=timezone.utc)
+
+        keys = EncryptionKeysCollection([_master_key, _site_key, _keyset_key], default_keyset_id=20,
+                                        master_keyset_id=9999, caller_site_id=20)
+
+        result = encrypt(uid2, identity_scope, keys, now=now, ad_token_version=AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
+        final = decrypt(result, keys, now=now)
+
+        self.assertEqual(uid2, final.uid2)
+
+    def test_smoke_token_v4(self):
+        uid2 = _example_id
+        identity_scope = IdentityScope.UID2
+        now = dt.datetime.now(tz=timezone.utc)
+
+        keys = EncryptionKeysCollection([_master_key, _site_key, _keyset_key], default_keyset_id=20,
+                                        master_keyset_id=9999, caller_site_id=20)
+
+        result = encrypt(uid2, identity_scope, keys, now=now)
+        final = decrypt(result, keys, now=now)
+
+        self.assertEqual(uid2, final.uid2)
 
     def test_decrypt_token_v2_invalid_payload(self):
         params = Params(dt.datetime.now(tz=timezone.utc) + dt.timedelta(seconds=-1))
@@ -324,7 +351,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
         with self.assertRaises(EncryptionError):
-            result = decrypt_token(token[:-3], keys)
+            result = decrypt(token[:-3], keys)
 
 
     def test_encrypt_data_specific_key_and_iv(self):
@@ -586,7 +613,7 @@ class TestEncryptionFunctions(unittest.TestCase):
     def verify_identity_type(self, raw_uid, expected_identity_type):
         token = UID2TokenGenerator.generate_uid2_token_v4(raw_uid, _master_key, _site_id, _site_key)
         keys = EncryptionKeysCollection([_master_key, _site_key])
-        result = decrypt_token(token, keys)
+        result = decrypt(token, keys)
         self.assertEqual(raw_uid, result.uid2)
         self.assertEqual(expected_identity_type, get_token_identity_type(token))
 

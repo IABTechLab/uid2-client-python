@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import IntEnum
 
-class IdentityType(Enum):
+class IdentityType(IntEnum):
     """Enum for types of ID source"""
     Email = 0
     Phone = 1
