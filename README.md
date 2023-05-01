@@ -1,15 +1,16 @@
-# Uid2 Client Python
+# UID2 SDK for Python
 
-The UID 2 Project is subject to Tech Lab IPR’s Policy and is managed by the IAB Tech Lab Addressability Working Group and Privacy & Rearc Commit Group. Please review the governance rules [here](https://github.com/IABTechLab/uid2-core/blob/master/Software%20Development%20and%20Release%20Procedures.md)
+The UID 2 Project is subject to Tech Lab IPR’s Policy and is managed by the IAB Tech Lab Addressability Working Group and Privacy & Rearc Commit Group. Please review [the governance rules](https://github.com/IABTechLab/uid2-core/blob/master/Software%20Development%20and%20Release%20Procedures.md).
 
-Client SDK for working with UID2 services.
+This SDK simplifies integration with UID2 for those using Python.
 
-SDK supports Python 3.6 and above.
+## Dependencies
+
+This SDK supports Python 3.6 and above.
 
 ## Quick Start
 
-Connect to the UID2 service, refresh encryption keys and use those to decrypt an advertising ID
-from an advertising token:
+Connect to the UID2 service, refresh the encryption keys, and then use the keys to decrypt an advertising token, to arrive at the corresponding advertising ID:
 
 ```
 from uid2_client import Uid2Client, decrypt_token
@@ -21,11 +22,14 @@ decrypted_token = decrypt_token(advertising_token, keys)
 print(decrypted_token.uid2)
 ```
 
-More examples can be found in the [examples] directory.
+Additional examples are in the [examples] directory:
+* [sample_auto_refresh.py](examples/sample_auto_refresh.py)
+* [sample_client.py](examples/sample_client.py)
+* [sample_encryption.py](examples/sample_encryption.py)
 
 ## Development
 
-Required for all subsequent commands, build docker image with Python 3.6 and all dev dependencies:
+First, build the Docker image with Python 3.6 and all dev dependencies. This is required for all subsequent commands. Run the following:
 
 ```
 make docker
@@ -43,20 +47,22 @@ Build a bdist wheel:
 make wheel
 ```
 
-Get access to interactive shell within the Python 3.6 docker image:
+Get access to an interactive shell within the Python 3.6 Docker image:
 
 ```
 make shell
 ```
 
-Run all the example applications:
+## Example Usage
+
+To run all the example applications:
 
 ```
 make examples BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key SECRET_KEY=my-secret-key \
 	AD_TOKEN=AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A==
 ```
 
-Or specific examples:
+Alternatively, you can run specific examples:
 
 ```
 make example_client BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key SECRET_KEY=my-secret-key \
@@ -64,5 +70,3 @@ make example_client BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key SECRET
 make example_auto_refresh BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key SECRET_KEY=my-secret-key \
 	AD_TOKEN=AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A==
 ```
-
-
