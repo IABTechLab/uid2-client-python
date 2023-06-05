@@ -48,6 +48,28 @@ class TestEncryptionFunctions(unittest.TestCase):
         decoded = Uid2Base64UrlCoder.decode(base64_url_encoded_str)
         self.assertEqual(decoded, raw_input)
 
+    def validate_advertising_token(self, advertising_token_string, identity_scope, identity_type):
+        first_char = advertising_token_string[0]
+        if identity_scope == IdentityScope.UID2:
+            self.assertEqual("A" if identity_type == IdentityType.Email.value else "B", first_char)
+        else:
+            self.assertEqual("E" if identity_type == IdentityType.Email.value else "F", first_char)
+
+        second_char = advertising_token_string[1]
+        self.assertEqual("4", second_char)
+
+        # No URL-unfriendly characters allowed
+        self.assertEqual(-1, advertising_token_string.find("="))
+        self.assertEqual(-1, advertising_token_string.find("+"))
+        self.assertEqual(-1, advertising_token_string.find("/"))
+
+
+    def generate_uid2_token_v4(self, uid, master_key, site_id, site_key, params = Params(), identity_type = IdentityType.Email, identity_scope = IdentityScope.UID2):
+        advertising_token = UID2TokenGenerator.generate_uid2_token_v4(uid, master_key, site_id, site_key, params)
+        self.validate_advertising_token(advertising_token, identity_scope, identity_type)
+        return advertising_token
+
+
     def test_cross_platform_consistency_decrypt(self):
         crossPlatformAdvertisingToken = "AIAAAACkOqJj9VoxXJNnuX3v-ymceRf8_Av0vA5asOj9YBZJc1kV1vHdmb0AIjlzWnFF-gxIlgXqhRFhPo3iXpugPBl3gv4GKnGkw-Zgm2QqMsDPPLpMCYiWrIUqHPm8hQiq9PuTU-Ba9xecRsSIAN0WCwKLwA_EDVdzmnLJu64dQoeYmuu3u1G2EuTkuMrevmP98tJqSUePKwnfK73-0Zdshw";
         # Sunday, 1 January 2023 1:01:01 AM UTC
@@ -78,7 +100,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         params = Params(dt.timedelta(days=1 * 365 * 20))
 
         # verify that the dynamically created ad token can be decrypted
-        runtime_advertising_token = UID2TokenGenerator.generate_uid2_token_v4(_example_id, master_key, _site_id, site_key, params)
+        runtime_advertising_token = self.generate_uid2_token_v4(_example_id, master_key, _site_id, site_key, params)
         # best effort check as the token might simply just not require padding
         self.assertEqual(-1, runtime_advertising_token.find('='))
         self.assertEqual(-1, runtime_advertising_token.find('+'))
@@ -91,8 +113,9 @@ class TestEncryptionFunctions(unittest.TestCase):
         result = decrypt(crossPlatformAdvertisingToken, EncryptionKeysCollection([_master_key, _site_key]))
         self.assertEqual(_example_id, result.uid2)
 
+
     def test_decrypt_token_v4(self):
-        token = UID2TokenGenerator.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key)
+        token = self.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
         result = decrypt(token, keys)
@@ -101,7 +124,7 @@ class TestEncryptionFunctions(unittest.TestCase):
 
 
     def test_decrypt_token_v4_empty_keys(self):
-        token = UID2TokenGenerator.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key)
+        token = self.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key)
 
         keys = EncryptionKeysCollection([])
 
@@ -110,7 +133,7 @@ class TestEncryptionFunctions(unittest.TestCase):
 
 
     def test_decrypt_token_v4_no_master_key(self):
-        token = UID2TokenGenerator.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key)
+        token = self.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key)
 
         keys = EncryptionKeysCollection([_site_key])
 
@@ -119,7 +142,7 @@ class TestEncryptionFunctions(unittest.TestCase):
 
 
     def test_decrypt_token_v4_no_site_key(self):
-        token = UID2TokenGenerator.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key)
+        token = self.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key)
 
         keys = EncryptionKeysCollection([_master_key])
 
@@ -138,7 +161,7 @@ class TestEncryptionFunctions(unittest.TestCase):
 
     def test_decrypt_token_v4_expired(self):
         params = Params(dt.timedelta(seconds=-1))
-        token = UID2TokenGenerator.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key, params)
+        token = self.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key, params)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
@@ -149,7 +172,7 @@ class TestEncryptionFunctions(unittest.TestCase):
     def test_decrypt_token_v4_custom_now(self):
         expiry = dt.datetime(2021, 3, 22, 9, 1, 2, tzinfo=timezone.utc)
         params = Params(expiry)
-        token = UID2TokenGenerator.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key, params)
+        token = self.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key, params)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
@@ -162,7 +185,7 @@ class TestEncryptionFunctions(unittest.TestCase):
 
     def test_decrypt_token_v4_invalid_payload(self):
         params = Params(dt.timedelta(seconds=-1))
-        token = UID2TokenGenerator.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key, params)
+        token = self.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key, params)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
 
@@ -596,6 +619,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         self.assertEqual(format_time(now), format_time(decrypted.encrypted_at))
 
 
+    # TODO - deduplicate the logic in sharing_test.py that has been copied from this file
     def test_raw_uid_produces_correct_identity_type_in_token(self):
         #v2 +12345678901. Although this was generated from a phone number, it's a v2 raw UID which doesn't encode this
         # information, so token assumes email by default.
@@ -611,7 +635,7 @@ class TestEncryptionFunctions(unittest.TestCase):
                                                       IdentityType.Email.value) #v3 EUID test@example.com
 
     def verify_identity_type(self, raw_uid, expected_identity_type):
-        token = UID2TokenGenerator.generate_uid2_token_v4(raw_uid, _master_key, _site_id, _site_key)
+        token = self.generate_uid2_token_v4(raw_uid, _master_key, _site_id, _site_key, Params(), expected_identity_type)
         keys = EncryptionKeysCollection([_master_key, _site_key])
         result = decrypt(token, keys)
         self.assertEqual(raw_uid, result.uid2)

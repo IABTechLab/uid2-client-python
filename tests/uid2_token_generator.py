@@ -89,7 +89,7 @@ class UID2TokenGenerator:
         if (first_char == 'F') or (first_char == 'B'):
             identity_type = IdentityType.Phone.value
 
-        token = int.to_bytes((params.identity_scope << 4 | identity_type << 2), 1, 'big')
+        token = int.to_bytes((params.identity_scope << 4 | identity_type << 2) | 3, 1, 'big')
         token += int.to_bytes(version, 1, 'big')
         token += int.to_bytes(master_key.key_id, 4, 'big')
         token += _encrypt_gcm(master_payload, None, master_key.secret)
