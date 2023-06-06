@@ -7,11 +7,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uid2_client"
-version = "2.0.1"
+version = "2.0.2"
 authors = [
-    { name = "Cody Constine", email = "cody.constine@thetradedesk.com" }
+    { name = "UID2 team", email = "unifiedid-admin@thetradedesk.com" }
 ]
-description = "UID2 sdk for the UID2 and EUID apis"
+description = "UID2 SDK for Python"
 readme = "README.md"
 classifiers = [
     "Programming Language :: Python :: 3",
