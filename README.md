@@ -25,7 +25,6 @@ print(decrypted_token.uid2)
 Additional examples are in the [examples] directory:
 * [sample_auto_refresh.py](examples/sample_auto_refresh.py)
 * [sample_client.py](examples/sample_client.py)
-* [sample_encryption.py](examples/sample_encryption.py)
 
 ## Development
 
