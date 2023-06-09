@@ -3,6 +3,7 @@ import sys
 from uid2_client import Uid2Client
 from uid2_client import decrypt
 from uid2_client import encrypt
+from uid2_client.identity_scope import IdentityScope
 
 # this sample client will decrypt a given advertising token into raw UID2
 # and then encrypt into a new advertising token
@@ -32,5 +33,6 @@ print('Site Key Site ID =', decrypt_result.site_key_site_id)
 
 # Not required for DSPs but if you are using UID2 Sharing functionality then this is how to encrypt raw UID2 into
 # a new advertising token
-new_ad_token = encrypt(ad_token, decrypt_result.uid2)
+# IdentityScope could be UID2 or EUID
+new_ad_token = encrypt(ad_token, IdentityScope.UID2, decrypt_result.uid2)
 print('New Ad Token =', new_ad_token)
