@@ -13,18 +13,19 @@ This SDK supports Python 3.6 and above.
 Connect to the UID2 service, refresh the encryption keys, and then use the keys to decrypt an advertising token, to arrive at the corresponding advertising ID:
 
 ```
-from uid2_client import Uid2Client, decrypt_token
+from uid2_client import Uid2Client, decrypt
 
 client = Uid2Client('https://prod.uidapi.com', 'my-auth-token', 'my-secret-key')
 keys = client.refresh_keys()
 advertising_token = 'AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A=='
-decrypted_token = decrypt_token(advertising_token, keys)
+decrypted_token = decrypt(advertising_token, keys)
 print(decrypted_token.uid2)
 ```
 
 Additional examples are in the [examples] directory:
 * [sample_auto_refresh.py](examples/sample_auto_refresh.py)
 * [sample_client.py](examples/sample_client.py)
+  * Includes an example to encrypt a raw UID into an advertising token for UID2 Sharing purpose 
 
 ## Development
 
