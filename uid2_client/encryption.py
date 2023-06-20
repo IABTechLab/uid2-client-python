@@ -192,11 +192,11 @@ def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, tok
 
 
 def encrypt(uid2, indentity_scope, keys, keyset_id=None, **kwargs):
-    """ Encrypt an uid2 into a sharing token
+    """ Encrypt an UID2 into a sharing token
 
     Args:
-        uid2: the uid2 to be encrypted
-        indentity_scope (IdentityScope): If the key will be uid2 or euid2
+        uid2: the UID2 or EUID to be encrypted
+        indentity_scope (IdentityScope): indicates whether the output will be for UID2 or EUID
         keys (EncryptionKeysCollection): collection of keys to choose from for encryption
         keyset_id (int) : An optional keyset id to use for the encryption. Will use default keyset if left blank
 
