@@ -25,7 +25,7 @@ print(decrypted_token.uid2)
 Additional examples are in the [examples] directory:
 * [sample_auto_refresh.py](examples/sample_auto_refresh.py)
 * [sample_client.py](examples/sample_client.py)
-  * Includes an example to encrypt a raw UID into an advertising token for UID2 Sharing purpose 
+  * Includes an example to encrypt a raw UID2 into an advertising token for UID2 sharing.
 
 ## Development
 
