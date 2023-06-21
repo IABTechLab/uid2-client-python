@@ -6,7 +6,7 @@ test:
 shell:
 	docker run -it -w $(PWD) -v $(PWD):$(PWD) -u `id -u`:`id -g` $(DOCKERIMAGE) /bin/bash
 
-examples: example_client example_auto_refresh example_encryption
+examples: example_client example_auto_refresh
 
 example_client:
 	docker run -w $(PWD) -v $(PWD):$(PWD) -u `id -u`:`id -g` -e PYTHONPATH=$(PWD) $(DOCKERIMAGE) python3 examples/sample_client.py "$(BASE_URL)" "$(AUTH_KEY)" "$(SECRET_KEY)" "$(AD_TOKEN)"
