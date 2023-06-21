@@ -219,7 +219,7 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
     master_key = keys.get_by_keyset_key(keys.get_master_keyset_id(), now)
 
     token_expiry = now + dt.timedelta(days=30) if keys.get_token_expiry_seconds() is None \
-        else now + dt.timedelta(seconds=keys.get_token_expiry_seconds())
+        else now + dt.timedelta(seconds=int(keys.get_token_expiry_seconds()))
 
     site_id = keys.get_caller_site_id()
     if site_id is None:
