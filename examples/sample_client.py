@@ -34,5 +34,5 @@ print('Site Key Site ID =', decrypt_result.site_key_site_id)
 # Not required for DSPs, but for those using UID2 sharing functionality this shows how to encrypt a raw UID2 into
 # a new advertising token.
 # IdentityScope could be UID2 or EUID
-new_ad_token = encrypt(ad_token, IdentityScope.UID2, decrypt_result.uid2)
+new_ad_token = encrypt(decrypt_result.uid2, IdentityScope.UID2, keys)
 print('New Ad Token =', new_ad_token)
