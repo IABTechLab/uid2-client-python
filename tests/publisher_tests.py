@@ -157,9 +157,9 @@ class PublisherIntegrationTests(unittest.TestCase):
 
 
     def test_integration_tc_string_with_insufficient_consent(self):
-        EUID_BASE_URL = os.getenv("EUID_BASE_URL", "http://localhost:8080");
-        EUID_API_KEY = os.getenv("EUID_API_KEY", "trusted-partner-key");
-        EUID_SECRET_KEY = os.getenv("EUID_SECRET_KEY", "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg=");
+        EUID_BASE_URL = os.getenv("EUID_BASE_URL", "http://localhost:8080")
+        EUID_API_KEY = os.getenv("EUID_API_KEY", "trusted-partner-key")
+        EUID_SECRET_KEY = os.getenv("EUID_SECRET_KEY", "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg=")
 
         publisher_client = Uid2PublisherClient(EUID_BASE_URL, EUID_API_KEY, EUID_SECRET_KEY)
         tc_string = "CPehXK9PehXK9ABAMBFRACBoADAAAEJAAIYgAKwAQAKgArABAAqAAA"
@@ -167,19 +167,18 @@ class PublisherIntegrationTests(unittest.TestCase):
             publisher_client.generate_token(TokenGenerateInput.from_email("user@example.com").with_transparency_and_consent_string(tc_string))
 
     def test_integration_optout_generate_token(self):
-        EUID_BASE_URL = os.getenv("EUID_BASE_URL", "http://localhost:8080");
-        EUID_API_KEY = os.getenv("EUID_API_KEY", "trusted-partner-key");
-        EUID_SECRET_KEY = os.getenv("EUID_SECRET_KEY", "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg=");
+        EUID_BASE_URL = os.getenv("EUID_BASE_URL", "http://localhost:8080")
+        EUID_API_KEY = os.getenv("EUID_API_KEY", "trusted-partner-key")
+        EUID_SECRET_KEY = os.getenv("EUID_SECRET_KEY", "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg=")
 
         publisher_client = Uid2PublisherClient(EUID_BASE_URL, EUID_API_KEY, EUID_SECRET_KEY)
         tc_string = "CPhJRpMPhJRpMABAMBFRACBoALAAAEJAAIYgAKwAQAKgArABAAqAAA"
         input = TokenGenerateInput.from_email("optout@example.com").do_not_generate_tokens_for_opted_out().with_transparency_and_consent_string(tc_string)
+        print(input.get_as_json_string())
         token_generate_response = publisher_client.generate_token(input)
         self.assertTrue(token_generate_response.is_optout())
         self.assertFalse(token_generate_response.is_success())
         self.assertIsNone(token_generate_response.get_identity())
-
-
 
 
 if __name__ == '__main__':
