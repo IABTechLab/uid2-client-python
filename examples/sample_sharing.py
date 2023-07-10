@@ -5,12 +5,8 @@ from uid2_client import decrypt
 from uid2_client import encrypt
 from uid2_client.identity_scope import IdentityScope
 
-# this sample client decrypts an advertising token into a raw UID2
-# and then encrypts it into a new advertising token
-# to demonstrate decryption (for DSPs and sharers) and encryption (sharers only).
-
 def _usage():
-    print('Usage: python3 sample_client.py <base_url> <auth_key> <secret_key> <ad_token>', file=sys.stderr)
+    print('Usage: python3 sample_encryption.py <base_url> <auth_key> <secret_key> <raw_uid>', file=sys.stderr)
     sys.exit(1)
 
 
@@ -20,13 +16,15 @@ if len(sys.argv) <= 4:
 base_url = sys.argv[1]
 auth_key = sys.argv[2]
 secret_key = sys.argv[3]
-ad_token = sys.argv[4]
+raw_uid = sys.argv[4]
 
 client = Uid2Client(base_url, auth_key, secret_key, IdentityScope.UID2)
 keys = client.refresh_keys()
-decrypt_result = client.decrypt(ad_token, keys)
 
-print('UID2 =', decrypt_result.uid2)
+new_ad_token = client.encrypt(raw_uid, keys)
+print('New Ad Token =', new_ad_token)
+decrypt_result = client.decrypt(new_ad_token, keys)
+print('Decrypted UID2 =', decrypt_result.uid2)
 print('Established =', decrypt_result.established)
 print('Site ID =', decrypt_result.site_id)
 print('Site Key Site ID =', decrypt_result.site_key_site_id)
