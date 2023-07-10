@@ -17,6 +17,7 @@ from uid2_client import encryption
 from .encryption import _decrypt_gcm, _encrypt_gcm
 from .keys import EncryptionKey, EncryptionKeysCollection
 from .identity_scope import IdentityScope
+from .request_response_util import *
 
 
 def _make_dt(timestamp):
@@ -31,6 +32,9 @@ class Uid2Client:
 
     Methods:
         refresh_keys: get the latest encryption keys for decrypting advertising tokens
+        refresh_json: parse json to get encryption keys
+        encrypt: encrypt a uid to a token
+        decrypt: decrypt a token to a uid
 
     Examples:
         Connect to the UID2 service and obtain the latest encryption keys:
@@ -47,6 +51,7 @@ class Uid2Client:
             base_url (str): base URL for all requests to UID2 services (e.g. 'https://prod.uidapi.com')
             auth_key (str): authorization key for consuming the UID2 services
             secret_key (str): secret key for consuming the UID2 services
+            identity_scope (IdentityScope): UID2 or EUID
 
         Note:
             Your authorization key will determine which UID2 services you are allowed to use.
@@ -66,9 +71,9 @@ class Uid2Client:
         Returns:
             EncryptionKeysCollection containing the keys
         """
-        req, nonce = self._make_v2_request(dt.datetime.now(tz=timezone.utc))
-        resp = self._post('/v2/key/sharing', headers=self._auth_headers(), data=req)
-        resp_body = json.loads(self._parse_v2_response(resp.read(), nonce)).get('body')
+        req, nonce = make_v2_request(self._secret_key, dt.datetime.now(tz=timezone.utc))
+        resp = post(self._base_url, '/v2/key/sharing', headers=auth_headers(self._auth_key), data=req)
+        resp_body = json.loads(parse_v2_response(self._secret_key, resp.read(), nonce)).get('body')
         return self._parse_keys_json(resp_body)
 
     def refresh_json(self, json_str):
@@ -123,33 +128,6 @@ class Uid2Client:
             keys.append(key)
         return EncryptionKeysCollection(keys, resp_body["caller_site_id"], resp_body["master_keyset_id"],
                                         resp_body.get("default_keyset_id", None), resp_body["token_expiry_seconds"])
-
-    def _make_url(self, path):
-        return self._base_url + path
-
-    def _auth_headers(self):
-        return {'Authorization': 'Bearer ' + self._auth_key,
-                "X-UID2-Client-Version": "uid2-client-python-" + pkg_resources.get_distribution("uid2_client").version}
-
-    def _make_v2_request(self, now):
-        payload = int.to_bytes(int(now.timestamp() * 1000), 8, 'big')
-        nonce = os.urandom(8)
-        payload += nonce
-
-        envelope = int.to_bytes(1, 1, 'big')
-        envelope += _encrypt_gcm(payload, None, self._secret_key)
-
-        return base64.b64encode(envelope), nonce
-
-    def _parse_v2_response(self, encrypted, nonce):
-        payload = _decrypt_gcm(base64.b64decode(encrypted), self._secret_key)
-        if nonce != payload[8:16]:
-            raise ValueError("nonce mismatch")
-        return payload[16:]
-
-    def _post(self, path, headers, data):
-        req = request.Request(self._make_url(path), headers=headers, method='POST', data=data)
-        return request.urlopen(req)
 
 
 class Uid2ClientError(Exception):
