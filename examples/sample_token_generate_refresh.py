@@ -18,7 +18,6 @@ auth_key = sys.argv[2]
 secret_key = sys.argv[3]
 
 
-
 publisher_client = Uid2PublisherClient(base_url, auth_key, secret_key)
 print("Generating Token")
 token_generate_response = publisher_client.generate_token(TokenGenerateInput.from_email("testemail@notgmail.com"))
@@ -61,4 +60,4 @@ print('Refresh Response Key =', refresh_response_key)
 print('Refresh From =', refresh_from)
 print('Refresh Expires =', refresh_expires)
 print('Identity Expires =', identity_expires)
-print('As Json String =', json_string, "\n")
+print('As Json String =', json_string)

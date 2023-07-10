@@ -5,16 +5,11 @@ Do not use this module directly, import through uid2_client module instead, e.g.
 >>> from uid2_client import Uid2Client
 """
 
-import base64
 import datetime as dt
 from datetime import timezone
 import json
-import os
-import urllib.request as request
-import pkg_resources
 
 from uid2_client import encryption
-from .encryption import _decrypt_gcm, _encrypt_gcm
 from .keys import EncryptionKey, EncryptionKeysCollection
 from .identity_scope import IdentityScope
 from .request_response_util import *
@@ -87,9 +82,6 @@ class Uid2Client:
                 uid2: the UID2 or EUID to be encrypted
                 keys (EncryptionKeysCollection): collection of keys to choose from for encryption
                 keyset_id (int) : An optional keyset id to use for the encryption. Will use default keyset if left blank
-
-            Keyword Args:
-                now (Datetime): the datettime to use for now. Defaults to utc now
 
             Returns (str): Sharing Token
             """

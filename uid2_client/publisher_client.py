@@ -5,18 +5,13 @@ Do not use this module directly, import through uid2_client module instead, e.g.
 >>> from uid2_client import Uid2PublisherClient
 """
 
-import base64
-import datetime
 import datetime as dt
-import json
 from datetime import timezone
 
-from Crypto.Cipher import AES
 
 from .encryption import _decrypt_gcm
 from .request_response_util import *
 from .token_generate_response import TokenGenerateResponse
-from .token_generate_input import TokenGenerateInput
 from .token_refresh_response import TokenRefreshResponse
 from .input_util import base64_to_byte_array
 
@@ -65,5 +60,3 @@ class Uid2PublisherClient:
         resp_bytes = base64_to_byte_array(resp.read())
         decrypted = _decrypt_gcm(resp_bytes, base64_to_byte_array(current_identity.get_refresh_response_key()))
         return TokenRefreshResponse(decrypted.decode(), dt.datetime.now(tz=timezone.utc))
-
-

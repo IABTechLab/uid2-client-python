@@ -1,6 +1,5 @@
 import hashlib
 import base64
-from enum import Enum
 
 
 def is_phone_number_normalized(phone_number):

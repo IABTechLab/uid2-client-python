@@ -30,4 +30,3 @@ class TokenGenerateResponse:
     @staticmethod
     def get_body_as_json(json_response):
         return json_response['body']
-
