@@ -2,7 +2,7 @@ import datetime as dt
 import sys
 import time
 
-from uid2_client import EncryptionKeysAutoRefresher
+from uid2_client import EncryptionKeysAutoRefresher, IdentityScope
 from uid2_client import Uid2Client
 from uid2_client import decrypt
 
@@ -20,7 +20,7 @@ auth_key = sys.argv[2]
 secret_key = sys.argv[3]
 ad_token = sys.argv[4]
 
-client = Uid2Client(base_url, auth_key, secret_key)
+client = Uid2Client(base_url, auth_key, secret_key, IdentityScope.UID2)
 with EncryptionKeysAutoRefresher(client, dt.timedelta(seconds=4), dt.timedelta(seconds=7)) as refresher:
     for i in range(0, 20):
         refresh_result = refresher.current_result()

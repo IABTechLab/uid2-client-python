@@ -22,9 +22,9 @@ auth_key = sys.argv[2]
 secret_key = sys.argv[3]
 ad_token = sys.argv[4]
 
-client = Uid2Client(base_url, auth_key, secret_key)
+client = Uid2Client(base_url, auth_key, secret_key, IdentityScope.UID2)
 keys = client.refresh_keys()
-decrypt_result = decrypt(ad_token, keys)
+decrypt_result = client.decrypt(ad_token, keys)
 
 print('UID2 =', decrypt_result.uid2)
 print('Established =', decrypt_result.established)
@@ -34,5 +34,5 @@ print('Site Key Site ID =', decrypt_result.site_key_site_id)
 # Not required for DSPs, but for those using UID2 sharing functionality this shows how to encrypt a raw UID2 into
 # a new advertising token.
 # IdentityScope could be UID2 or EUID
-new_ad_token = encrypt(decrypt_result.uid2, IdentityScope.UID2, keys)
+new_ad_token = client.encrypt(decrypt_result.uid2, keys)
 print('New Ad Token =', new_ad_token)

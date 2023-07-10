@@ -13,8 +13,10 @@ import os
 import urllib.request as request
 import pkg_resources
 
-from .keys import EncryptionKey, EncryptionKeysCollection
+from uid2_client import encryption
 from .encryption import _decrypt_gcm, _encrypt_gcm
+from .keys import EncryptionKey, EncryptionKeysCollection
+from .identity_scope import IdentityScope
 
 
 def _make_dt(timestamp):
@@ -33,12 +35,12 @@ class Uid2Client:
     Examples:
         Connect to the UID2 service and obtain the latest encryption keys:
         >>> from uid2_client import *
-        >>> client = Uid2Client('https://prod.uidapi.com', 'my-authorization-key', 'my-secret-key')
+        >>> client = Uid2Client('https://prod.uidapi.com', 'my-authorization-key', 'my-secret-key', IdentityScope.UID2)
         >>> keys = client.refresh_keys()
         >>> uid2 = decrypt('some-ad-token', keys).uid2
     """
 
-    def __init__(self, base_url, auth_key, secret_key):
+    def __init__(self, base_url, auth_key, secret_key, identity_scope):
         """Create a new Uid2Client client.
 
         Args:
@@ -52,6 +54,7 @@ class Uid2Client:
         self._base_url = base_url
         self._auth_key = auth_key
         self._secret_key = base64.b64decode(secret_key)
+        self._identity_scope = identity_scope
 
     def refresh_keys(self):
         """Get the latest encryption keys for advertising tokens.
@@ -72,6 +75,37 @@ class Uid2Client:
         body = json.loads(json_str)
         return self._parse_keys_json(body['body'])
 
+    def encrypt(self, uid2, keys, keyset_id=None):
+        """ Encrypt an UID2 into a sharing token
+
+            Args:
+                uid2: the UID2 or EUID to be encrypted
+                keys (EncryptionKeysCollection): collection of keys to choose from for encryption
+                keyset_id (int) : An optional keyset id to use for the encryption. Will use default keyset if left blank
+
+            Keyword Args:
+                now (Datetime): the datettime to use for now. Defaults to utc now
+
+            Returns (str): Sharing Token
+            """
+        return encryption.encrypt(uid2, self._identity_scope, keys, keyset_id)
+
+    def decrypt(self, token, keys, now=dt.datetime.now(tz=timezone.utc)):
+        """Decrypt advertising token to extract UID2 details.
+
+            Args:
+                token (str): advertising token to decrypt
+                keys (EncryptionKeysCollection): collection of keys to decrypt the token
+                now (datetime): date/time to use as "now" when doing token expiration check
+
+            Returns:
+                DecryptedToken: details extracted from the advertising token
+
+            Raises:
+                EncryptionError: if token version is not supported, the token has expired,
+                                 or no required decryption keys present in the keys collection
+        """
+        return encryption.decrypt(token, keys, now)
 
     def _parse_keys_json(self, resp_body):
         keys = []

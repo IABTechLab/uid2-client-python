@@ -21,7 +21,7 @@ secret_key = sys.argv[3]
 ad_token = sys.argv[4]
 str_data = sys.argv[5]
 
-client = Uid2Client(base_url, auth_key, secret_key)
+client = Uid2Client(base_url, auth_key, secret_key, IdentityScope.UID2)
 keys = client.refresh_keys()
 
 data = bytes(str_data, 'utf-8')

@@ -202,7 +202,6 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
 
     Keyword Args:
         now (Datetime): the datettime to use for now. Defaults to utc now
-        ad_token_version (AdvertisingTokenVersion): Defaults to v4
 
     Returns (str): Sharing Token
 
@@ -211,9 +210,7 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
     if now is None:
         now = dt.datetime.now(tz=timezone.utc)
 
-    ad_token_version = kwargs.get("ad_token_version")
-    if ad_token_version is None:
-        ad_token_version = AdvertisingTokenVersion.ADVERTISING_TOKEN_V4
+    ad_token_version = AdvertisingTokenVersion.ADVERTISING_TOKEN_V4
 
     key = keys.get_default_keyset_key(now) if keyset_id is None else keys.get_by_keyset_key(keyset_id, now)
     master_key = keys.get_by_keyset_key(keys.get_master_keyset_id(), now)
@@ -249,7 +246,7 @@ def encrypt_data(data, identity_scope, **kwargs):
                                          key from; the key will be selected using site_id
         site_id (int): ID of the site for which the encryption key is to be used;
                        the key will be looked up from the keys collection;
-                       if this is specified, you can't specificy advertising_token
+                       if this is specified, you can't specify advertising_token
         advertising_token (str): token to decrypt in order to obtain the site_id
         now (datetime): date/time to use as "now" for checking whether advertising_token
                         or site encryption key have expired (default: UTC now) as well as
