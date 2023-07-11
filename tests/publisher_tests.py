@@ -7,18 +7,71 @@ from uid2_client import TokenGenerateResponse
 from uid2_client.identity_tokens import IdentityTokens
 from urllib.request import HTTPError
 
-class PublisherIntegrationTests(unittest.TestCase):
 
-    UID2_SECRET_KEY = None
-    UID2_API_KEY = None
-    UID2_BASE_URL = None
+class PublisherEuidIntegrationTests(unittest.TestCase):
+
+    EUID_SECRET_KEY = None
+    EUID_API_KEY = None
+    EUID_BASE_URL = None
+
     publisher_client = None
 
     @classmethod
     def setUpClass(cls):
-        cls.UID2_BASE_URL = os.getenv("UID2_BASE_URL", "http://localhost:8080")
-        cls.UID2_API_KEY = os.getenv("UID2_API_KEY", "trusted-partner-key")
-        cls.UID2_SECRET_KEY = os.getenv("UID2_SECRET_KEY", "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg=")
+        cls.EUID_BASE_URL = os.getenv("EUID_BASE_URL", "http://localhost:8888")
+        cls.EUID_API_KEY = os.getenv("EUID_API_KEY", "LOCALfCXrMMfsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=")
+        cls.EUID_SECRET_KEY = os.getenv("EUID_SECRET_KEY", "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=")
+
+        print(cls.EUID_BASE_URL, cls.EUID_API_KEY, cls.EUID_SECRET_KEY)
+
+        if cls.EUID_BASE_URL and cls.EUID_API_KEY and cls.EUID_SECRET_KEY:
+            cls.publisher_client = Uid2PublisherClient(cls.EUID_BASE_URL, cls.EUID_API_KEY, cls.EUID_SECRET_KEY)
+
+    def test_integration_tc_string(self):
+        tc_string = "CPhJRpMPhJRpMABAMBFRACBoALAAAEJAAIYgAKwAQAKgArABAAqAAA"
+
+        token_generate_response = self.publisher_client.generate_token(
+            TokenGenerateInput.from_email("user@example.com").with_transparency_and_consent_string(tc_string))
+        self.assertFalse(token_generate_response.is_optout())
+
+        identity = token_generate_response.get_identity()
+        self.assertIsNotNone(identity)
+        self.assertFalse(identity.is_due_for_refresh())
+        self.assertIsNotNone(identity.get_advertising_token())
+        self.assertIsNotNone(identity.get_refresh_token())
+        self.assertIsNotNone(identity.get_json_string())
+        self.assertTrue(identity.is_refreshable())
+
+    def test_integration_tc_string_with_insufficient_consent(self):
+        tc_string = "CPehXK9PehXK9ABAMBFRACBoADAAAEJAAIYgAKwAQAKgArABAAqAAA"
+        with self.assertRaises(ValueError):
+            self.publisher_client.generate_token(TokenGenerateInput.from_email("user@example.com").with_transparency_and_consent_string(tc_string))
+
+
+    def test_integration_optout_generate_token(self):
+        publisher_client = Uid2PublisherClient(self.EUID_BASE_URL, self.EUID_API_KEY, self.EUID_SECRET_KEY)
+        tc_string = "CPhJRpMPhJRpMABAMBFRACBoALAAAEJAAIYgAKwAQAKgArABAAqAAA"
+        input = TokenGenerateInput.from_email("random-optout-user@email.io").do_not_generate_tokens_for_opted_out().with_transparency_and_consent_string(tc_string)
+        print(input.get_as_json_string())
+        token_generate_response = publisher_client.generate_token(input)
+        print(token_generate_response.get_identity_json_string())
+        self.assertTrue(token_generate_response.is_optout())
+        self.assertFalse(token_generate_response.is_success())
+        self.assertIsNone(token_generate_response.get_identity())
+
+class PublisherUid2IntegrationTests(unittest.TestCase):
+
+    UID2_SECRET_KEY = None
+    UID2_API_KEY = None
+    UID2_BASE_URL = None
+
+    publisher_client = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.UID2_BASE_URL = os.getenv("UID2_BASE_URL", "http://localhost:8888")
+        cls.UID2_API_KEY = os.getenv("UID2_API_KEY", "LOCALfCXrMMfsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=")
+        cls.UID2_SECRET_KEY = os.getenv("UID2_SECRET_KEY", "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=")
 
         print(cls.UID2_BASE_URL, cls.UID2_API_KEY, cls.UID2_SECRET_KEY)
 
@@ -135,50 +188,6 @@ class PublisherIntegrationTests(unittest.TestCase):
         bad_api_client = Uid2PublisherClient(self.UID2_BASE_URL, "not-real-key", self.UID2_SECRET_KEY)
         with self.assertRaises(HTTPError):
             bad_secret_client.generate_token(TokenGenerateInput.from_email("test@example.com"))
-
-    def test_integration_tc_string(self):
-        EUID_BASE_URL = os.getenv("EUID_BASE_URL", "http://localhost:8080");
-        EUID_API_KEY = os.getenv("EUID_API_KEY", "trusted-partner-key");
-        EUID_SECRET_KEY = os.getenv("EUID_SECRET_KEY", "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg=");
-
-        publisher_client = Uid2PublisherClient(EUID_BASE_URL, EUID_API_KEY, EUID_SECRET_KEY)
-        tc_string = "CPhJRpMPhJRpMABAMBFRACBoALAAAEJAAIYgAKwAQAKgArABAAqAAA"
-
-        token_generate_response = publisher_client.generate_token(TokenGenerateInput.from_email("user@example.com").with_transparency_and_consent_string(tc_string))
-        self.assertFalse(token_generate_response.is_optout())
-        identity = token_generate_response.get_identity()
-        self.assertIsNotNone(identity)
-        self.assertFalse(identity.is_due_for_refresh())
-        self.assertIsNotNone(identity.get_advertising_token())
-        self.assertIsNotNone(identity.get_refresh_token())
-        self.assertIsNotNone(identity.get_json_string())
-        self.assertTrue(identity.is_refreshable())
-
-
-
-    def test_integration_tc_string_with_insufficient_consent(self):
-        EUID_BASE_URL = os.getenv("EUID_BASE_URL", "http://localhost:8080")
-        EUID_API_KEY = os.getenv("EUID_API_KEY", "trusted-partner-key")
-        EUID_SECRET_KEY = os.getenv("EUID_SECRET_KEY", "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg=")
-
-        publisher_client = Uid2PublisherClient(EUID_BASE_URL, EUID_API_KEY, EUID_SECRET_KEY)
-        tc_string = "CPehXK9PehXK9ABAMBFRACBoADAAAEJAAIYgAKwAQAKgArABAAqAAA"
-        with self.assertRaises(ValueError):
-            publisher_client.generate_token(TokenGenerateInput.from_email("user@example.com").with_transparency_and_consent_string(tc_string))
-
-    def test_integration_optout_generate_token(self):
-        EUID_BASE_URL = os.getenv("EUID_BASE_URL", "http://localhost:8080")
-        EUID_API_KEY = os.getenv("EUID_API_KEY", "trusted-partner-key")
-        EUID_SECRET_KEY = os.getenv("EUID_SECRET_KEY", "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg=")
-
-        publisher_client = Uid2PublisherClient(EUID_BASE_URL, EUID_API_KEY, EUID_SECRET_KEY)
-        tc_string = "CPhJRpMPhJRpMABAMBFRACBoALAAAEJAAIYgAKwAQAKgArABAAqAAA"
-        input = TokenGenerateInput.from_email("optout@example.com").do_not_generate_tokens_for_opted_out().with_transparency_and_consent_string(tc_string)
-        print(input.get_as_json_string())
-        token_generate_response = publisher_client.generate_token(input)
-        self.assertTrue(token_generate_response.is_optout())
-        self.assertFalse(token_generate_response.is_success())
-        self.assertIsNone(token_generate_response.get_identity())
 
 
 if __name__ == '__main__':
