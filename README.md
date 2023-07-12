@@ -15,17 +15,19 @@ Connect to the UID2 service, refresh the encryption keys, and then use the keys 
 ```
 from uid2_client import Uid2Client, decrypt
 
-client = Uid2Client('https://prod.uidapi.com', 'my-auth-token', 'my-secret-key')
+client = Uid2Client('https://prod.uidapi.com', 'my-auth-token', 'my-secret-key', IdentityScope.UID2)
 keys = client.refresh_keys()
 advertising_token = 'AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A=='
-decrypted_token = decrypt(advertising_token, keys)
+decrypted_token = client.decrypt(advertising_token, keys)
 print(decrypted_token.uid2)
 ```
 
 Additional examples are in the [examples] directory:
 * [sample_auto_refresh.py](examples/sample_auto_refresh.py)
 * [sample_client.py](examples/sample_client.py)
-  * Includes an example to encrypt a raw UID2 into an advertising token for UID2 sharing.
+  * Example for DSPs (decryption of tokens)
+* [sample_sharing.py](examples/sample_sharing.py)
+  * Example for Sharers (decryption/encryption of tokens/uids)
 
 ## Development
 
@@ -59,7 +61,8 @@ To run all the example applications:
 
 ```
 make examples BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key SECRET_KEY=my-secret-key \
-	AD_TOKEN=AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A==
+	AD_TOKEN=AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A== \
+	RAW_UID=JCqmlLXpbbu/jTdpB2a1cNAVs8O72eMXPaQzC9Ic9mE=
 ```
 
 Alternatively, you can run specific examples:
