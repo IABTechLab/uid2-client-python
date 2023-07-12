@@ -8,6 +8,8 @@ class TokenGenerateResponse:
         response_json = json.loads(response)
         self.status = response_json['status']
 
+        self.tokens = None
+
         if self.is_optout():
             return
         elif not self.is_success():

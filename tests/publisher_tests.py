@@ -18,9 +18,9 @@ class PublisherEuidIntegrationTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.EUID_BASE_URL = os.getenv("EUID_BASE_URL", "http://localhost:8888")
-        cls.EUID_API_KEY = os.getenv("EUID_API_KEY", "LOCALfCXrMMfsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=")
-        cls.EUID_SECRET_KEY = os.getenv("EUID_SECRET_KEY", "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=")
+        cls.EUID_BASE_URL = os.getenv("EUID_BASE_URL")
+        cls.EUID_API_KEY = os.getenv("EUID_API_KEY")
+        cls.EUID_SECRET_KEY = os.getenv("EUID_SECRET_KEY")
 
         print(cls.EUID_BASE_URL, cls.EUID_API_KEY, cls.EUID_SECRET_KEY)
 
@@ -51,7 +51,7 @@ class PublisherEuidIntegrationTests(unittest.TestCase):
     def test_integration_optout_generate_token(self):
         publisher_client = Uid2PublisherClient(self.EUID_BASE_URL, self.EUID_API_KEY, self.EUID_SECRET_KEY)
         tc_string = "CPhJRpMPhJRpMABAMBFRACBoALAAAEJAAIYgAKwAQAKgArABAAqAAA"
-        input = TokenGenerateInput.from_email("random-optout-user@email.io").do_not_generate_tokens_for_opted_out().with_transparency_and_consent_string(tc_string)
+        input = TokenGenerateInput.from_email("optout@example.com").do_not_generate_tokens_for_opted_out().with_transparency_and_consent_string(tc_string)
         print(input.get_as_json_string())
         token_generate_response = publisher_client.generate_token(input)
         print(token_generate_response.get_identity_json_string())
@@ -69,9 +69,9 @@ class PublisherUid2IntegrationTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.UID2_BASE_URL = os.getenv("UID2_BASE_URL", "http://localhost:8888")
-        cls.UID2_API_KEY = os.getenv("UID2_API_KEY", "LOCALfCXrMMfsR3mDqAXELtWWMS+xG1s7RdgRTMqdOH2qaAo=")
-        cls.UID2_SECRET_KEY = os.getenv("UID2_SECRET_KEY", "DzBzbjTJcYL0swDtFs2krRNu+g1Eokm2tBU4dEuD0Wk=")
+        cls.UID2_BASE_URL = os.getenv("UID2_BASE_URL")
+        cls.UID2_API_KEY = os.getenv("UID2_API_KEY")
+        cls.UID2_SECRET_KEY = os.getenv("UID2_SECRET_KEY")
 
         print(cls.UID2_BASE_URL, cls.UID2_API_KEY, cls.UID2_SECRET_KEY)
 
