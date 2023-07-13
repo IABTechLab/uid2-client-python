@@ -20,10 +20,11 @@ secret_key = sys.argv[3]
 
 publisher_client = Uid2PublisherClient(base_url, auth_key, secret_key)
 print("Generating Token")
-token_generate_response = publisher_client.generate_token(TokenGenerateInput.from_email("test@email.com"))
+token_generate_response = publisher_client.generate_token(TokenGenerateInput.from_email("test@email.com").do_not_generate_tokens_for_opted_out())
 
 status = token_generate_response.status
 tokens = token_generate_response.get_identity()
+
 advertising_token = tokens.get_advertising_token()
 refresh_token = tokens.get_refresh_token()
 refresh_response_key = tokens.get_refresh_response_key()

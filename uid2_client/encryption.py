@@ -264,7 +264,7 @@ def encrypt_data(data, identity_scope, **kwargs):
 
     The keyword arguments key, keys, site_id and advertising_token can only be used in
     the following combinations:
-        - key: use the specied key
+        - key: use the specified key
         - keys and site_id: find the key for the specified site_id
         - keys and advertising_token: extract site_id from the token and find a key for it
     """
