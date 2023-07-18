@@ -15,10 +15,11 @@ Connect to the UID2 service, refresh the encryption keys, and then use the keys 
 ```
 from uid2_client import Uid2Client, decrypt
 
-client = Uid2Client('https://prod.uidapi.com', 'my-auth-token', 'my-secret-key', IdentityScope.UID2)
-keys = client.refresh_keys()
+# for UID2 (for EUID use EuidClientFactory)
+client = Uid2ClientFactory.create('https://prod.uidapi.com', 'my-auth-token', 'my-secret-key')
+client.refresh_keys()
 advertising_token = 'AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A=='
-decrypted_token = client.decrypt(advertising_token, keys)
+decrypted_token = client.decrypt(advertising_token)
 print(decrypted_token.uid2)
 ```
 
