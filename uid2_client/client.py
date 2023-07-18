@@ -47,7 +47,6 @@ class Uid2Client:
             base_url (str): base URL for all requests to UID2 services (e.g. 'https://prod.uidapi.com')
             auth_key (str): authorization key for consuming the UID2 services
             secret_key (str): secret key for consuming the UID2 services
-            identity_scope (IdentityScope): UID2 or EUID
 
         Note:
             Your authorization key will determine which UID2 services you are allowed to use.

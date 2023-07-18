@@ -1,7 +1,7 @@
 import sys
 
-from uid2_client.euid_client_factory import EuidClientFactory
-from uid2_client.uid2_client_factory import Uid2ClientFactory
+from uid2_client import EuidClientFactory
+from uid2_client import Uid2ClientFactory
 
 
 # this sample client encrypts and decrypts a uid2 to a sharing token
