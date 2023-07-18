@@ -1,5 +1,5 @@
 import unittest
-from uid2_client import Uid2Client, IdentityScope
+from uid2_client import Uid2Client
 import datetime as dt
 import base64
 
@@ -36,7 +36,7 @@ class TestKeyParse(unittest.TestCase):
             "}, " + \
             "\"status\": \"success\" }"
 
-        client = Uid2Client("ep", "ak", "ioG3wKxAokmp+rERx6A4kM/13qhyolUXIu14WN16Spo=", IdentityScope.UID2)
+        client = Uid2Client("ep", "ak", "ioG3wKxAokmp+rERx6A4kM/13qhyolUXIu14WN16Spo=")
 
         now = dt.datetime.now(tz=dt.timezone.utc)
 
@@ -65,7 +65,7 @@ class TestKeyParse(unittest.TestCase):
         self.assertEqual("DD67xF8OFmbJ1/lMPQ6fGRDbJOT4kXErrYWcKdFfCUE=", base64.b64encode(key.secret).decode("ascii"))
 
     def test_parse_key_error(self):
-        client = Uid2Client("ep", "ak", "ioG3wKxAokmp+rERx6A4kM/13qhyolUXIu14WN16Spo=", IdentityScope.UID2)
+        client = Uid2Client("ep", "ak", "ioG3wKxAokmp+rERx6A4kM/13qhyolUXIu14WN16Spo=")
         self.assertRaises(BaseException, client.refresh_json, "{\"status\": \"error\"}")
         self.assertRaises(BaseException, client.refresh_json, "{\"body\": \"error\"}")
         self.assertRaises(BaseException, client.refresh_json, "{\"body\": [1, 2, 3]}")

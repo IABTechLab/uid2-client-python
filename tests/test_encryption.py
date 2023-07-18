@@ -1,6 +1,3 @@
-import base64
-import datetime as dt
-from datetime import timezone
 import unittest
 
 from tests.uid2_token_generator import UID2TokenGenerator, Params
@@ -605,7 +602,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         self.assertEqual(format_time(now), format_time(decrypted.encrypted_at))
 
 
-    # TODO - deduplicate the logic in sharing_test.py that has been copied from this file
+    # TODO - deduplicate the logic in test_sharing.py that has been copied from this file
     def test_raw_uid_produces_correct_identity_type_in_token(self):
         #v2 +12345678901. Although this was generated from a phone number, it's a v2 raw UID which doesn't encode this
         # information, so token assumes email by default.

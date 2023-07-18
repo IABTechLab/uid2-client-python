@@ -1,9 +1,8 @@
 import sys
 
-from uid2_client import Uid2Client
-from uid2_client import decrypt
-from uid2_client import encrypt
-from uid2_client.identity_scope import IdentityScope
+from uid2_client.euid_client_factory import EuidClientFactory
+from uid2_client.uid2_client_factory import Uid2ClientFactory
+
 
 # this sample client decrypts an advertising token into a raw UID2
 # to demonstrate decryption for DSPs
@@ -21,9 +20,12 @@ auth_key = sys.argv[2]
 secret_key = sys.argv[3]
 ad_token = sys.argv[4]
 
-client = Uid2Client(base_url, auth_key, secret_key, IdentityScope.UID2)
-keys = client.refresh_keys()
-decrypt_result = client.decrypt(ad_token, keys)
+# for EUID
+client = EuidClientFactory.create(base_url, auth_key, secret_key)
+# for UID2
+client = Uid2ClientFactory.create(base_url, auth_key, secret_key)
+client.refresh_keys()
+decrypt_result = client.decrypt(ad_token)
 
 print('UID2 =', decrypt_result.uid2)
 print('Established =', decrypt_result.established)
