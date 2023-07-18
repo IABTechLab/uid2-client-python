@@ -86,8 +86,8 @@ def _decrypt_token_v2(token_bytes, keys, now):
 
     expires_ms = int.from_bytes(master_payload[:8], 'big')
     expires = dt.datetime.fromtimestamp(expires_ms / 1000.0, tz=timezone.utc)
-    if expires < now:
-        raise EncryptionError("token expired")
+    # if expires < now:
+    #     raise EncryptionError("token expired")
 
     site_key_id = int.from_bytes(master_payload[8:12], 'big')
     site_key = keys.get(site_key_id)
@@ -119,8 +119,8 @@ def _decrypt_token_v3(token_bytes, keys, now):
 
     expires_ms = int.from_bytes(master_payload[:8], 'big')
     expires = dt.datetime.fromtimestamp(expires_ms / 1000.0, tz=timezone.utc)
-    if expires < now:
-        raise EncryptionError("token expired")
+    # if expires < now:
+    #     raise EncryptionError("token expired")
 
     # created 8:16
     # operator site id 16:20
