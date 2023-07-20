@@ -15,7 +15,7 @@ def auth_headers(auth_key):
     try:
         version = pkg_resources.get_distribution("uid2_client").version
     except Exception:
-        version = "0"
+        version = "non-packaged-mode"
 
     return {'Authorization': 'Bearer ' + auth_key,
             "X-UID2-Client-Version": "uid2-client-python-" + version}
