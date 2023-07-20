@@ -12,5 +12,7 @@ from .auto_refresh import *
 from .client import *
 from .encryption import *
 from .keys import *
+from .euid_client_factory import *
+from .uid2_client_factory import *
 
 

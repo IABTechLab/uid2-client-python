@@ -3,8 +3,8 @@ import sys
 import time
 
 from uid2_client import EncryptionKeysAutoRefresher
-from uid2_client import Uid2Client
-from uid2_client import decrypt
+from uid2_client import EuidClientFactory
+from uid2_client import Uid2ClientFactory
 
 
 def _usage():
@@ -20,13 +20,16 @@ auth_key = sys.argv[2]
 secret_key = sys.argv[3]
 ad_token = sys.argv[4]
 
-client = Uid2Client(base_url, auth_key, secret_key)
+# for EUID use:
+# client = EuidClientFactory.create(base_url, auth_key, secret_key)
+# for UID2 use:
+client = Uid2ClientFactory.create(base_url, auth_key, secret_key)
 with EncryptionKeysAutoRefresher(client, dt.timedelta(seconds=4), dt.timedelta(seconds=7)) as refresher:
     for i in range(0, 20):
         refresh_result = refresher.current_result()
         if refresh_result.ready:
             print('Keys are ready, last refreshed (UTC):', refresh_result.last_success_time, flush=True)
-            result = decrypt(ad_token, refresh_result.keys)
+            result = client.decrypt(ad_token)
             print('UID2 =', result.uid2, flush=True)
         else:
             print('Keys are not ready yet, last error:', refresh_result.last_error[1], flush=True)

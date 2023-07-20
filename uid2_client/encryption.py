@@ -4,7 +4,6 @@ Do not use this module directly, import from uid2_client instead, e.g.
 >>> from uid2_client import decrypt
 """
 
-
 import base64
 import datetime as dt
 from datetime import timezone
@@ -29,8 +28,11 @@ class _PayloadType(Enum):
     ENCRYPTED_DATA = 128
     ENCRYPTED_DATA_V3 = 96
 
+
 base64_url_special_chars = {"-", "_"}
 
+
+# DEPRECATED, DO NOT CALL DIRECTLY. PLEASE USE Uid2Client's client.decrypt()
 def decrypt(token, keys, now=dt.datetime.now(tz=timezone.utc)):
     """Decrypt advertising token to extract UID2 details.
 
@@ -100,10 +102,10 @@ def _decrypt_token_v2(token_bytes, keys, now):
     site_id = int.from_bytes(identity[0:4], 'big')
 
     id_len = int.from_bytes(identity[4:8], 'big')
-    id_str = identity[8:8+id_len].decode('utf-8')
+    id_str = identity[8:8 + id_len].decode('utf-8')
 
     idx = 8 + id_len + 4
-    established_ms = int.from_bytes(identity[idx:idx+8], 'big')
+    established_ms = int.from_bytes(identity[idx:idx + 8], 'big')
     established = dt.datetime.fromtimestamp(established_ms / 1000.0, tz=timezone.utc)
 
     return DecryptedToken(id_str, established, site_id, site_key.site_id)
@@ -157,30 +159,31 @@ def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, tok
     site_payload[12:16] = int.to_bytes(0, byteorder='big', length=4)  # Client Key ID
     # User Identity Data
     site_payload[16:20] = int.to_bytes(0, byteorder='big', length=4)  # Privacy Bits
-    site_payload[20:28] = int.to_bytes(int((now-dt.timedelta(hours=1)).timestamp())*1000, byteorder='big', length=8)  # Established
-    site_payload[28:36] = int.to_bytes(int(now.timestamp())*1000, byteorder='big', length=8)  # last refresh
+    site_payload[20:28] = int.to_bytes(int((now - dt.timedelta(hours=1)).timestamp()) * 1000, byteorder='big',
+                                       length=8)  # Established
+    site_payload[28:36] = int.to_bytes(int(now.timestamp()) * 1000, byteorder='big', length=8)  # last refresh
     site_payload[36:] = bytes(base64.b64decode(uid2))
 
     id_payload = _encrypt_gcm(bytes(site_payload), None, site_key.secret)
 
     # Operator Identity Data
     master_payload = bytearray(256)
-    master_payload[:8] = int.to_bytes(int(token_expiry.timestamp())*1000, byteorder='big', length=8)  # Expiry
+    master_payload[:8] = int.to_bytes(int(token_expiry.timestamp()) * 1000, byteorder='big', length=8)  # Expiry
     master_payload[8:16] = int.to_bytes(int(now.timestamp()), byteorder='big', length=8)  # Token Created
     master_payload[16:20] = int.to_bytes(0, byteorder='big', length=4)  # Site ID
     master_payload[20:21] = int.to_bytes(1, byteorder='big', length=1)  # Operator Type
     master_payload[21:25] = int.to_bytes(0, byteorder='big', length=4)  # Operator Version
     master_payload[25:29] = int.to_bytes(0, byteorder='big', length=4)  # Operator Key ID
-    master_payload[29:33] = int.to_bytes(site_key.key_id, byteorder='big', length=4) # Site Key ID
+    master_payload[29:33] = int.to_bytes(site_key.key_id, byteorder='big', length=4)  # Site Key ID
     master_payload[33:] = bytes(id_payload)
 
     encrypted_master_payload = _encrypt_gcm(bytes(master_payload), None, master_key.secret)
 
-    root_writer = bytearray(len(encrypted_master_payload)+6)
+    root_writer = bytearray(len(encrypted_master_payload) + 6)
     first_char = uid2[0]
     identity_type = IdentityType.Phone if first_char == 'F' or first_char == 'B' else IdentityType.Email
     root_writer[0:1] = int.to_bytes((int(identity_scope) << 4 | int(identity_type) << 2), byteorder='big', length=1)
-    root_writer[1:2] = int.to_bytes(ad_token_version, byteorder='big', length=1)
+    root_writer[1:2] = int.to_bytes(ad_token_version.value, byteorder='big', length=1)
     root_writer[2:6] = int.to_bytes(master_key.key_id, byteorder='big', length=4)
     root_writer[6:] = bytes(encrypted_master_payload)
 
@@ -190,7 +193,7 @@ def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, tok
     return base64.b64encode(root_writer)
 
 
-
+# DEPRECATED, DO NOT CALL DIRECTLY. PLEASE USE Uid2Client's client.encrypt()
 def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
     """ Encrypt an UID2 into a sharing token
 
@@ -202,7 +205,6 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
 
     Keyword Args:
         now (Datetime): the datettime to use for now. Defaults to utc now
-        ad_token_version (AdvertisingTokenVersion): Defaults to v4
 
     Returns (str): Sharing Token
 
@@ -211,9 +213,7 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
     if now is None:
         now = dt.datetime.now(tz=timezone.utc)
 
-    ad_token_version = kwargs.get("ad_token_version")
-    if ad_token_version is None:
-        ad_token_version = AdvertisingTokenVersion.ADVERTISING_TOKEN_V4
+    ad_token_version = AdvertisingTokenVersion.ADVERTISING_TOKEN_V4
 
     key = keys.get_default_keyset_key(now) if keyset_id is None else keys.get_by_keyset_key(keyset_id, now)
     master_key = keys.get_by_keyset_key(keys.get_master_keyset_id(), now)
@@ -249,7 +249,7 @@ def encrypt_data(data, identity_scope, **kwargs):
                                          key from; the key will be selected using site_id
         site_id (int): ID of the site for which the encryption key is to be used;
                        the key will be looked up from the keys collection;
-                       if this is specified, you can't specificy advertising_token
+                       if this is specified, you can't specify advertising_token
         advertising_token (str): token to decrypt in order to obtain the site_id
         now (datetime): date/time to use as "now" for checking whether advertising_token
                         or site encryption key have expired (default: UTC now) as well as
@@ -388,7 +388,7 @@ def _decrypt_data_v3(encrypted_bytes, keys):
 
 def _add_pkcs7_padding(data, block_size):
     pad_len = block_size - (len(data) % block_size)
-    return data + bytes([pad_len])*pad_len
+    return data + bytes([pad_len]) * pad_len
 
 
 def _encrypt(data, iv, key):
@@ -432,6 +432,7 @@ class DecryptedToken:
         site_id (int): site ID which the token is originating from
         site_key_site_id (int): site ID of the site key which the token is encrypted with
     """
+
     def __init__(self, uid2, established, site_id, site_key_site_id):
         self.uid2 = uid2
         self.established = established
@@ -446,6 +447,7 @@ class DecryptedData:
         data (bytes): data decrypted from the string
         encrypted_at (datetime): UTC date/time for when the data was encrypted
     """
+
     def __init__(self, data, encrypted_at):
         self.data = data
         self.encrypted_at = encrypted_at

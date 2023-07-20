@@ -1,10 +1,8 @@
-import base64
-import datetime as dt
-from datetime import timezone
 import unittest
 
 from tests.uid2_token_generator import UID2TokenGenerator, Params
 from uid2_client import *
+from uid2_client.encryption import _encrypt_token
 from uid2_client.identity_scope import IdentityScope
 from uid2_client.identity_type import IdentityType
 from uid2_client.keys import *
@@ -340,7 +338,6 @@ class TestEncryptionFunctions(unittest.TestCase):
         result = decrypt(token, keys, now=expiry - dt.timedelta(seconds=1))
         self.assertEqual(_example_id, result.uid2)
 
-
     def test_smoke_token_v3(self):
         uid2 = _example_id
         identity_scope = IdentityScope.UID2
@@ -349,7 +346,10 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key, _keyset_key], default_keyset_id=20,
                                         master_keyset_id=9999, caller_site_id=20)
 
-        result = encrypt(uid2, identity_scope, keys, now=now, ad_token_version=AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
+        result = _encrypt_token(uid2, identity_scope, _master_key, _site_key, _site_id, now=now,
+                                token_expiry=now + dt.timedelta(days=30) if keys.get_token_expiry_seconds() is None \
+                                    else now + dt.timedelta(seconds=int(keys.get_token_expiry_seconds())),
+                         ad_token_version=AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
         final = decrypt(result, keys, now=now)
 
         self.assertEqual(uid2, final.uid2)
@@ -619,7 +619,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         self.assertEqual(format_time(now), format_time(decrypted.encrypted_at))
 
 
-    # TODO - deduplicate the logic in sharing_test.py that has been copied from this file
+    # TODO - deduplicate the logic in test_sharing.py that has been copied from this file
     def test_raw_uid_produces_correct_identity_type_in_token(self):
         #v2 +12345678901. Although this was generated from a phone number, it's a v2 raw UID which doesn't encode this
         # information, so token assumes email by default.
