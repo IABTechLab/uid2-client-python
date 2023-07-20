@@ -215,7 +215,7 @@ class TestClient(unittest.TestCase):
 
         with patch('uid2_client.encryption._decrypt_token_v3') as mock_decrypt:
             def decrypt_side_effect(token_bytes, keys, now):
-                return real_decrypt_v3(token_bytes, keys, now + dt.timedelta(seconds=2))
+                return real_decrypt_v3(token_bytes, keys, now + dt.timedelta(seconds=3))
 
             mock_decrypt.side_effect = decrypt_side_effect
 

@@ -20,9 +20,9 @@ auth_key = sys.argv[2]
 secret_key = sys.argv[3]
 ad_token = sys.argv[4]
 
-# for EUID
-client = EuidClientFactory.create(base_url, auth_key, secret_key)
-# for UID2
+# for EUID use:
+# client = EuidClientFactory.create(base_url, auth_key, secret_key)
+# for UID2 use:
 client = Uid2ClientFactory.create(base_url, auth_key, secret_key)
 client.refresh_keys()
 decrypt_result = client.decrypt(ad_token)
