@@ -12,8 +12,13 @@ def _make_url(base_url, path):
 
 
 def auth_headers(auth_key):
+    try:
+        version = pkg_resources.get_distribution("uid2_client").version
+    except Exception:
+        version = "non-packaged-mode"
+
     return {'Authorization': 'Bearer ' + auth_key,
-            "X-UID2-Client-Version": "uid2-client-python-" + pkg_resources.get_distribution("uid2_client").version}
+            "X-UID2-Client-Version": "uid2-client-python-" + version}
 
 
 def make_v2_request(secret_key, now, data=None):

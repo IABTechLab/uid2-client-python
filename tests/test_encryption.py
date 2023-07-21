@@ -2,6 +2,7 @@ import unittest
 
 from tests.uid2_token_generator import UID2TokenGenerator, Params
 from uid2_client import *
+from uid2_client.encryption import _encrypt_token
 from uid2_client.identity_scope import IdentityScope
 from uid2_client.identity_type import IdentityType
 from uid2_client.keys import *
@@ -336,6 +337,22 @@ class TestEncryptionFunctions(unittest.TestCase):
 
         result = decrypt(token, keys, now=expiry - dt.timedelta(seconds=1))
         self.assertEqual(_example_id, result.uid2)
+
+    def test_smoke_token_v3(self):
+        uid2 = _example_id
+        identity_scope = IdentityScope.UID2
+        now = dt.datetime.now(tz=timezone.utc)
+
+        keys = EncryptionKeysCollection([_master_key, _site_key, _keyset_key], default_keyset_id=20,
+                                        master_keyset_id=9999, caller_site_id=20)
+
+        result = _encrypt_token(uid2, identity_scope, _master_key, _site_key, _site_id, now=now,
+                                token_expiry=now + dt.timedelta(days=30) if keys.get_token_expiry_seconds() is None \
+                                    else now + dt.timedelta(seconds=int(keys.get_token_expiry_seconds())),
+                         ad_token_version=AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
+        final = decrypt(result, keys, now=now)
+
+        self.assertEqual(uid2, final.uid2)
 
     def test_smoke_token_v4(self):
         uid2 = _example_id

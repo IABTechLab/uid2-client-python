@@ -20,9 +20,9 @@ auth_key = sys.argv[2]
 secret_key = sys.argv[3]
 ad_token = sys.argv[4]
 
-# for EUID
-client = EuidClientFactory.create(base_url, auth_key, secret_key)
-# for UID2
+# for EUID use:
+# client = EuidClientFactory.create(base_url, auth_key, secret_key)
+# for UID2 use:
 client = Uid2ClientFactory.create(base_url, auth_key, secret_key)
 with EncryptionKeysAutoRefresher(client, dt.timedelta(seconds=4), dt.timedelta(seconds=7)) as refresher:
     for i in range(0, 20):
