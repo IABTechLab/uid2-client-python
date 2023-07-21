@@ -26,7 +26,10 @@ class PublisherEuidIntegrationTests(unittest.TestCase):
 
         if cls.EUID_BASE_URL and cls.EUID_API_KEY and cls.EUID_SECRET_KEY:
             cls.publisher_client = Uid2PublisherClient(cls.EUID_BASE_URL, cls.EUID_API_KEY, cls.EUID_SECRET_KEY)
+        else:
+            raise Exception("set the required EUID_BASE_URL/EUID_API_KEY/EUID_SECRET_KEY environment variables first")
 
+    # this test requires these env vars to be configured: EUID_BASE_URL, EUID_API_KEY, EUID_SECRET_KEY
     def test_integration_tc_string(self):
         tc_string = "CPhJRpMPhJRpMABAMBFRACBoALAAAEJAAIYgAKwAQAKgArABAAqAAA"
 
@@ -42,12 +45,13 @@ class PublisherEuidIntegrationTests(unittest.TestCase):
         self.assertIsNotNone(identity.get_json_string())
         self.assertTrue(identity.is_refreshable())
 
+    # this test requires these env vars to be configured: EUID_BASE_URL, EUID_API_KEY, EUID_SECRET_KEY
     def test_integration_tc_string_with_insufficient_consent(self):
         tc_string = "CPehXK9PehXK9ABAMBFRACBoADAAAEJAAIYgAKwAQAKgArABAAqAAA"
         with self.assertRaises(ValueError):
             self.publisher_client.generate_token(TokenGenerateInput.from_email("user@example.com").with_transparency_and_consent_string(tc_string))
 
-
+    # this test requires these env vars to be configured: EUID_BASE_URL, EUID_API_KEY, EUID_SECRET_KEY
     def test_integration_optout_generate_token(self):
         publisher_client = Uid2PublisherClient(self.EUID_BASE_URL, self.EUID_API_KEY, self.EUID_SECRET_KEY)
         tc_string = "CPhJRpMPhJRpMABAMBFRACBoALAAAEJAAIYgAKwAQAKgArABAAqAAA"
@@ -75,8 +79,10 @@ class PublisherUid2IntegrationTests(unittest.TestCase):
 
         if cls.UID2_BASE_URL and cls.UID2_API_KEY and cls.UID2_SECRET_KEY:
             cls.publisher_client = Uid2PublisherClient(cls.UID2_BASE_URL, cls.UID2_API_KEY, cls.UID2_SECRET_KEY)
+        else:
+            raise Exception("set the required UID2_BASE_URL/UID2_API_KEY/UID2_SECRET_KEY environment variables first")
 
-    # Test methods
+    # this test requires these env vars to be configured: UID2_BASE_URL, UID2_API_KEY, UID2_SECRET_KEY
     def test_integration_generate_and_refresh(self):
 
         token_generate_response = self.publisher_client.generate_token(
@@ -105,6 +111,7 @@ class PublisherUid2IntegrationTests(unittest.TestCase):
         self.assertIsNotNone(refreshed_identity.get_json_string())
         self.assertTrue(identity.is_refreshable())
 
+    # this test requires these env vars to be configured: UID2_BASE_URL, UID2_API_KEY, UID2_SECRET_KEY
     def test_integration_optout(self):
 
         token_generate_response = self.publisher_client.generate_token(TokenGenerateInput.from_email("optout@email.com"))
@@ -125,6 +132,7 @@ class PublisherUid2IntegrationTests(unittest.TestCase):
         self.assertIsNone(token_refresh_response.get_identity_json_string())
         self.assertIsNone(token_refresh_response.get_identity())
 
+    # this test requires these env vars to be configured: UID2_BASE_URL, UID2_API_KEY, UID2_SECRET_KEY
     def test_integration_phone(self):
 
         token_generate_response = self.publisher_client.generate_token(
@@ -152,6 +160,7 @@ class PublisherUid2IntegrationTests(unittest.TestCase):
         self.assertIsNotNone(refreshed_identity.get_json_string())
         self.assertTrue(identity.is_refreshable())
 
+    # this test requires these env vars to be configured: UID2_BASE_URL, UID2_API_KEY, UID2_SECRET_KEY
     def test_integration_bad_requests(self):
 
         with self.assertRaises(ValueError):

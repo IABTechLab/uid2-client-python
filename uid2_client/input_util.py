@@ -12,6 +12,10 @@ def is_phone_number_normalized(phone_number):
     if phone_number[0] != '+':
         return False
 
+    for char in phone_number[1:]:
+        if not char.isdigit():
+            return False
+
     total_digits = sum(char.isdigit() for char in phone_number[1:])
 
     return min_phone_number_digits <= total_digits <= max_phone_number_digits
