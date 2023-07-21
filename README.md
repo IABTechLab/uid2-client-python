@@ -16,7 +16,7 @@ This document includes:
 
 ## Who Is this SDK for?
 
-This SDK simplifies integration with UID2 for DSPs and UID Sharers, as described in [UID2 Integration Guides](https://unifiedid.com/docs/category/integration-guides).
+This SDK simplifies integration with UID2 for Publishers, DSPs and UID Sharers, as described in [UID2 Integration Guides](https://unifiedid.com/docs/category/integration-guides).
 
 ## Requirements
 
