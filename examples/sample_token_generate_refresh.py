@@ -60,7 +60,7 @@ except Exception as e:
     exit(1)
 
 
-if(token_generate_response.is_optout()):
+if(token_refresh_response.is_optout()):
     print("User has opted out")
     exit(0)
 
