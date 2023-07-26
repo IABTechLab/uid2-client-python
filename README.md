@@ -13,6 +13,7 @@ This document includes:
 * [Usage for UID2 Sharers](#usage-for-uid2-sharers)
 * [Development](#development)
   * [Example Usage](#example-usage)
+* [History](#history)
 
 ## Who Is this SDK for?
 
@@ -168,3 +169,9 @@ make example_client BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key SECRET
 make example_auto_refresh BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key SECRET_KEY=my-secret-key \
 	AD_TOKEN=AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A==
 ```
+
+## History
+
+### 2.2.0 (07/26/2023)
+ * Added support for /token/generate
+ * Added support for /token/refresh
