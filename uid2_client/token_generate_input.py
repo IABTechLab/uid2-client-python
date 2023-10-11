@@ -62,7 +62,7 @@ class TokenGenerateInput:
         if tc_string is not None:
             json_object["tcf_consent_string"] = tc_string
         if not generate_for_opted_out:
-            json_object["policy"] = 1
+            json_object["optout_check"] = 1
         return json.dumps(json_object)
 
     def create_hashed_json_request_for_generate_token(self):
