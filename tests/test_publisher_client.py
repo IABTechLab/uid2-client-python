@@ -114,7 +114,7 @@ class PublisherUid2IntegrationTests(unittest.TestCase):
     # this test requires these env vars to be configured: UID2_BASE_URL, UID2_API_KEY, UID2_SECRET_KEY
     def test_integration_optout(self):
 
-        token_generate_response = self.publisher_client.generate_token(TokenGenerateInput.from_email("optout@email.com"))
+        token_generate_response = self.publisher_client.generate_token(TokenGenerateInput.from_email("refresh-optout@example.com").do_not_generate_tokens_for_opted_out())
 
         self.assertFalse(token_generate_response.is_optout())
 
