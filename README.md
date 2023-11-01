@@ -57,7 +57,7 @@ print(decrypted_token.uid2)
 
    >IMPORTANT: Be sure to call this function only when you have obtained legal basis to convert the user’s [directly identifying information (DII)](https://unifiedid.com/docs/ref-info/glossary-uid#gl-dii) to UID2 tokens for targeted advertising.
    
-   >`do_not_generate_tokens_for_opted_out()` applies `policy=1` in the [/token/generate](https://unifiedid.com/docs/endpoints/post-token-generate#token-generation-policy) call. Without this, `policy` is omitted to maintain backwards compatibility.
+   >`do_not_generate_tokens_for_opted_out()` applies `optout_check=1` in the [/token/generate](https://unifiedid.com/docs/endpoints/post-token-generate) call. Without this, `optout_check` is omitted to maintain backwards compatibility.
 
 ### Standard Integration
 
@@ -175,3 +175,6 @@ make example_auto_refresh BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key 
 ### 2.2.0 (07/26/2023)
  * Added support for /token/generate
  * Added support for /token/refresh
+
+### 2.3.0 (10/11/2023)
+ * Update from deprecated "policy" parameter to "optout_check" parameter

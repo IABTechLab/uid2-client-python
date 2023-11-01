@@ -1,3 +1,4 @@
+import json
 import os
 import unittest
 
@@ -56,6 +57,7 @@ class PublisherEuidIntegrationTests(unittest.TestCase):
         publisher_client = Uid2PublisherClient(self.EUID_BASE_URL, self.EUID_API_KEY, self.EUID_SECRET_KEY)
         tc_string = "CPhJRpMPhJRpMABAMBFRACBoALAAAEJAAIYgAKwAQAKgArABAAqAAA"
         input = TokenGenerateInput.from_email("optout@example.com").do_not_generate_tokens_for_opted_out().with_transparency_and_consent_string(tc_string)
+        self.assertEqual(1, json.loads(input.get_as_json_string())['optout_check'])
         token_generate_response = publisher_client.generate_token(input)
         self.assertTrue(token_generate_response.is_optout())
         self.assertFalse(token_generate_response.is_success())
