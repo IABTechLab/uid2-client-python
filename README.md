@@ -57,7 +57,7 @@ print(decrypted_token.uid2)
 
    >IMPORTANT: Be sure to call this function only when you have obtained legal basis to convert the user’s [directly identifying information (DII)](https://unifiedid.com/docs/ref-info/glossary-uid#gl-dii) to UID2 tokens for targeted advertising.
    
-   >`do_not_generate_tokens_for_opted_out()` applies `policy=1` in the [/token/generate](https://unifiedid.com/docs/endpoints/post-token-generate#token-generation-policy) call. Without this, `policy` is omitted to maintain backwards compatibility.
+   >IMPORTANT: Always apply `do_not_generate_tokens_for_opted_out()`. This applies `policy=1` in the [/token/generate](https://unifiedid.com/docs/endpoints/post-token-generate#token-generation-policy) call. Support for `policy=0` will be removed soon.
 
 ### Standard Integration
 

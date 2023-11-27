@@ -21,6 +21,7 @@ publisher_client = Uid2PublisherClient(base_url, auth_key, secret_key)
 
 print("Generating Token")
 try:
+    # Always use .do_not_generate_tokens_for_opted_out(), which applies policy=1. Support for policy=0 will be removed soon.
     token_generate_response = publisher_client.generate_token(TokenGenerateInput.from_email("testpythonsdksampletokengenerate@email.com").do_not_generate_tokens_for_opted_out())
 except Exception as e:
     print(e)
