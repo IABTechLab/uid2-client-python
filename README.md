@@ -175,3 +175,5 @@ make example_auto_refresh BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key 
 ### 2.2.0 (07/26/2023)
  * Added support for /token/generate
  * Added support for /token/refresh
+### 2.2.1 (12/05/2023)
+ * Support for policy=0 will be removed soon
