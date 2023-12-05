@@ -36,6 +36,7 @@ class TokenGenerateInput:
         self.need_hash = False
         return self
 
+    # Always use .do_not_generate_tokens_for_opted_out(), which applies policy=1. Support for policy=0 will be removed soon.
     def do_not_generate_tokens_for_opted_out(self):
         self.generate_for_opted_out = False
         return self
