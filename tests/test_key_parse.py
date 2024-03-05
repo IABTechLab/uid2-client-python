@@ -14,7 +14,7 @@ class TestKeyParse(unittest.TestCase):
             "\"caller_site_id\": 11, " + \
             "\"master_keyset_id\": 1, " + \
             "\"default_keyset_id\": 99999, " + \
-            "\"token_expiry_seconds\": 1728000, " + \
+            "\"token_expiry_seconds\": \"1728000\", " + \
             "\"keys\": [ " + \
             "{ " + \
             "\"id\": 3, " + \

@@ -80,7 +80,7 @@ class TestSharing(unittest.TestCase):
 
     def test_expiry_in_token_matches_expiry_in_reponse(self):
         client = Uid2Client("endpoint", "authkey", client_secret)
-        json_body = key_set_to_json_for_sharing_with_header('"default_keyset_id": 99999, "token_expiry_seconds": 2,', 99999, [master_key, site_key])
+        json_body = key_set_to_json_for_sharing_with_header('"default_keyset_id": 99999, "token_expiry_seconds": "2",', 99999, [master_key, site_key])
         keys = client.refresh_json(json_body)
 
         now = dt.datetime.now(tz=timezone.utc)

@@ -198,7 +198,7 @@ class TestClient(unittest.TestCase):
     def test_expiry_in_token_matches_expiry_in_response(self, mock_post):
         def get_post_refresh_keys_response_with_token_expiry(base_url, path, headers, data):
             response_payload = key_set_to_json_for_sharing_with_header('"default_keyset_id": 99999, '
-                                                                       '"token_expiry_seconds": 2,', 99999, [master_key,
+                                                                       '"token_expiry_seconds": "2",', 99999, [master_key,
                                                                                                              site_key]).encode()
             return self._make_post_response(data, response_payload)
 
