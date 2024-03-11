@@ -1,0 +1,24 @@
+name: Build and Publish Pypi Packages
+run-name: ${{ format('Release {0}', inputs.release_type)}} Package by @${{ github.actor }}
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        type: choice
+        description: The type of release
+        options:
+        - Major
+        - Minor
+        - Patch
+      publish_vulnerabilities:
+        type: string
+        default: true
+  pull_request:
+
+jobs:
+  build-and-pubish:
+    name: Build and publish Python packages to Pypi
+    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-to-pypi-versioned.yaml@kcc-UID2-2330-create-workflow-for-python
+    with:
+      release_type: ${{ inputs.release_type }}
+    secrets: inherit
