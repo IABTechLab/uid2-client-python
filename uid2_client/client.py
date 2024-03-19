@@ -12,6 +12,7 @@ import json
 from uid2_client import encryption
 from .keys import EncryptionKey, EncryptionKeysCollection
 from .identity_scope import IdentityScope
+from .refresh_keys_util import *
 from .request_response_util import *
 
 
@@ -79,15 +80,12 @@ class Uid2Client:
         Returns:
             EncryptionKeysCollection containing the keys
         """
-        req, nonce = make_v2_request(self._secret_key, dt.datetime.now(tz=timezone.utc))
-        resp = post(self._base_url, '/v2/key/sharing', headers=auth_headers(self._auth_key), data=req)
-        resp_body = json.loads(parse_v2_response(self._secret_key, resp.read(), nonce)).get('body')
-        self._keys = self._parse_keys_json(resp_body)
+        self._keys = refresh_keys(self._base_url, self._auth_key, self._secret_key);
         return self._keys
 
     def refresh_json(self, json_str):
         body = json.loads(json_str)
-        return self._parse_keys_json(body['body'])
+        return parse_keys_json(body['body'])
 
     def encrypt(self, uid2, keyset_id=None):
         """ Encrypt an UID2 into a sharing token
@@ -116,25 +114,7 @@ class Uid2Client:
                 EncryptionError: if token version is not supported, the token has expired,
                                  or no required decryption keys present in the keys collection
         """
-        return encryption.decrypt(token, self._keys)
-
-    def _parse_keys_json(self, resp_body):
-        keys = []
-        for key in resp_body["keys"]:
-            keyset_id = None
-            if "keyset_id" in key:
-                keyset_id = key["keyset_id"]
-            key = EncryptionKey(key['id'],
-                                key.get('site_id', -1),
-                                _make_dt(key['created']),
-                                _make_dt(key['activates']),
-                                _make_dt(key['expires']),
-                                base64.b64decode(key['secret']),
-                                keyset_id)
-            keys.append(key)
-        return EncryptionKeysCollection(keys, resp_body["caller_site_id"], resp_body["master_keyset_id"],
-                                        resp_body.get("default_keyset_id", None), resp_body["token_expiry_seconds"])
-
+        return encryption.decrypt(token, self._keys, None)
 
 class Uid2ClientError(Exception):
     """Raised for problems encountered while interacting with UID2 services."""

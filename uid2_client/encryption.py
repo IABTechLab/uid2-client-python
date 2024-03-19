@@ -33,12 +33,13 @@ base64_url_special_chars = {"-", "_"}
 
 
 # DEPRECATED, DO NOT CALL DIRECTLY. PLEASE USE Uid2Client's client.decrypt()
-def decrypt(token, keys, now=dt.datetime.now(tz=timezone.utc)):
+def decrypt(token, keys, domain_name, now=dt.datetime.now(tz=timezone.utc)):
     """Decrypt advertising token to extract UID2 details.
 
     Args:
         token (str): advertising token to decrypt
         keys (EncryptionKeysCollection): collection of keys to decrypt the token
+        domain_name (str) : domain name from bid request
         now (datetime): date/time to use as "now" when doing token expiration check
 
     Returns:
@@ -50,14 +51,14 @@ def decrypt(token, keys, now=dt.datetime.now(tz=timezone.utc)):
     """
 
     try:
-        return _decrypt_token(token, keys, now)
+        return _decrypt_token(token, keys, domain_name, now)
     except Exception as exc:
         if isinstance(exc, EncryptionError):
             raise
         raise EncryptionError('invalid payload') from exc
 
 
-def _decrypt_token(token, keys, now):
+def _decrypt_token(token, keys, domain_name, now):
     if not keys.valid(now):
         raise EncryptionError('no keys available or all keys have expired; refresh the latest keys from UID2 service')
 
@@ -228,7 +229,8 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
 
     if key is None:
         raise EncryptionError("No Keyset Key Found")
-
+    if identity_scope is None:
+        identity_scope = keys.get_identity_scope()
     return _encrypt_token(uid2, identity_scope, master_key, key, site_id, now, token_expiry, ad_token_version)
 
 
@@ -285,7 +287,7 @@ def encrypt_data(data, identity_scope, **kwargs):
         if site_id is not None and advertising_token is not None:
             raise ValueError("only one of site_id and advertising_token can be specified")
         if advertising_token is not None:
-            decrypted_token = decrypt(advertising_token, keys, now)
+            decrypted_token = decrypt(advertising_token, keys, None, now)
             site_id = decrypted_token.site_id
             site_key_site_id = decrypted_token.site_key_site_id
 

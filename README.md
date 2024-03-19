@@ -33,15 +33,15 @@ pip install uid2-client
 ## Usage for DSPs
 
 Connect to the UID2 service, refresh the encryption keys, and then use the keys to decrypt an advertising token, to arrive at the corresponding advertising ID:
-For examples of usage for DSPs, see [sample_client.py](examples/sample_client.py) and [sample_auto_refresh.py](examples/sample_auto_refresh.py)
+For examples of usage for DSPs, see [sample_bidstream_client.py](examples/sample_bidstream_client.py) and [sample_auto_refresh.py](examples/sample_auto_refresh.py)
 ```
-from uid2_client import Uid2ClientFactory
+from uid2_client import BidStreamClient
 
-# for UID2 (for EUID use EuidClientFactory)
-client = Uid2ClientFactory.create('https://prod.uidapi.com', 'my-auth-token', 'my-secret-key')
+client = BidStreamClient('https://prod.uidapi.com', 'my-auth-token', 'my-secret-key')
 client.refresh_keys()
 advertising_token = 'AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A=='
-decrypted_token = client.decrypt(advertising_token)
+domain_name = 'example.com'
+decrypted_token = client.decrypt_ad_token_into_raw_uid(advertising_token, domain_name)
 print(decrypted_token.uid2)
 ```
 
@@ -158,7 +158,8 @@ To run all the example applications:
 ```
 make examples BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key SECRET_KEY=my-secret-key \
 	AD_TOKEN=AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A== \
-	RAW_UID=JCqmlLXpbbu/jTdpB2a1cNAVs8O72eMXPaQzC9Ic9mE=
+	RAW_UID=JCqmlLXpbbu/jTdpB2a1cNAVs8O72eMXPaQzC9Ic9mE= \
+	DOMAIN=example.com
 ```
 
 Alternatively, you can run specific examples:

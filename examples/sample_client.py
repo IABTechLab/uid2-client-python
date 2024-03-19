@@ -1,3 +1,6 @@
+# THIS FILE IS DEPRECATED!
+# To learn how to decrypt a UID2 advertising token for DSPs, see sample_bidstream_client.py
+
 import sys
 
 from uid2_client.euid_client_factory import EuidClientFactory
