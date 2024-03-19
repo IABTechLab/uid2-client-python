@@ -54,6 +54,7 @@ def key_set_to_json_for_sharing(keys):
 def key_set_to_json_for_sharing_with_header(default_keyset, caller_site_id, keys):
     return """{{
                     "body": {{
+                        "identity_scope": "UID2",
                         "caller_site_id": {0}, 
                         "master_keyset_id": 1,
                         "token_expiry_seconds": 86400,

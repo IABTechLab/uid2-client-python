@@ -7,6 +7,7 @@ Do not use this module directly, import from uid2_client instead, e.g.
 
 import datetime as dt
 from bisect import bisect_right, bisect_left
+from .identity_scope import IdentityScope
 
 
 class EncryptionKey:
@@ -100,9 +101,10 @@ class EncryptionKeysCollection:
     used for decoding UID2 advertising tokens.
     """
 
-    def __init__(self, keys, caller_site_id=None, master_keyset_id=None, default_keyset_id=None, token_expiry_seconds=None):
+    def __init__(self, keys, identity_scope=IdentityScope.UID2, caller_site_id=None, master_keyset_id=None, default_keyset_id=None, token_expiry_seconds=None):
         self._latest_expires = None
         self._keys = dict()
+        self._identity_scope = identity_scope
         self._keys_by_site = dict()
         self._keys_by_keyset = dict()
         self.set_keys(keys)
@@ -133,6 +135,9 @@ class EncryptionKeysCollection:
 
     def __getitem__(self, key_id):
         return self._keys[key_id]
+
+    def get_identity_scope(self):
+        return self._identity_scope
 
     def get_caller_site_id(self):
         return self._caller_site_id

@@ -11,6 +11,7 @@ def _make_dt(timestamp):
 class TestKeyParse(unittest.TestCase):
     def test_key_parse(self):
         s = "{ \"body\": { " + \
+            "\"identity_scope\": \"UID2\", " + \
             "\"caller_site_id\": 11, " + \
             "\"master_keyset_id\": 1, " + \
             "\"default_keyset_id\": 99999, " + \
