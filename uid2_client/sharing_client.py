@@ -1,9 +1,13 @@
 """Usage
 >>> from uid2_client import SharingClient
 """
+import base64
 
-from uid2_client import encryption
-from .refresh_keys_util import *
+from .encryption import encrypt, decrypt_token
+from .client_type import ClientType
+from .refresh_keys_util import refresh_sharing_keys
+
+
 class SharingClient:
     """Client for interacting with UID2 Sharing services
 
@@ -31,6 +35,7 @@ class SharingClient:
         self._base_url = base_url
         self._auth_key = auth_key
         self._secret_key = base64.b64decode(secret_key)
+
     def encrypt_raw_uid_into_sharing_token(self, uid2, keyset_id=None):
         """ Encrypt a UID2 into a sharing token
 
@@ -41,7 +46,7 @@ class SharingClient:
 
             Returns (str): Sharing Token
             """
-        return encryption.encrypt(uid2, None, self._keys, keyset_id)
+        return encrypt(uid2, None, self._keys, keyset_id)
 
     def decrypt_sharing_token_into_raw_uid(self, token):
         """Decrypt sharing token to extract UID2 details.
@@ -56,7 +61,7 @@ class SharingClient:
                 EncryptionError: if token version is not supported, the token has expired,
                                  or no required decryption keys present in the keys collection
         """
-        return encryption.decrypt(token, self._keys, None)
+        return decrypt_token(token, self._keys, None, ClientType.Sharing)
 
     def refresh_keys(self):
         """Get the latest encryption keys for advertising tokens.
@@ -68,4 +73,4 @@ class SharingClient:
         Returns:
             EncryptionKeysCollection containing the keys
         """
-        self._keys = refresh_keys(self._base_url, self._auth_key, self._secret_key)
+        self._keys = refresh_sharing_keys(self._base_url, self._auth_key, self._secret_key)
