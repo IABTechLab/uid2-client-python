@@ -6,6 +6,7 @@ Do not use this module directly, import from uid2_client instead, e.g.
 
 
 import datetime as dt
+import sys
 from bisect import bisect_right, bisect_left
 from .identity_scope import IdentityScope
 
@@ -101,7 +102,7 @@ class EncryptionKeysCollection:
     used for decoding UID2 advertising tokens.
     """
 
-    def __init__(self, keys, identity_scope=IdentityScope.UID2, caller_site_id=None, master_keyset_id=None, default_keyset_id=None, token_expiry_seconds=None):
+    def __init__(self, keys, identity_scope=IdentityScope.UID2, caller_site_id=None, master_keyset_id=None, default_keyset_id=None, token_expiry_seconds=None, max_sharing_lifetime_seconds=None, max_bidstream_lifetime_seconds=None, allow_clock_skew_seconds=None):
         self._latest_expires = None
         self._keys = dict()
         self._identity_scope = identity_scope
@@ -112,6 +113,15 @@ class EncryptionKeysCollection:
         self._master_keyset_id = master_keyset_id
         self._default_keyset_id = default_keyset_id
         self._token_expiry_seconds = token_expiry_seconds
+        if max_sharing_lifetime_seconds is None:
+            self._max_sharing_lifetime_seconds = sys.maxsize
+        else:
+            self._max_sharing_lifetime_seconds = max_sharing_lifetime_seconds
+        if max_bidstream_lifetime_seconds is None:
+            self._max_bidstream_lifetime_seconds = sys.maxsize
+        else:
+            self._max_bidstream_lifetime_seconds = max_bidstream_lifetime_seconds
+        self._allow_clock_skew_seconds = allow_clock_skew_seconds
 
     def set_keys(self, keys):
         for key in keys:
@@ -151,6 +161,14 @@ class EncryptionKeysCollection:
     def get_token_expiry_seconds(self):
         return self._token_expiry_seconds
 
+    def get_max_bidstream_lifetime_seconds(self):
+        return self._max_bidstream_lifetime_seconds
+
+    def get_max_sharing_lifetime_seconds(self):
+        return self._max_sharing_lifetime_seconds
+
+    def get_allow_clock_skew_seconds(self):
+        return self._allow_clock_skew_seconds
 
     def get(self, key_id, default=None):
         """Get encryption key with the specified id, else default."""

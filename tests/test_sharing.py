@@ -18,7 +18,7 @@ class TestSharing(unittest.TestCase):
 
     def test_can_encrypt_and_decrypt_for_sharing(self):
         ad_token, keys = self.setup_sharing_and_encrypt()
-        results = decrypt(ad_token, keys, None)
+        results = decrypt(ad_token, keys)
         self.assertEqual(example_uid, results.uid2)
 
     def test_can_decrypt_another_clients_encrypted_token(self):
@@ -28,7 +28,7 @@ class TestSharing(unittest.TestCase):
 
         receiving_keys = receiving_client.refresh_json(keys_json)
 
-        result = decrypt(ad_token, receiving_keys, None)
+        result = decrypt(ad_token, receiving_keys)
         self.assertEqual(example_uid, result.uid2)
 
     def test_sharing_token_is_v4(self):
@@ -60,7 +60,7 @@ class TestSharing(unittest.TestCase):
 
         ad_token = encrypt(example_uid, IdentityScope.UID2, keys)
 
-        result = decrypt(ad_token, keys, None)
+        result = decrypt(ad_token, keys)
 
         self.assertEqual(example_uid, result.uid2)
 
@@ -86,10 +86,10 @@ class TestSharing(unittest.TestCase):
         now = dt.datetime.now(tz=timezone.utc)
         ad_token = encrypt(example_uid, IdentityScope.UID2, keys)
 
-        result = decrypt(ad_token, keys, None, now=now + dt.timedelta(seconds=1))
+        result = decrypt(ad_token, keys, now=now + dt.timedelta(seconds=1))
         self.assertEqual(example_uid, result.uid2)
 
-        self.assertRaises(EncryptionError, decrypt, ad_token, keys, None, now=now + dt.timedelta(seconds=3))
+        self.assertRaises(EncryptionError, decrypt, ad_token, keys, now=now + dt.timedelta(seconds=3))
 
     def test_encrypt_key_inactive(self):
         client = Uid2Client("endpoint", "authkey", client_secret)

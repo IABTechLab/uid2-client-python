@@ -6,12 +6,14 @@ from .keys import EncryptionKey, EncryptionKeysCollection
 from .request_response_util import *
 from .identity_scope import IdentityScope
 
+
 def _make_dt(timestamp):
     return dt.datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
 
 def parse_keys_json(resp_body):
     keys = []
+    identity_scope = IdentityScope.UID2
     for key in resp_body["keys"]:
         keyset_id = None
         if "keyset_id" in key:
@@ -24,14 +26,37 @@ def parse_keys_json(resp_body):
                             base64.b64decode(key['secret']),
                             keyset_id)
         keys.append(key)
-        identity_scope = IdentityScope.UID2
         if resp_body["identity_scope"] == "EUID":
             identity_scope = IdentityScope.EUID
     return EncryptionKeysCollection(keys, identity_scope, resp_body["caller_site_id"], resp_body["master_keyset_id"],
-                                    resp_body.get("default_keyset_id", None), resp_body["token_expiry_seconds"])
+                                    resp_body.get("default_keyset_id"), resp_body.get("token_expiry_seconds"),
+                                    resp_body.get("max_bidstream_lifetime_seconds"),
+                                    resp_body.get("max_sharing_lifetime_seconds"),
+                                    resp_body.get("allow_clock_skew_seconds"))
 
 
-def refresh_keys(base_url, auth_key, secret_key):
+def fetch_keys(base_url, path, auth_key, secret_key):
+    req, nonce = make_v2_request(secret_key, dt.datetime.now(tz=timezone.utc))
+    resp = post(base_url, path, headers=auth_headers(auth_key), data=req)
+    resp_body = json.loads(parse_v2_response(secret_key, resp.read(), nonce)).get('body')
+    keys = parse_keys_json(resp_body)
+    return keys
+
+
+def refresh_sharing_keys(base_url, auth_key, secret_key):
+    """Get the latest encryption keys for sharing tokens.
+
+    This will synchronously connect to the corresponding UID2 service and fetch the latest
+    set of encryption keys which can then be used to encrypt and decrypt sharing tokens
+
+    Returns:
+        EncryptionKeysCollection containing the keys
+    """
+    keys = fetch_keys(base_url, '/v2/key/sharing', auth_key, secret_key)
+    return keys
+
+
+def refresh_bidstream_keys(base_url, auth_key, secret_key):
     """Get the latest encryption keys for advertising tokens.
 
     This will synchronously connect to the corresponding UID2 service and fetch the latest
@@ -41,8 +66,5 @@ def refresh_keys(base_url, auth_key, secret_key):
     Returns:
         EncryptionKeysCollection containing the keys
     """
-    req, nonce = make_v2_request(secret_key, dt.datetime.now(tz=timezone.utc))
-    resp = post(base_url, '/v2/key/sharing', headers=auth_headers(auth_key), data=req)
-    resp_body = json.loads(parse_v2_response(secret_key, resp.read(), nonce)).get('body')
-    keys = parse_keys_json(resp_body)
+    keys = fetch_keys(base_url, '/v2/key/bidstream', auth_key, secret_key)
     return keys

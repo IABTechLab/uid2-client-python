@@ -1,9 +1,11 @@
 """Usage
 >>> from uid2_client import BidStreamClient
 """
+import base64
 
-from uid2_client import encryption
-from .refresh_keys_util import *
+from .encryption import decrypt_token
+from .client_type import ClientType
+from .refresh_keys_util import refresh_sharing_keys
 
 
 class BidStreamClient:
@@ -47,7 +49,7 @@ class BidStreamClient:
                 EncryptionError: if token version is not supported, the token has expired,
                                  or no required decryption keys present in the keys collection
         """
-        return encryption.decrypt(token, self._keys, domain_name)
+        return decrypt_token(token, self._keys, domain_name, ClientType.Bidstream)
 
     def refresh_keys(self):
         """Get the latest encryption keys for advertising tokens.
@@ -59,4 +61,4 @@ class BidStreamClient:
         Returns:
             EncryptionKeysCollection containing the keys
         """
-        self._keys = refresh_keys(self._base_url, self._auth_key, self._secret_key)
+        self._keys = refresh_sharing_keys(self._base_url, self._auth_key, self._secret_key)

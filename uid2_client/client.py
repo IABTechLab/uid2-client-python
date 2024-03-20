@@ -10,6 +10,7 @@ from datetime import timezone
 import json
 
 from uid2_client import encryption
+from .client_type import ClientType
 from .keys import EncryptionKey, EncryptionKeysCollection
 from .identity_scope import IdentityScope
 from .refresh_keys_util import *
@@ -37,7 +38,7 @@ class Uid2Client:
         Connect to the UID2 service and obtain the latest encryption keys:
         >>> from uid2_client import *
         >>> client = Uid2Client('https://prod.uidapi.com', 'my-authorization-key', 'my-secret-key')
-        >>> keys = client.refresh_keys()
+        >>> keys = client.refresh_sharing_keys()
         >>> uid2 = decrypt('some-ad-token', keys).uid2
     """
 
@@ -80,7 +81,7 @@ class Uid2Client:
         Returns:
             EncryptionKeysCollection containing the keys
         """
-        self._keys = refresh_keys(self._base_url, self._auth_key, self._secret_key);
+        self._keys = refresh_sharing_keys(self._base_url, self._auth_key, self._secret_key)
         return self._keys
 
     def refresh_json(self, json_str):
@@ -114,7 +115,7 @@ class Uid2Client:
                 EncryptionError: if token version is not supported, the token has expired,
                                  or no required decryption keys present in the keys collection
         """
-        return encryption.decrypt(token, self._keys, None)
+        return encryption.decrypt(token, self._keys)
 
 class Uid2ClientError(Exception):
     """Raised for problems encountered while interacting with UID2 services."""
