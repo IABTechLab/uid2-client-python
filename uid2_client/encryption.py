@@ -12,7 +12,6 @@ import os
 from Crypto.Cipher import AES
 from enum import Enum
 
-
 from uid2_client.advertising_token_version import AdvertisingTokenVersion
 from uid2_client.client_type import ClientType
 from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
@@ -37,7 +36,7 @@ base64_url_special_chars = {"-", "_"}
 
 
 # DEPRECATED, DO NOT CALL DIRECTLY. For DSPs PLEASE USE BidStreamClient's decrypt_ad_token_into_raw_uid()
-# for Sharers USE SharingClient's decrypt_sharing_token_into_raw_uid
+# for Sharers USE SharingClient's decrypt_sharing_token_into_raw_uid()
 def decrypt(token, keys, now=dt.datetime.now(tz=timezone.utc)):
     """Decrypt advertising token to extract UID2 details.
 
@@ -66,7 +65,7 @@ def decrypt_token(token, keys, domain_name, client_type, now=dt.datetime.now(tz=
     """Decrypt advertising token to extract UID2 details.
 
     Args:
-        client_type: Specify whether Sharing, Bidstream or Legacy client
+        client_type (enum): Specify whether Sharing, Bidstream or Legacy client
         token (str): advertising token to decrypt
         keys (EncryptionKeysCollection): collection of keys to decrypt the token
         domain_name (str) : domain name from bid request
@@ -352,7 +351,7 @@ def encrypt_data(data, identity_scope, **kwargs):
         if site_id is not None and advertising_token is not None:
             raise ValueError("only one of site_id and advertising_token can be specified")
         if advertising_token is not None:
-            decrypted_token = decrypt(advertising_token, keys)
+            decrypted_token = decrypt(advertising_token, keys, now)
             site_id = decrypted_token.site_id
             site_key_site_id = decrypted_token.site_key_site_id
 
