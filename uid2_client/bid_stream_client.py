@@ -5,7 +5,7 @@ import base64
 
 from .encryption import decrypt_token
 from .client_type import ClientType
-from .refresh_keys_util import refresh_sharing_keys
+from .refresh_keys_util import refresh_bidstream_keys
 
 
 class BidStreamClient:
@@ -61,4 +61,4 @@ class BidStreamClient:
         Returns:
             EncryptionKeysCollection containing the keys
         """
-        self._keys = refresh_sharing_keys(self._base_url, self._auth_key, self._secret_key)
+        self._keys = refresh_bidstream_keys(self._base_url, self._auth_key, self._secret_key)

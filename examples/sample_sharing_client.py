@@ -1,6 +1,3 @@
-"""Usage
->>> from uid2_client import SharingClient
-"""
 import sys
 
 from uid2_client import SharingClient

@@ -28,7 +28,7 @@ def parse_keys_json(resp_body):
         keys.append(key)
         if resp_body["identity_scope"] == "EUID":
             identity_scope = IdentityScope.EUID
-    return EncryptionKeysCollection(keys, identity_scope, resp_body["caller_site_id"], resp_body["master_keyset_id"],
+    return EncryptionKeysCollection(keys, identity_scope, resp_body.get("caller_site_id"), resp_body.get("master_keyset_id"),
                                     resp_body.get("default_keyset_id"), resp_body.get("token_expiry_seconds"),
                                     resp_body.get("max_bidstream_lifetime_seconds"),
                                     resp_body.get("max_sharing_lifetime_seconds"),
