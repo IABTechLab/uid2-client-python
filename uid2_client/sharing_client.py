@@ -64,11 +64,10 @@ class SharingClient:
         return decrypt_token(token, self._keys, None, ClientType.Sharing)
 
     def refresh_keys(self):
-        """Get the latest encryption keys for advertising tokens.
+        """Get the latest encryption keys for sharing tokens.
 
-        This will synchronously connect to the corresponding UID2 service and fetch the latest
-        set of encryption keys which can then be used to decrypt advertising tokens using
-        the decrypt_token function.
+            This will synchronously connect to the corresponding UID2 service and fetch the latest
+            set of encryption keys which can then be used to encrypt and decrypt sharing tokens
 
         Returns:
             EncryptionKeysCollection containing the keys
