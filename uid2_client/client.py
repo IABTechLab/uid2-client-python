@@ -13,7 +13,7 @@ from uid2_client import encryption
 from .client_type import ClientType
 from .keys import EncryptionKey, EncryptionKeysCollection
 from .identity_scope import IdentityScope
-from .refresh_keys_util import *
+from .refresh_keys_util import refresh_sharing_keys, parse_keys_json
 from .request_response_util import *
 
 
