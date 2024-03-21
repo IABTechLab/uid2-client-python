@@ -2,7 +2,7 @@ import base64
 import datetime as dt
 from datetime import timezone
 
-from uid2_client import EncryptionKey, encrypt, IdentityScope, IdentityType
+from uid2_client import EncryptionKey, encrypt, IdentityScope, IdentityType, EncryptionKeysCollection
 
 master_secret = bytes(
     [139, 37, 241, 173, 18, 92, 36, 232, 165, 168, 23, 18, 38, 195, 123, 92, 160, 136, 185, 40, 91, 173, 165, 221, 168,
@@ -80,3 +80,8 @@ def format_key(key: EncryptionKey):
                                          int(key.activates.timestamp()),
                                          int(key.expires.timestamp()),
                                          base64.b64encode(key.secret).decode("utf-8"))
+
+
+def create_default_key_collection(key_set):
+    return EncryptionKeysCollection(key_set, IdentityScope.UID2, 9000, 1,
+                                    99999, 2)
