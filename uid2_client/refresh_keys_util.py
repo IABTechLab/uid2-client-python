@@ -30,12 +30,12 @@ def parse_keys_json(resp_body):
             identity_scope = IdentityScope.EUID
     return EncryptionKeysCollection(keys, identity_scope, resp_body.get("caller_site_id"), resp_body.get("master_keyset_id"),
                                     resp_body.get("default_keyset_id"), resp_body.get("token_expiry_seconds"),
-                                    resp_body.get("max_bidstream_lifetime_seconds"),
                                     resp_body.get("max_sharing_lifetime_seconds"),
+                                    resp_body.get("max_bidstream_lifetime_seconds"),
                                     resp_body.get("allow_clock_skew_seconds"))
 
 
-def fetch_keys(base_url, path, auth_key, secret_key):
+def _fetch_keys(base_url, path, auth_key, secret_key):
     req, nonce = make_v2_request(secret_key, dt.datetime.now(tz=timezone.utc))
     resp = post(base_url, path, headers=auth_headers(auth_key), data=req)
     resp_body = json.loads(parse_v2_response(secret_key, resp.read(), nonce)).get('body')
@@ -52,7 +52,7 @@ def refresh_sharing_keys(base_url, auth_key, secret_key):
     Returns:
         EncryptionKeysCollection containing the keys
     """
-    keys = fetch_keys(base_url, '/v2/key/sharing', auth_key, secret_key)
+    keys = _fetch_keys(base_url, '/v2/key/sharing', auth_key, secret_key)
     return keys
 
 
@@ -66,5 +66,5 @@ def refresh_bidstream_keys(base_url, auth_key, secret_key):
     Returns:
         EncryptionKeysCollection containing the keys
     """
-    keys = fetch_keys(base_url, '/v2/key/bidstream', auth_key, secret_key)
+    keys = _fetch_keys(base_url, '/v2/key/bidstream', auth_key, secret_key)
     return keys
