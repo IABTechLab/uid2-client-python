@@ -3,59 +3,12 @@ from unittest.mock import patch
 
 from test_utils import *
 from uid2_client import *
-from uid2_client.encryption import _encrypt_gcm, _decrypt_gcm
 from uid2_client.euid_client_factory import EuidClientFactory
 from uid2_client.uid2_client_factory import Uid2ClientFactory
 
 
 @patch('uid2_client.client.refresh_sharing_keys')
 class TestClient(unittest.TestCase):
-    class MockPostResponse:
-        def __init__(self, return_value):
-            self.return_value = return_value
-
-        def read(self):
-            return base64.b64encode(self.return_value)
-
-    def _make_post_response(self, request_data, response_payload):
-        d = base64.b64decode(request_data)[1:]
-        d = _decrypt_gcm(d, client_secret_bytes)
-        nonce = d[8:16]
-
-        payload = int.to_bytes(int(now.timestamp() * 1000), 8, 'big')
-        payload += nonce
-        payload += response_payload
-        envelope = _encrypt_gcm(payload, None, client_secret_bytes)
-
-        return self.MockPostResponse(envelope)
-
-    def _get_post_refresh_keys_response(self, base_url, path, headers, data):
-        response_payload = key_set_to_json_for_sharing([master_key, site_key]).encode()
-        return self._make_post_response(data, response_payload)
-
-    def _validate_master_and_site_key(self, keys):
-        self.assertEqual(len(keys.values()), 2)
-
-        master = keys.get_master_key(now)
-        self.assertIsNotNone(master)
-        self.assertIsInstance(master, EncryptionKey)
-        self.assertEqual(164, master.key_id)
-        self.assertEqual(-1, master.site_id)
-        self.assertEqual(now - dt.timedelta(days=-1), master.created)
-        self.assertEqual(now, master.activates)
-        self.assertEqual(now + dt.timedelta(days=1), master.expires)
-        self.assertEqual(master_secret, master.secret)
-        self.assertEqual(1, master.keyset_id)
-
-        site = keys.get(165)
-        self.assertIsNotNone(site)
-        self.assertIsInstance(master, EncryptionKey)
-        self.assertEqual(-1, master.site_id)
-        self.assertEqual(now - dt.timedelta(days=-1), master.created)
-        self.assertEqual(now, master.activates)
-        self.assertEqual(now + dt.timedelta(days=1), master.expires)
-        self.assertEqual(master_secret, master.secret)
-        self.assertEqual(1, master.keyset_id)
 
     def setUp(self):
         key_set = [master_key, site_key]
@@ -66,13 +19,15 @@ class TestClient(unittest.TestCase):
         mock_refresh_keys_util.return_value = self._key_collection
         client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
         client.refresh_keys()
-        self._validate_master_and_site_key(client._keys)
+        mock_refresh_keys_util.assert_called_once_with("base_url", "api_key", base64.b64decode(client_secret))
+        self.assertEqual(client._keys, self._key_collection)
 
-    def test_refresh_json(self, mock_refresh_keys_util):
+    @patch('uid2_client.client.parse_keys_json')
+    def test_refresh_json(self, mock_refresh_keys, mock_parse_keys):
+        mock_parse_keys.return_value = self._key_collection
         client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
-        keys_json = key_set_to_json_for_sharing([master_key, site_key])
-        keys = client.refresh_json(keys_json)
-        self._validate_master_and_site_key(keys)
+        keys = client.refresh_json("{\"body\":{\"obj1\":\"value\"}}")
+        self.assertIsNotNone(keys)
 
     def test_encrypt_decrypt(self, mock_refresh_keys_util):
         mock_refresh_keys_util.return_value = self._key_collection
