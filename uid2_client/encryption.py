@@ -162,7 +162,7 @@ def _decrypt_token_v2(token_bytes, keys, domain_name, client_type, now):
     established = dt.datetime.fromtimestamp(established_ms / 1000.0, tz=timezone.utc)
 
     if not _token_has_valid_lifetime(keys, client_type, established, expires, now):
-        return EncryptionError("invalid token lifetime")
+        raise EncryptionError("invalid token lifetime")
 
     return DecryptedToken(id_str, established, site_id, site_key.site_id)
 
@@ -208,7 +208,7 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now):
     # refreshed_ms 28:36
 
     if not _token_has_valid_lifetime(keys, client_type, established, expires, now):
-        return EncryptionError("invalid token lifetime")
+        raise EncryptionError("invalid token lifetime")
 
     id_bytes = site_payload[36:]
     id_str = base64.b64encode(id_bytes).decode('ascii')
