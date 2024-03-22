@@ -121,7 +121,10 @@ class EncryptionKeysCollection:
             self._max_bidstream_lifetime_seconds = sys.maxsize
         else:
             self._max_bidstream_lifetime_seconds = max_bidstream_lifetime_seconds
-        self._allow_clock_skew_seconds = allow_clock_skew_seconds
+        if allow_clock_skew_seconds is None:
+            self._allow_clock_skew_seconds = 60 * 30  # 30 minutes
+        else:
+            self._allow_clock_skew_seconds = allow_clock_skew_seconds
 
     def set_keys(self, keys):
         for key in keys:
