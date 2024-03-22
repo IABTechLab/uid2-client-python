@@ -10,6 +10,9 @@ from uid2_client.uid2_client_factory import Uid2ClientFactory
 @patch('uid2_client.client.refresh_sharing_keys')
 class TestClient(unittest.TestCase):
 
+    _CONST_BASE_URL = "base_url"
+    _CONST_API_KEY = "api_key"
+
     def setUp(self):
         key_set = [master_key, site_key]
         self._key_collection = EncryptionKeysCollection(key_set, IdentityScope.UID2, site_id, 1,
@@ -17,21 +20,21 @@ class TestClient(unittest.TestCase):
 
     def test_refresh(self, mock_refresh_keys_util):
         mock_refresh_keys_util.return_value = self._key_collection
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
-        mock_refresh_keys_util.assert_called_once_with("base_url", "api_key", base64.b64decode(client_secret))
+        mock_refresh_keys_util.assert_called_once_with(self._CONST_BASE_URL, self._CONST_API_KEY, base64.b64decode(client_secret))
         self.assertEqual(client._keys, self._key_collection)
 
     @patch('uid2_client.client.parse_keys_json')
     def test_refresh_json(self, mock_refresh_keys, mock_parse_keys):
         mock_parse_keys.return_value = self._key_collection
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         keys = client.refresh_json("{\"body\":{\"obj1\":\"value\"}}")
         self.assertIsNotNone(keys)
 
     def test_encrypt_decrypt(self, mock_refresh_keys_util):
         mock_refresh_keys_util.return_value = self._key_collection
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         ad_token = client.encrypt(example_uid)
@@ -43,7 +46,7 @@ class TestClient(unittest.TestCase):
 
     def test_can_decrypt_another_clients_encrypted_token(self, mock_refresh_keys_util):
         mock_refresh_keys_util.return_value = self._key_collection
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         ad_token = client.encrypt(example_uid)
@@ -56,7 +59,7 @@ class TestClient(unittest.TestCase):
 
     def test_sharing_token_is_v4(self, mock_refresh_keys_util):
         mock_refresh_keys_util.return_value = self._key_collection
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         ad_token = client.encrypt(example_uid)
@@ -65,7 +68,7 @@ class TestClient(unittest.TestCase):
 
     def test_uid2_client_produces_uid2_token(self, mock_refresh_keys_util):
         mock_refresh_keys_util.return_value = self._key_collection
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         ad_token = client.encrypt(example_uid)
@@ -73,7 +76,7 @@ class TestClient(unittest.TestCase):
 
     def test_euid_client_produces_euid_token(self, mock_refresh_keys_util):
         mock_refresh_keys_util.return_value = self._key_collection
-        client = EuidClientFactory.create("base_url", "api_key", client_secret)
+        client = EuidClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         ad_token = client.encrypt(example_uid)
@@ -81,7 +84,7 @@ class TestClient(unittest.TestCase):
 
     def test_raw_uid_produces_correct_identity_type_in_token(self, mock_refresh_keys_util):
         mock_refresh_keys_util.return_value = self._key_collection
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         ad_token = client.encrypt(example_uid)
@@ -102,7 +105,7 @@ class TestClient(unittest.TestCase):
             return create_default_key_collection([master_key, site_key, master_key2, site_key2])
 
         mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_multiple_keys()
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         ad_token = client.encrypt(example_uid)
@@ -115,7 +118,7 @@ class TestClient(unittest.TestCase):
             return create_default_key_collection([master_key])
 
         mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_no_default_keyset_key()
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         with self.assertRaises(EncryptionError) as context:
@@ -129,7 +132,7 @@ class TestClient(unittest.TestCase):
                                             "", 86400)
 
         mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_no_default_keyset_header()
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         with self.assertRaises(EncryptionError) as context:
@@ -141,7 +144,7 @@ class TestClient(unittest.TestCase):
             return create_default_key_collection([master_key, site_key])
 
         mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_token_expiry()
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         ad_token = client.encrypt(example_uid)
@@ -168,7 +171,7 @@ class TestClient(unittest.TestCase):
             return create_default_key_collection([inactive_key])
 
         mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_key_inactive()
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         with self.assertRaises(EncryptionError) as context:
@@ -182,7 +185,7 @@ class TestClient(unittest.TestCase):
             return create_default_key_collection([expired_key])
 
         mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_key_expired()
-        client = Uid2ClientFactory.create("base_url", "api_key", client_secret)
+        client = Uid2ClientFactory.create(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         client.refresh_keys()
 
         with self.assertRaises(EncryptionError) as context:
