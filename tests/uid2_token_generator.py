@@ -13,9 +13,10 @@ from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
 
 class Params:
     def __init__(self, expiry=dt.datetime.now(tz=timezone.utc) + dt.timedelta(hours=1),
-                 identity_scope=IdentityScope.UID2.value):
+                 identity_scope=IdentityScope.UID2.value, token_created_at=dt.datetime.now(tz=timezone.utc) - dt.timedelta(hours=1)):
         self.identity_scope = identity_scope
         self.token_expiry = expiry
+        self.token_created_at = token_created_at
         if not isinstance(expiry, dt.datetime):
             self.token_expiry = dt.datetime.now(tz=timezone.utc) + expiry
 
@@ -33,8 +34,8 @@ class UID2TokenGenerator:
         identity += id
         # old privacy_bits
         identity += int.to_bytes(0, 4, 'big')
-        identity += int.to_bytes(int((dt.datetime.now(tz=timezone.utc) - dt.timedelta(hours=1)).timestamp()) * 1000, 8,
-                                 'big')
+        created = params.token_created_at
+        identity += int.to_bytes(int(created.timestamp()) * 1000, 8, 'big')
         identity_iv = bytes([10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         expiry = params.token_expiry
         master_payload = int.to_bytes(int(expiry.timestamp()) * 1000, 8, 'big')
@@ -57,6 +58,24 @@ class UID2TokenGenerator:
                                                     AdvertisingTokenVersion.ADVERTISING_TOKEN_V4.value)
 
     @staticmethod
+    def generate_uid_token(id_str, master_key, site_id, site_key, identity_scope, token_version,
+                           created_at=None, expires_at=None):
+        params = default_params()
+        params.identity_scope = identity_scope
+        if created_at is not None:
+            params.token_created_at = created_at
+        if expires_at is not None:
+            params.token_expiry = expires_at
+        if token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V2:
+            return UID2TokenGenerator.generate_uid2_token_v2(id_str, master_key, site_id, site_key, params)
+        elif token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V3:
+            return UID2TokenGenerator.generate_uid2_token_v3(id_str, master_key, site_id, site_key, params)
+        elif token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4:
+            return UID2TokenGenerator.generate_uid2_token_v4(id_str, master_key, site_id, site_key, params)
+        else:
+            raise Exception('invalid version')
+
+    @staticmethod
     def generate_uid2_token_with_debug_info(id_str, master_key, site_id, site_key, params, version):
         id = base64.b64decode(id_str)
 
@@ -65,15 +84,15 @@ class UID2TokenGenerator:
         site_payload += int.to_bytes(0, 4, 'big')  # client key id
 
         site_payload += int.to_bytes(0, 4, 'big')  # privacy bits
-        site_payload += int.to_bytes(int((dt.datetime.now(tz=timezone.utc) - dt.timedelta(hours=1)).timestamp()) * 1000,
-                                     8, 'big')  # established
-        site_payload += int.to_bytes(int((dt.datetime.now(tz=timezone.utc) - dt.timedelta(hours=1)).timestamp()) * 1000,
-                                     8, 'big')  # refreshed
+        created = params.token_created_at
+        site_payload += int.to_bytes(int(created.timestamp()) * 1000, 8, 'big')  # established
+        site_payload += int.to_bytes(int(created.timestamp()) * 1000, 8, 'big')  # refreshed
         site_payload += id
 
         expiry = params.token_expiry
+
         master_payload = int.to_bytes(int(expiry.timestamp()) * 1000, 8, 'big')
-        master_payload += int.to_bytes(int((dt.datetime.now(tz=timezone.utc)).timestamp()) * 1000, 8, 'big')  # created
+        master_payload += int.to_bytes(int(created.timestamp()) * 1000, 8, 'big')  # created
 
         master_payload += int.to_bytes(0, 4, 'big')  # operator site id
         master_payload += int.to_bytes(0, 1, 'big')  # operator type
