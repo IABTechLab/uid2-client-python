@@ -99,10 +99,10 @@ def _decrypt_token(token, keys, domain_name, client_type, now):
     if token_bytes[0] == 2:
         return _decrypt_token_v2(base64.b64decode(token), keys, domain_name, client_type, now)
     elif token_bytes[1] == AdvertisingTokenVersion.ADVERTISING_TOKEN_V3.value:
-        return _decrypt_token_v3(base64.b64decode(token), keys, domain_name, client_type, now)
+        return _decrypt_token_v3(base64.b64decode(token), keys, domain_name, client_type, now, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
     elif token_bytes[1] == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4.value:
         # same as V3 but use Base64URL encoding
-        return _decrypt_token_v3(Uid2Base64UrlCoder.decode(token), keys, domain_name, client_type, now)
+        return _decrypt_token_v3(Uid2Base64UrlCoder.decode(token), keys, domain_name, client_type, now, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
     else:
         raise EncryptionError('token version not supported')
 
@@ -164,10 +164,10 @@ def _decrypt_token_v2(token_bytes, keys, domain_name, client_type, now):
     if not _token_has_valid_lifetime(keys, client_type, established, expires, now):
         raise EncryptionError("invalid token lifetime")
 
-    return DecryptedToken(id_str, established, site_id, site_key.site_id)
+    return DecryptedToken(id_str, established, site_id, site_key.site_id, keys.get_identity_scope(),  AdvertisingTokenVersion.ADVERTISING_TOKEN_V2)
 
 
-def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now):
+def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_version):
     master_key_id = int.from_bytes(token_bytes[2:6], 'big')
     master_key = keys.get(master_key_id)
     if master_key is None:
@@ -213,7 +213,7 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now):
     id_bytes = site_payload[36:]
     id_str = base64.b64encode(id_bytes).decode('ascii')
 
-    return DecryptedToken(id_str, established, site_id, site_key.site_id)
+    return DecryptedToken(id_str, established, site_id, site_key.site_id, keys.get_identity_scope(), token_version)
 
 
 def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, token_expiry, ad_token_version):
@@ -499,11 +499,13 @@ class DecryptedToken:
         site_key_site_id (int): site ID of the site key which the token is encrypted with
     """
 
-    def __init__(self, uid2, established, site_id, site_key_site_id):
+    def __init__(self, uid2, established, site_id, site_key_site_id, identity_scope, advertising_token_version):
         self.uid2 = uid2
         self.established = established
         self.site_id = site_id
         self.site_key_site_id = site_key_site_id
+        self.identity_scope = identity_scope
+        self.advertising_token_version = advertising_token_version
 
 
 class DecryptedData:
