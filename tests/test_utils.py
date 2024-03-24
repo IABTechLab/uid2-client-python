@@ -35,9 +35,7 @@ client_secret_bytes = base64.b64decode(client_secret)
 example_uid = "ywsvDNINiZOVSsfkHpLpSJzXzhr6Jx9Z/4Q0+lsEUvM="
 
 
-def get_token_identity_type(uid2, keys):
-    token = encrypt(uid2, IdentityScope.UID2, keys)
-
+def get_identity_type(token):
     first_char = token[0]
     if ('A' == first_char or 'E' == first_char):
         return IdentityType.Email
@@ -45,6 +43,11 @@ def get_token_identity_type(uid2, keys):
         return IdentityType.Phone
 
     return None
+
+
+def get_token_identity_type(uid2, keys):
+    token = encrypt(uid2, IdentityScope.UID2, keys)
+    return get_identity_type(token)
 
 
 def key_set_to_json_for_sharing(keys):
