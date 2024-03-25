@@ -3,9 +3,7 @@ import unittest
 from tests.uid2_token_generator import UID2TokenGenerator, Params
 from uid2_client import *
 from uid2_client.encryption import _encrypt_token
-from uid2_client.identity_scope import IdentityScope
-from uid2_client.identity_type import IdentityType
-from uid2_client.keys import *
+from test_utils import *
 
 _master_secret = bytes([139, 37, 241, 173, 18, 92, 36, 232, 165, 168, 23, 18, 38, 195, 123, 92, 160, 136, 185, 40, 91, 173, 165, 221, 168, 16, 169, 164, 38, 139, 8, 155])
 _site_secret =   bytes([32, 251, 7, 194, 132, 154, 250, 86, 202, 116, 104, 29, 131, 192, 139, 215, 48, 164, 11, 65, 226, 110, 167, 14, 108, 51, 254, 125, 65, 24, 23, 133])
@@ -708,17 +706,8 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
         result = decrypt(token, keys)
         self.assertEqual(raw_uid, result.uid2)
-        self.assertEqual(expected_identity_type, get_token_identity_type(token))
+        self.assertEqual(expected_identity_type, get_identity_type(token))
 
-
-def get_token_identity_type(id):
-    firstChar = id[0]
-    if 'A' == firstChar or 'E' == firstChar: #from UID2-79+Token+ and +ID+format+v3
-        return IdentityType.Email.value
-    elif 'F' == firstChar or 'B' == firstChar:
-        return IdentityType.Phone.value
-
-    raise Exception("unknown IdentityType")
 
 def format_time(t):
     s = t.strftime('%Y-%m-%d %H:%M:%S.%f')
