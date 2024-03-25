@@ -12,8 +12,8 @@ def _create_key_collection(identity_scope):
                              99999, 86400)
 
 
-def _generate_uid_token(identity_scope, version, created_at=None, expires_at=None):
-    return UID2TokenGenerator.generate_uid_token(example_id, master_key, site_id, site_key,
+def _generate_uid_token(identity_scope, version, raw_uid=example_uid, created_at=None, expires_at=None):
+    return UID2TokenGenerator.generate_uid_token(raw_uid, master_key, site_id, site_key,
                                                  identity_scope, version, created_at, expires_at)
 
 
@@ -24,11 +24,18 @@ class TestSharingClient(unittest.TestCase):
 
     def setUp(self):
         self._key_collection = _create_key_collection(IdentityScope.UID2)
-        self._test_cases = [
+        self._test_cases_all_scopes_all_versions = [
             [IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2],
             [IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3],
             [IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4],
             [IdentityScope.EUID, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2],
+            [IdentityScope.EUID, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3],
+            [IdentityScope.EUID, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4]
+        ]
+
+        self._test_cases_all_scopes_v3_v4_versions = [
+            [IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3],
+            [IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4],
             [IdentityScope.EUID, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3],
             [IdentityScope.EUID, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4]
         ]
@@ -201,9 +208,9 @@ class TestSharingClient(unittest.TestCase):
 
     def test_smoke_test(self, mock_refresh_sharing_keys):  # SmokeTest
         client = SharingClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
-        for expected_scope, expected_version in self._test_cases:
+        for expected_scope, expected_version in self._test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
-                token = _generate_uid_token(expected_scope, expected_version, None)
+                token = _generate_uid_token(expected_scope, expected_version)
                 mock_refresh_sharing_keys.return_value = _create_key_collection(expected_scope)
                 client.refresh_keys()
                 decrypted = client.decrypt_sharing_token_into_raw_uid(token)
@@ -214,9 +221,9 @@ class TestSharingClient(unittest.TestCase):
         client = SharingClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         expires_in_sec = dt.datetime.now(tz=timezone.utc) + dt.timedelta(days=31)
         max_sharing_lifetime = dt.timedelta(days=30).total_seconds()
-        for expected_scope, expected_version in self._test_cases:
+        for expected_scope, expected_version in self._test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
-                token = _generate_uid_token(expected_scope, expected_version, expires_in_sec)
+                token = _generate_uid_token(expected_scope, expected_version, expires_at=expires_in_sec)
                 mock_refresh_sharing_keys.return_value = EncryptionKeysCollection([master_key, site_key],
                                                                                   expected_scope, site_id, 1,
                                                 99999, 86400, max_sharing_lifetime)
@@ -227,9 +234,9 @@ class TestSharingClient(unittest.TestCase):
     def test_token_generated_in_the_future_to_simulate_clock_skew(self, mock_refresh_sharing_keys):  # TokenGeneratedInTheFutureToSimulateClockSkew
         client = SharingClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         created_at_future = dt.datetime.now(tz=timezone.utc) + dt.timedelta(minutes=31)  #max allowed clock skew is 30m
-        for expected_scope, expected_version in self._test_cases:
+        for expected_scope, expected_version in self._test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
-                token = _generate_uid_token(expected_scope, expected_version, created_at_future)
+                token = _generate_uid_token(expected_scope, expected_version, created_at=created_at_future)
                 mock_refresh_sharing_keys.return_value = EncryptionKeysCollection([master_key, site_key],
                                                                                   expected_scope, site_id, 1,
                                                 99999, 86400)
@@ -240,16 +247,34 @@ class TestSharingClient(unittest.TestCase):
     def test_token_generated_in_the_future_within_allowed_clock_skew(self, mock_refresh_sharing_keys):  # TokenGeneratedInTheFutureWithinAllowedClockSkew
         client = SharingClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         created_at_future = dt.datetime.now(tz=timezone.utc) + dt.timedelta(minutes=29)  #max allowed clock skew is 30m
-        for expected_scope, expected_version in self._test_cases:
+        for expected_scope, expected_version in self._test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
-                token = _generate_uid_token(expected_scope, expected_version, created_at_future)
+                token = _generate_uid_token(expected_scope, expected_version, expires_at=created_at_future)
                 mock_refresh_sharing_keys.return_value = EncryptionKeysCollection([master_key, site_key],
                                                                                   expected_scope, site_id, 1,
                                                 99999, 86400)
                 client.refresh_keys()
                 result = client.decrypt_sharing_token_into_raw_uid(token)
                 self.assertIsNotNone(result)
+                self.assertEqual(result.identity_scope, expected_scope)
+                self.assertEqual(result.advertising_token_version, expected_version)
 
+    def test_phone_uids(self, mock_refresh_sharing_keys):  # PhoneTest
+        client = SharingClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
+        phone_uid = "BEOGxroPLdcY7LrSiwjY52+X05V0ryELpJmoWAyXiwbZ"
+        for expected_scope, expected_version in self._test_cases_all_scopes_v3_v4_versions:
+            with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
+                mock_refresh_sharing_keys.return_value = EncryptionKeysCollection([master_key, site_key],
+                                                                                  expected_scope, site_id, 1,
+                                                                                  99999, 86400)
+                client.refresh_keys()
+                token = _generate_uid_token(expected_scope, expected_version, phone_uid)
+                self.assertEqual(IdentityType.Phone, get_identity_type(token))
+                result = client.decrypt_sharing_token_into_raw_uid(token)
+                self.assertIsNotNone(result)
+                self.assertEqual(result.uid2, phone_uid)
+                self.assertEqual(result.identity_scope, expected_scope)
+                self.assertEqual(result.advertising_token_version, expected_version)
 
 
 if __name__ == '__main__':

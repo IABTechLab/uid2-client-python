@@ -42,7 +42,7 @@ def get_identity_type(token):
     if ('F' == first_char or 'B' == first_char):
         return IdentityType.Phone
 
-    return None
+    raise Exception("unknown IdentityType")
 
 
 def get_token_identity_type(uid2, keys):
