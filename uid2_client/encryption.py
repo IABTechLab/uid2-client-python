@@ -92,6 +92,8 @@ def _decrypt_token(token, keys, domain_name, client_type, now):
         raise EncryptionError('keys not initialized')
     if not keys.valid(now):
         raise EncryptionError('no keys available or all keys have expired; refresh the latest keys from UID2 service')
+    if len(token) < 4:
+        raise EncryptionError('invalid payload')
 
     header_str = token[0:4]
     index = next((i for i, ch in enumerate(header_str) if ch in base64_url_special_chars), None)

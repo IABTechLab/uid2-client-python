@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from test_utils import *
-from uid2_client import BidStreamClient, EncryptionError
+from uid2_client import BidStreamClient, EncryptionError, Uid2Base64UrlCoder
 
 
 @patch('uid2_client.bid_stream_client.refresh_bidstream_keys')
@@ -89,7 +89,7 @@ class TestBidStreamClient(unittest.TestCase):
             self._client.decrypt_ad_token_into_raw_uid(token, None)
         self.assertEqual('keys not initialized', str(context.exception))
 
-    def test_master_key_expired(self, mock_refresh_keys_util):  #ExpiredKeyContainer
+    def test_master_key_expired(self, mock_refresh_bidstream_keys):  #ExpiredKeyContainer
         def get_post_refresh_keys_response_with_key_expired():
             master_key_expired = EncryptionKey(master_key_id, -1, created=now, activates=now - dt.timedelta(hours=2), expires=now - dt.timedelta(hours=1), secret=master_secret,
                                         keyset_id=99999)
@@ -97,7 +97,7 @@ class TestBidStreamClient(unittest.TestCase):
                                         keyset_id=99999)
             return create_default_key_collection([master_key_expired, site_key_expired])
 
-        mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_key_expired()
+        mock_refresh_bidstream_keys.return_value = get_post_refresh_keys_response_with_key_expired()
         self._client.refresh_keys()
 
         with self.assertRaises(EncryptionError) as context:
@@ -105,11 +105,52 @@ class TestBidStreamClient(unittest.TestCase):
 
         self.assertEqual('no keys available or all keys have expired; refresh the latest keys from UID2 service', str(context.exception))
 
+    def test_not_authorized_for_master_key(self, mock_refresh_bidstream_keys):  #NotAuthorizedForMasterKey
+        def get_post_refresh_keys_response_with_key_expired():
+            another_master_key = EncryptionKey(master_key_id + site_key_id + 1, -1, created=now, activates=now, expires=now + dt.timedelta(hours=1), secret=master_secret)
+            another_site_key = EncryptionKey(master_key_id + site_key_id + 2, site_id, created=now, activates=now, expires=now + dt.timedelta(hours=1), secret=site_secret)
+            return create_default_key_collection([another_master_key, another_site_key])
+
+        mock_refresh_bidstream_keys.return_value = get_post_refresh_keys_response_with_key_expired()
+        self._client.refresh_keys()
+        token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
+
+        with self.assertRaises(EncryptionError) as context:
+            self._client.decrypt_ad_token_into_raw_uid(token, None)
+
+        self.assertEqual('not authorized for master key', str(context.exception))
+
+    def test_invalid_payload(self, mock_refresh_bidstream_keys):  #InvalidPayload
+        mock_refresh_bidstream_keys.return_value = create_default_key_collection([master_key, site_key])
+        self._client.refresh_keys()
+        token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
+        payload = Uid2Base64UrlCoder.decode(token)
+        bad_token = base64.urlsafe_b64encode(payload[:0])
+
+        with self.assertRaises(EncryptionError) as context:
+            self._client.decrypt_ad_token_into_raw_uid(bad_token, None)
+        self.assertEqual('invalid payload', str(context.exception))
+
+    def test_token_expiry_custom_decryption_time(self, mock_refresh_bidstream_keys):
+        mock_refresh_bidstream_keys.return_value = create_default_key_collection([master_key, site_key])
+        self._client.refresh_keys()
+
+        expires_at = now - dt.timedelta(days=60)
+        created_at = expires_at - dt.timedelta(minutes=1)
+        token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4,
+                                   created_at=created_at, expires_at=expires_at)
+        with self.assertRaises(EncryptionError) as context:
+            self._client.decrypt_ad_token_into_raw_uid(token, None, expires_at + dt.timedelta(seconds=1))
+        self.assertEqual('token expired', str(context.exception))
+
+        result = self._client.decrypt_ad_token_into_raw_uid(token, None, expires_at - dt.timedelta(seconds=1))
+        self.assertIsNotNone(result)
+        self.assertEqual(result.identity_scope, IdentityScope.UID2)
+        self.assertEqual(result.advertising_token_version, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
+
     def test_refresh_keys(self, mock_refresh_bidstream_keys):
-        key_collection = create_default_key_collection([master_key])
-        mock_refresh_bidstream_keys.return_value = key_collection
-        client = BidStreamClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
-        client.refresh_keys()
+        mock_refresh_bidstream_keys.return_value = create_default_key_collection([master_key])
+        self._client.refresh_keys()
         mock_refresh_bidstream_keys.assert_called_once_with(self._CONST_BASE_URL, self._CONST_API_KEY,
                                                             client_secret_bytes)
 
