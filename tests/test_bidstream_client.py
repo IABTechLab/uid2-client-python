@@ -79,6 +79,28 @@ class TestBidStreamClient(unittest.TestCase):
                 self.assertEqual(result.identity_scope, expected_scope)
                 self.assertEqual(result.advertising_token_version, expected_version)
 
+    def test_empty_keys(self, mock_refresh_bidstream_keys):  # EmptyKeyContainer
+        token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
+        mock_refresh_bidstream_keys.return_value = None
+        self._client.refresh_keys()
+        with self.assertRaises(EncryptionError):
+            self._client.decrypt_ad_token_into_raw_uid(token, None)
+
+    def test_master_key_expired(self, mock_refresh_keys_util):  #ExpiredKeyContainer
+        def get_post_refresh_keys_response_with_key_expired():
+            master_key_expired = EncryptionKey(master_key_id, site_id, created=now, activates=YESTERDAY, expires=YESTERDAY, secret=master_secret,
+                                        keyset_id=99999)
+            expired_key = EncryptionKey(site_key_id, site_id, created=now, activates=YESTERDAY, expires=YESTERDAY, secret=site_secret,
+                                        keyset_id=99999)
+            return create_default_key_collection([master_key, expired_key])
+
+        mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_key_expired()
+        self._client.refresh_keys()
+
+        with self.assertRaises(EncryptionError) as context:
+            self._client.decrypt_ad_token_into_raw_uid(example_uid, None)
+            self.assertTrue('No Keyset Key Found' in context.exception)
+
     def test_refresh_keys(self, mock_refresh_bidstream_keys):
         key_collection = create_default_key_collection([master_key])
         mock_refresh_bidstream_keys.return_value = key_collection
