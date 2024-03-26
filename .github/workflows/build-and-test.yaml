@@ -1,0 +1,14 @@
+name: Build and Test
+
+on: [pull_request, push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: |
+          python3 -m unittest discover -s ./tests
+          python3 -m pip install --upgrade build
+          python3 -m build
