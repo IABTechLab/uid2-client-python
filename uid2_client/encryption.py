@@ -88,6 +88,8 @@ def decrypt_token(token, keys, domain_name, client_type, now=dt.datetime.now(tz=
 
 
 def _decrypt_token(token, keys, domain_name, client_type, now):
+    if keys is None:
+        raise EncryptionError('keys not initialized')
     if not keys.valid(now):
         raise EncryptionError('no keys available or all keys have expired; refresh the latest keys from UID2 service')
 
