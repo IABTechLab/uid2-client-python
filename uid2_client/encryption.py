@@ -300,6 +300,7 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
     return _encrypt_token(uid2, identity_scope, master_key, key, site_id, now, token_expiry, ad_token_version)
 
 
+# DEPRECATED, DO NOT CALL
 def encrypt_data(data, identity_scope, **kwargs):
     """Encrypt arbitrary binary data.
 
@@ -386,7 +387,7 @@ def encrypt_data(data, identity_scope, **kwargs):
 def _encrypt_data_v1(data, key, iv):
     return int.to_bytes(key.key_id, 4, 'big') + iv + _encrypt(data, iv, key)
 
-
+# DEPRECATED, DO NOT CALL
 def decrypt_data(encrypted_data, keys):
     """Decrypt data encrypted with encrypt_data().
 
