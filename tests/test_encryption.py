@@ -203,11 +203,8 @@ class TestEncryptionFunctions(unittest.TestCase):
 
                 with self.assertRaises(EncryptionError) as context:
                     decrypt_token(token, key_collection, "", client_type)
-                    # Assert that the exception was raised
-                    self.assertIsNotNone(context.exception)
 
-                    # Assert additional properties of the exception, if needed
-                    self.assertEqual(str(context.exception), "invalid token lifetime")
+                self.assertEqual(str(context.exception), "invalid token lifetime")
 
     def test_decrypt_token_invalid_lifetime_pass(self):
         seconds_since_established = 3600  # from UID2TokenGenerator.generate_uid2_token_v4
