@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import patch
 
-from uid2_client import BidStreamClient, ClientType, EncryptionError
 from test_utils import *
+from uid2_client import BidStreamClient, EncryptionError
 
 
 @patch('uid2_client.bid_stream_client.refresh_bidstream_keys')
@@ -50,8 +50,9 @@ class TestBidStreamClient(unittest.TestCase):
                                                                                   99999, 86400,
                                                                                   max_bidstream_lifetime_seconds=max_bidstream_lifetime)
                 self._client.refresh_keys()
-                with self.assertRaises(EncryptionError):
+                with self.assertRaises(EncryptionError) as context:
                     self._client.decrypt_ad_token_into_raw_uid(token, None)
+                self.assertEqual('invalid token lifetime', str(context.exception))
 
     def test_token_generated_in_the_future_to_simulate_clock_skew(self, mock_refresh_bidstream_keys):  # TokenGeneratedInTheFutureToSimulateClockSkew
         created_at_future = dt.datetime.now(tz=timezone.utc) + dt.timedelta(minutes=31)  #max allowed clock skew is 30m
@@ -62,8 +63,9 @@ class TestBidStreamClient(unittest.TestCase):
                                                                                   expected_scope, site_id, 1,
                                                 99999, 86400)
                 self._client.refresh_keys()
-                with self.assertRaises(EncryptionError):
+                with self.assertRaises(EncryptionError) as context:
                     self._client.decrypt_ad_token_into_raw_uid(token, None)
+                self.assertEqual('invalid token lifetime', str(context.exception))
 
     def test_token_generated_in_the_future_within_allowed_clock_skew(self, mock_refresh_bidstream_keys):  # TokenGeneratedInTheFutureWithinAllowedClockSkew
         created_at_future = dt.datetime.now(tz=timezone.utc) + dt.timedelta(minutes=29)  #max allowed clock skew is 30m
@@ -83,23 +85,25 @@ class TestBidStreamClient(unittest.TestCase):
         token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
         mock_refresh_bidstream_keys.return_value = None
         self._client.refresh_keys()
-        with self.assertRaises(EncryptionError):
+        with self.assertRaises(EncryptionError) as context:
             self._client.decrypt_ad_token_into_raw_uid(token, None)
+        self.assertEqual('keys not initialized', str(context.exception))
 
     def test_master_key_expired(self, mock_refresh_keys_util):  #ExpiredKeyContainer
         def get_post_refresh_keys_response_with_key_expired():
-            master_key_expired = EncryptionKey(master_key_id, site_id, created=now, activates=YESTERDAY, expires=YESTERDAY, secret=master_secret,
+            master_key_expired = EncryptionKey(master_key_id, -1, created=now, activates=now - dt.timedelta(hours=2), expires=now - dt.timedelta(hours=1), secret=master_secret,
                                         keyset_id=99999)
-            expired_key = EncryptionKey(site_key_id, site_id, created=now, activates=YESTERDAY, expires=YESTERDAY, secret=site_secret,
+            site_key_expired = EncryptionKey(site_key_id, site_id, created=now, activates=now - dt.timedelta(hours=2), expires=now - dt.timedelta(hours=1), secret=site_secret,
                                         keyset_id=99999)
-            return create_default_key_collection([master_key, expired_key])
+            return create_default_key_collection([master_key_expired, site_key_expired])
 
         mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_key_expired()
         self._client.refresh_keys()
 
         with self.assertRaises(EncryptionError) as context:
             self._client.decrypt_ad_token_into_raw_uid(example_uid, None)
-            self.assertTrue('No Keyset Key Found' in context.exception)
+
+        self.assertEqual('no keys available or all keys have expired; refresh the latest keys from UID2 service', str(context.exception))
 
     def test_refresh_keys(self, mock_refresh_bidstream_keys):
         key_collection = create_default_key_collection([master_key])
