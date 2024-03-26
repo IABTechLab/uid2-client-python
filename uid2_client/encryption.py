@@ -76,7 +76,7 @@ def decrypt_token(token, keys, domain_name, client_type, now=dt.datetime.now(tz=
 
     Raises:
         EncryptionError: if token version is not supported, the token has expired,
-                         or no required decryption keys present in the keys collection
+                         or required decryption keys not present in the keys collection
     """
 
     try:
