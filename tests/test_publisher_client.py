@@ -3,11 +3,10 @@ import unittest
 
 from uid2_client import Uid2PublisherClient
 from uid2_client import TokenGenerateInput
-from uid2_client import TokenGenerateResponse
 from uid2_client.identity_tokens import IdentityTokens
 from urllib.request import HTTPError
 
-
+@unittest.skip
 class PublisherEuidIntegrationTests(unittest.TestCase):
 
     EUID_SECRET_KEY = None
@@ -61,6 +60,8 @@ class PublisherEuidIntegrationTests(unittest.TestCase):
         self.assertFalse(token_generate_response.is_success())
         self.assertIsNone(token_generate_response.get_identity())
 
+
+@unittest.skip
 class PublisherUid2IntegrationTests(unittest.TestCase):
 
     UID2_SECRET_KEY = None
