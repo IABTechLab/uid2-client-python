@@ -23,6 +23,7 @@ class TestSharingClient(unittest.TestCase):
                 decrypted = self._client.decrypt_token_into_raw_uid(token)
                 self.assertEqual(decrypted.identity_scope, expected_scope)
                 self.assertEqual(decrypted.advertising_token_version, expected_version)
+                self.assertEqual((now - decrypted.established).total_seconds(), 0)
 
     def test_token_lifetime_too_long_for_sharing(self, mock_refresh_sharing_keys):  # TokenLifetimeTooLongForSharing
         expires_in_sec = dt.datetime.now(tz=timezone.utc) + dt.timedelta(days=31)

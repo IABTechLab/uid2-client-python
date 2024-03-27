@@ -23,6 +23,7 @@ class TestBidStreamClient(unittest.TestCase):
                 decrypted = self._client.decrypt_token_into_raw_uid(token, None)
                 self.assertEqual(decrypted.identity_scope, expected_scope)
                 self.assertEqual(decrypted.advertising_token_version, expected_version)
+                self.assertEqual((now - decrypted.established).total_seconds(), 0)
 
     def test_phone_uids(self, mock_refresh_bidstream_keys):  # PhoneTest
         for expected_scope, expected_version in test_cases_all_scopes_v3_v4_versions:

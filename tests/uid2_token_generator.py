@@ -13,7 +13,7 @@ from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
 
 class Params:
     def __init__(self, expiry=dt.datetime.now(tz=timezone.utc) + dt.timedelta(hours=1),
-                 identity_scope=IdentityScope.UID2.value, token_created_at=dt.datetime.now(tz=timezone.utc) - dt.timedelta(hours=1)):
+                 identity_scope=IdentityScope.UID2.value, token_created_at=dt.datetime.now(tz=timezone.utc)):
         self.identity_scope = identity_scope
         self.token_expiry = expiry
         self.token_created_at = token_created_at
