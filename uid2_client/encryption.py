@@ -232,7 +232,7 @@ def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, tok
     site_payload[12:16] = int.to_bytes(0, byteorder='big', length=4)  # Client Key ID
     # User Identity Data
     site_payload[16:20] = int.to_bytes(0, byteorder='big', length=4)  # Privacy Bits
-    site_payload[20:28] = int.to_bytes(int((now - dt.timedelta(hours=1)).timestamp()) * 1000, byteorder='big',
+    site_payload[20:28] = int.to_bytes(int(now.timestamp()) * 1000, byteorder='big',
                                        length=8)  # Established
     site_payload[28:36] = int.to_bytes(int(now.timestamp()) * 1000, byteorder='big', length=8)  # last refresh
     site_payload[36:] = bytes(base64.b64decode(uid2))

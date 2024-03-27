@@ -11,7 +11,7 @@ def _usage():
     sys.exit(1)
 
 
-if len(sys.argv) <= 6:
+if len(sys.argv) < 6:
     _usage()
 
 base_url = sys.argv[1]
