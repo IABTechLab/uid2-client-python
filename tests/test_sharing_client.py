@@ -185,9 +185,9 @@ class TestSharingClient(unittest.TestCase):
         mock_refresh_keys_util.return_value = create_default_key_collection([master_key, site_key])
         self._client.refresh_keys()
         token = self._client.encrypt_raw_uid_into_token(example_uid)
-        self._client.decrypt_token_into_raw_uid(token, now + dt.timedelta(seconds=1))
+        self._client._decrypt_token_into_raw_uid(token, now + dt.timedelta(seconds=1))
         with self.assertRaises(EncryptionError) as context:
-            self._client.decrypt_token_into_raw_uid(token, now + dt.timedelta(seconds=3))
+            self._client._decrypt_token_into_raw_uid(token, now + dt.timedelta(seconds=3))
         self.assertEqual('token expired', str(context.exception))
 
     def test_encrypt_key_inactive(self, mock_refresh_keys_util):  #EncryptKeyInactive

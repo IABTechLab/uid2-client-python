@@ -36,13 +36,15 @@ class BidstreamClient:
         self._auth_key = auth_key
         self._secret_key = base64.b64decode(secret_key)
 
-    def decrypt_token_into_raw_uid(self, token, domain_name, now=None):
+    def _decrypt_token_into_raw_uid(self, token, domain_name, now=None):
+        return decrypt_token(token, self._keys, domain_name, ClientType.Bidstream, now)
+
+    def decrypt_token_into_raw_uid(self, token, domain_name):
         """Decrypt advertising token to extract UID2 details.
 
             Args:
                 token (str): advertising token to decrypt
                 domain_name (str) : domain name from bid request
-                now (datetime): date/time to use as "now" when doing token expiration check
 
             Returns:
                 DecryptedToken: details extracted from the advertising token
@@ -51,7 +53,7 @@ class BidstreamClient:
                 EncryptionError: if token version is not supported, the token has expired,
                                  or no required decryption keys present in the keys collection
         """
-        return decrypt_token(token, self._keys, domain_name, ClientType.Bidstream, now)
+        return self._decrypt_token_into_raw_uid(token, domain_name, dt.datetime.now(tz=dt.timezone.utc))
 
     def refresh_keys(self):
         """Get the latest encryption keys for advertising tokens.

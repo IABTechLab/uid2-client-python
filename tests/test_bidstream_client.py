@@ -140,10 +140,10 @@ class TestBidStreamClient(unittest.TestCase):
         token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4,
                                    created_at=created_at, expires_at=expires_at)
         with self.assertRaises(EncryptionError) as context:
-            self._client.decrypt_token_into_raw_uid(token, None, expires_at + dt.timedelta(seconds=1))
+            self._client._decrypt_token_into_raw_uid(token, None, expires_at + dt.timedelta(seconds=1))
         self.assertEqual('token expired', str(context.exception))
 
-        result = self._client.decrypt_token_into_raw_uid(token, None, expires_at - dt.timedelta(seconds=1))
+        result = self._client._decrypt_token_into_raw_uid(token, None, expires_at - dt.timedelta(seconds=1))
         self.assertIsNotNone(result)
         self.assertEqual(result.identity_scope, IdentityScope.UID2)
         self.assertEqual(result.advertising_token_version, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
