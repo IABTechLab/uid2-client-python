@@ -1,7 +1,4 @@
-"""Internal module for holding the Uid2Client class.
-
-Do not use this module directly, import through uid2_client module instead, e.g.
-
+"""Usage
 >>> from uid2_client import Uid2PublisherClient
 """
 

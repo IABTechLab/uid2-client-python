@@ -3,9 +3,7 @@ import unittest
 from tests.uid2_token_generator import UID2TokenGenerator, Params
 from uid2_client import *
 from uid2_client.encryption import _encrypt_token
-from uid2_client.identity_scope import IdentityScope
-from uid2_client.identity_type import IdentityType
-from uid2_client.keys import *
+from test_utils import *
 
 _master_secret = bytes([139, 37, 241, 173, 18, 92, 36, 232, 165, 168, 23, 18, 38, 195, 123, 92, 160, 136, 185, 40, 91, 173, 165, 221, 168, 16, 169, 164, 38, 139, 8, 155])
 _site_secret =   bytes([32, 251, 7, 194, 132, 154, 250, 86, 202, 116, 104, 29, 131, 192, 139, 215, 48, 164, 11, 65, 226, 110, 167, 14, 108, 51, 254, 125, 65, 24, 23, 133])
@@ -166,6 +164,72 @@ class TestEncryptionFunctions(unittest.TestCase):
         with self.assertRaises(EncryptionError):
             result = decrypt(token, keys)
 
+    def _generate_v2_token(self, expires_in_seconds):
+        return UID2TokenGenerator.generate_uid2_token_v2(_example_id, _master_key, _site_id, _site_key, Params(expires_in_seconds))
+
+    def _generate_v4_token(self, expires_in_seconds):
+        return self.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key, Params(expires_in_seconds))
+
+    def test_decrypt_token_2_invalid_lifetime_exception(self):
+        test_cases = [
+            # expires 30s AFTER max
+            [self._generate_v2_token(dt.timedelta(seconds=60)), 30, 3600, ClientType.Bidstream],
+            [self._generate_v4_token(dt.timedelta(seconds=60)), 30, 3600, ClientType.Bidstream],
+            [self._generate_v2_token(dt.timedelta(seconds=60)), 3600, 30, ClientType.Sharing],
+            [self._generate_v4_token(dt.timedelta(seconds=60)), 3600, 30, ClientType.Sharing],
+            # expires 1s AFTER max
+            [self._generate_v2_token(dt.timedelta(seconds=60)), 59, 3600, ClientType.Bidstream],
+            [self._generate_v4_token(dt.timedelta(seconds=60)), 59, 3600, ClientType.Bidstream],
+            [self._generate_v2_token(dt.timedelta(seconds=60)), 3600, 59, ClientType.Sharing],
+            [self._generate_v4_token(dt.timedelta(seconds=60)), 3600, 59, ClientType.Sharing],
+            # expires 1 day AFTER max
+            [self._generate_v2_token(dt.timedelta(days=3)), dt.timedelta(days=2).seconds, dt.timedelta(days=4).seconds,
+             ClientType.Bidstream],
+            [self._generate_v4_token(dt.timedelta(days=3)), dt.timedelta(days=2).seconds,
+             dt.timedelta(days=4).seconds, ClientType.Bidstream],
+            [self._generate_v2_token(dt.timedelta(days=3)), dt.timedelta(days=4).seconds, dt.timedelta(days=2).seconds,
+             ClientType.Sharing],
+            [self._generate_v4_token(dt.timedelta(days=3)), dt.timedelta(days=4).seconds,
+             dt.timedelta(days=2).seconds, ClientType.Sharing]
+        ]
+        for token, max_bidstream_lifetime_seconds, max_sharing_lifetime_seconds, client_type in test_cases:
+            with self.subTest(token=token,
+                              max_bidstream_lifetime_seconds=max_bidstream_lifetime_seconds,
+                              max_sharing_lifetime_seconds=max_sharing_lifetime_seconds, client_type=client_type):
+                key_collection = EncryptionKeysCollection([_master_key, _site_key], IdentityScope.UID2, None, None,
+                                                          None, None,
+                                                          max_sharing_lifetime_seconds, max_bidstream_lifetime_seconds,
+                                                          None)
+
+                with self.assertRaises(EncryptionError) as context:
+                    decrypt_token(token, key_collection, "", client_type)
+
+                self.assertEqual(str(context.exception), "invalid token lifetime")
+
+    def test_decrypt_token_invalid_lifetime_pass(self):
+        seconds_since_established = 3600  # from UID2TokenGenerator.generate_uid2_token_v4
+        test_cases = [
+            # expires 30s before max
+            [self._generate_v2_token(dt.timedelta(seconds=30)), seconds_since_established + 60, 60, ClientType.Bidstream],
+            [self._generate_v4_token(dt.timedelta(seconds=30)), seconds_since_established + 60, 60, ClientType.Bidstream],
+            [self._generate_v2_token(dt.timedelta(seconds=30)), 30, seconds_since_established + 30, ClientType.Sharing],
+            [self._generate_v4_token(dt.timedelta(seconds=30)), 30, seconds_since_established + 30, ClientType.Sharing],
+            # expires exactly at max
+            [self._generate_v2_token(dt.timedelta(seconds=30)), seconds_since_established + 30, 30, ClientType.Bidstream],
+            [self._generate_v4_token(dt.timedelta(seconds=30)), seconds_since_established + 30, 30, ClientType.Bidstream],
+            [self._generate_v2_token(dt.timedelta(seconds=30)), 60, seconds_since_established + 60, ClientType.Sharing],
+            [self._generate_v4_token(dt.timedelta(seconds=30)), 60, seconds_since_established + 60, ClientType.Sharing]
+        ]
+        for token, max_bidstream_lifetime_seconds, max_sharing_lifetime_seconds, client_type in test_cases:
+            with self.subTest(token=token,
+                              max_bidstream_lifetime_seconds=max_bidstream_lifetime_seconds,
+                              max_sharing_lifetime_seconds=max_sharing_lifetime_seconds, client_type=client_type):
+
+                key_collection = EncryptionKeysCollection([_master_key, _site_key], IdentityScope.UID2, None, None,
+                                                          None, None,
+                                                          max_sharing_lifetime_seconds, max_bidstream_lifetime_seconds,
+                                                          None)
+                decrypt_token(token, key_collection, "", client_type)
 
     def test_decrypt_token_v4_custom_now(self):
         expiry = dt.datetime(2021, 3, 22, 9, 1, 2, tzinfo=timezone.utc)
@@ -639,17 +703,8 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
         result = decrypt(token, keys)
         self.assertEqual(raw_uid, result.uid2)
-        self.assertEqual(expected_identity_type, get_token_identity_type(token))
+        self.assertEqual(expected_identity_type, get_identity_type(token))
 
-
-def get_token_identity_type(id):
-    firstChar = id[0]
-    if 'A' == firstChar or 'E' == firstChar: #from UID2-79+Token+ and +ID+format+v3
-        return IdentityType.Email.value
-    elif 'F' == firstChar or 'B' == firstChar:
-        return IdentityType.Phone.value
-
-    raise Exception("unknown IdentityType")
 
 def format_time(t):
     s = t.strftime('%Y-%m-%d %H:%M:%S.%f')
