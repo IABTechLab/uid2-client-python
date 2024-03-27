@@ -1,5 +1,5 @@
 """Usage
->>> from uid2_client import BidStreamClient
+>>> from uid2_client import BidstreamClient
 """
 import base64
 import datetime as dt
@@ -9,11 +9,11 @@ from .encryption import decrypt_token
 from .refresh_keys_util import refresh_bidstream_keys
 
 
-class BidStreamClient:
+class BidstreamClient:
     """Client for interacting with UID2 BidStream services
 
-        You will need to have the base URL of the endpoint and a client key pair (auth/secret)
-        to consume web services.
+        You will need to have the base URL of the endpoint and a client API key
+        and secret to consume web services.
 
         Methods:
             refresh_keys: Refresh encryption keys from UID2 servers
@@ -36,7 +36,7 @@ class BidStreamClient:
         self._auth_key = auth_key
         self._secret_key = base64.b64decode(secret_key)
 
-    def decrypt_ad_token_into_raw_uid(self, token, domain_name, now=dt.datetime.now(tz=dt.timezone.utc)):
+    def decrypt_token_into_raw_uid(self, token, domain_name, now=None):
         """Decrypt advertising token to extract UID2 details.
 
             Args:

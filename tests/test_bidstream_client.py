@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from test_utils import *
-from uid2_client import BidStreamClient, EncryptionError, Uid2Base64UrlCoder
+from uid2_client import BidstreamClient, EncryptionError, Uid2Base64UrlCoder
 
 
 @patch('uid2_client.bid_stream_client.refresh_bidstream_keys')
@@ -12,7 +12,7 @@ class TestBidStreamClient(unittest.TestCase):
 
     def setUp(self):
         self._key_collection = create_key_collection(IdentityScope.UID2)
-        self._client = BidStreamClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
+        self._client = BidstreamClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
 
     def test_smoke_test(self, mock_refresh_bidstream_keys):  # SmokeTest
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
@@ -20,7 +20,7 @@ class TestBidStreamClient(unittest.TestCase):
                 token = generate_uid_token(expected_scope, expected_version)
                 mock_refresh_bidstream_keys.return_value = create_key_collection(expected_scope)
                 self._client.refresh_keys()
-                decrypted = self._client.decrypt_ad_token_into_raw_uid(token, None)
+                decrypted = self._client.decrypt_token_into_raw_uid(token, None)
                 self.assertEqual(decrypted.identity_scope, expected_scope)
                 self.assertEqual(decrypted.advertising_token_version, expected_version)
 
@@ -33,7 +33,7 @@ class TestBidStreamClient(unittest.TestCase):
                 self._client.refresh_keys()
                 token = generate_uid_token(expected_scope, expected_version, phone_uid)
                 self.assertEqual(IdentityType.Phone, get_identity_type(token))
-                result = self._client.decrypt_ad_token_into_raw_uid(token, None)
+                result = self._client.decrypt_token_into_raw_uid(token, None)
                 self.assertIsNotNone(result)
                 self.assertEqual(result.uid2, phone_uid)
                 self.assertEqual(result.identity_scope, expected_scope)
@@ -51,7 +51,7 @@ class TestBidStreamClient(unittest.TestCase):
                                                                                   max_bidstream_lifetime_seconds=max_bidstream_lifetime)
                 self._client.refresh_keys()
                 with self.assertRaises(EncryptionError) as context:
-                    self._client.decrypt_ad_token_into_raw_uid(token, None)
+                    self._client.decrypt_token_into_raw_uid(token, None)
                 self.assertEqual('invalid token lifetime', str(context.exception))
 
     def test_token_generated_in_the_future_to_simulate_clock_skew(self, mock_refresh_bidstream_keys):  # TokenGeneratedInTheFutureToSimulateClockSkew
@@ -64,7 +64,7 @@ class TestBidStreamClient(unittest.TestCase):
                                                 99999, 86400)
                 self._client.refresh_keys()
                 with self.assertRaises(EncryptionError) as context:
-                    self._client.decrypt_ad_token_into_raw_uid(token, None)
+                    self._client.decrypt_token_into_raw_uid(token, None)
                 self.assertEqual('invalid token lifetime', str(context.exception))
 
     def test_token_generated_in_the_future_within_allowed_clock_skew(self, mock_refresh_bidstream_keys):  # TokenGeneratedInTheFutureWithinAllowedClockSkew
@@ -76,7 +76,7 @@ class TestBidStreamClient(unittest.TestCase):
                                                                                   expected_scope, site_id, 1,
                                                 99999, 86400)
                 self._client.refresh_keys()
-                result = self._client.decrypt_ad_token_into_raw_uid(token, None)
+                result = self._client.decrypt_token_into_raw_uid(token, None)
                 self.assertIsNotNone(result)
                 self.assertEqual(result.identity_scope, expected_scope)
                 self.assertEqual(result.advertising_token_version, expected_version)
@@ -86,7 +86,7 @@ class TestBidStreamClient(unittest.TestCase):
         mock_refresh_bidstream_keys.return_value = None
         self._client.refresh_keys()
         with self.assertRaises(EncryptionError) as context:
-            self._client.decrypt_ad_token_into_raw_uid(token, None)
+            self._client.decrypt_token_into_raw_uid(token, None)
         self.assertEqual('keys not initialized', str(context.exception))
 
     def test_master_key_expired(self, mock_refresh_bidstream_keys):  #ExpiredKeyContainer
@@ -101,7 +101,7 @@ class TestBidStreamClient(unittest.TestCase):
         self._client.refresh_keys()
 
         with self.assertRaises(EncryptionError) as context:
-            self._client.decrypt_ad_token_into_raw_uid(example_uid, None)
+            self._client.decrypt_token_into_raw_uid(example_uid, None)
 
         self.assertEqual('no keys available or all keys have expired; refresh the latest keys from UID2 service', str(context.exception))
 
@@ -116,7 +116,7 @@ class TestBidStreamClient(unittest.TestCase):
         token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
 
         with self.assertRaises(EncryptionError) as context:
-            self._client.decrypt_ad_token_into_raw_uid(token, None)
+            self._client.decrypt_token_into_raw_uid(token, None)
 
         self.assertEqual('not authorized for master key', str(context.exception))
 
@@ -128,7 +128,7 @@ class TestBidStreamClient(unittest.TestCase):
         bad_token = base64.urlsafe_b64encode(payload[:0])
 
         with self.assertRaises(EncryptionError) as context:
-            self._client.decrypt_ad_token_into_raw_uid(bad_token, None)
+            self._client.decrypt_token_into_raw_uid(bad_token, None)
         self.assertEqual('invalid payload', str(context.exception))
 
     def test_token_expiry_custom_decryption_time(self, mock_refresh_bidstream_keys):
@@ -140,10 +140,10 @@ class TestBidStreamClient(unittest.TestCase):
         token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4,
                                    created_at=created_at, expires_at=expires_at)
         with self.assertRaises(EncryptionError) as context:
-            self._client.decrypt_ad_token_into_raw_uid(token, None, expires_at + dt.timedelta(seconds=1))
+            self._client.decrypt_token_into_raw_uid(token, None, expires_at + dt.timedelta(seconds=1))
         self.assertEqual('token expired', str(context.exception))
 
-        result = self._client.decrypt_ad_token_into_raw_uid(token, None, expires_at - dt.timedelta(seconds=1))
+        result = self._client.decrypt_token_into_raw_uid(token, None, expires_at - dt.timedelta(seconds=1))
         self.assertIsNotNone(result)
         self.assertEqual(result.identity_scope, IdentityScope.UID2)
         self.assertEqual(result.advertising_token_version, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)

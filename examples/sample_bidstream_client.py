@@ -1,6 +1,6 @@
 import sys
 
-from uid2_client import BidStreamClient
+from uid2_client import BidstreamClient
 
 
 # this sample client decrypts an advertising token into a raw UID2
@@ -11,7 +11,7 @@ def _usage():
     sys.exit(1)
 
 
-if len(sys.argv) <= 4:
+if len(sys.argv) <= 6:
     _usage()
 
 base_url = sys.argv[1]
@@ -20,9 +20,9 @@ secret_key = sys.argv[3]
 domain_name = sys.argv[4]
 ad_token = sys.argv[5]
 
-client = BidStreamClient(base_url, auth_key, secret_key)
+client = BidstreamClient(base_url, auth_key, secret_key)
 client.refresh_keys()
-decrypt_result = client.decrypt_ad_token_into_raw_uid(ad_token, domain_name)
+decrypt_result = client.decrypt_token_into_raw_uid(ad_token, domain_name)
 
 print('UID2 =', decrypt_result.uid2)
 print('Established =', decrypt_result.established)

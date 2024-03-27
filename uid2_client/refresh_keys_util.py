@@ -14,10 +14,10 @@ def _make_dt(timestamp):
 def parse_keys_json(resp_body):
     keys = []
     identity_scope = IdentityScope.UID2
+    if resp_body["identity_scope"] == "EUID":
+        identity_scope = IdentityScope.EUID
     for key in resp_body["keys"]:
-        keyset_id = None
-        if "keyset_id" in key:
-            keyset_id = key["keyset_id"]
+        keyset_id = key.get("keyset_id")
         key = EncryptionKey(key['id'],
                             key.get('site_id', -1),
                             _make_dt(key['created']),
@@ -26,8 +26,6 @@ def parse_keys_json(resp_body):
                             base64.b64decode(key['secret']),
                             keyset_id)
         keys.append(key)
-        if resp_body["identity_scope"] == "EUID":
-            identity_scope = IdentityScope.EUID
     return EncryptionKeysCollection(keys, identity_scope, resp_body.get("caller_site_id"), resp_body.get("master_keyset_id"),
                                     resp_body.get("default_keyset_id"), resp_body.get("token_expiry_seconds"),
                                     resp_body.get("max_sharing_lifetime_seconds"),

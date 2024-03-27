@@ -12,8 +12,8 @@ from .refresh_keys_util import refresh_sharing_keys
 class SharingClient:
     """Client for interacting with UID2 Sharing services
 
-        You will need to have the base URL of the endpoint and a client key pair (auth/secret)
-        to consume web services.
+        You will need to have the base URL of the endpoint and a client API key
+        and secret to consume web services.
 
         Methods:
             refresh_keys: Refresh encryption keys from UID2 servers
@@ -37,7 +37,7 @@ class SharingClient:
         self._auth_key = auth_key
         self._secret_key = base64.b64decode(secret_key)
 
-    def encrypt_raw_uid_into_sharing_token(self, uid2, keyset_id=None, now=dt.datetime.now(tz=dt.timezone.utc)):
+    def encrypt_raw_uid_into_token(self, uid2, keyset_id=None, now=None):
         """ Encrypt a UID2 into a sharing token
 
             Args:
@@ -50,7 +50,7 @@ class SharingClient:
             """
         return encrypt(uid2, None, self._keys, keyset_id, now=now)
 
-    def decrypt_sharing_token_into_raw_uid(self, token, now=dt.datetime.now(tz=dt.timezone.utc)):
+    def decrypt_token_into_raw_uid(self, token, now=None):
         """Decrypt sharing token to extract UID2 details.
 
             Args:
