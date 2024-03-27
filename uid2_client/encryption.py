@@ -37,7 +37,7 @@ base64_url_special_chars = {"-", "_"}
 
 # DEPRECATED, DO NOT CALL DIRECTLY. For DSPs PLEASE USE BidStreamClient's decrypt_ad_token_into_raw_uid()
 # for Sharers USE SharingClient's decrypt_sharing_token_into_raw_uid()
-def decrypt(token, keys, now=dt.datetime.now(tz=timezone.utc)):
+def decrypt(token, keys, now=None):
     """Decrypt advertising token to extract UID2 details.
 
     Args:
@@ -61,7 +61,7 @@ def decrypt(token, keys, now=dt.datetime.now(tz=timezone.utc)):
         raise EncryptionError('invalid payload') from exc
 
 
-def decrypt_token(token, keys, domain_name, client_type, now=dt.datetime.now(tz=timezone.utc)):
+def decrypt_token(token, keys, domain_name, client_type, now=None):
     """Decrypt advertising token to extract UID2 details.
 
     Args:
@@ -88,6 +88,8 @@ def decrypt_token(token, keys, domain_name, client_type, now=dt.datetime.now(tz=
 
 
 def _decrypt_token(token, keys, domain_name, client_type, now):
+    if now is None:
+        now = dt.datetime.now(tz=dt.timezone.utc)
     if keys is None:
         raise EncryptionError('keys not initialized')
     if not keys.valid(now):
