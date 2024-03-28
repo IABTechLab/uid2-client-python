@@ -103,11 +103,11 @@ class TestEncryptionFunctions(unittest.TestCase):
         self.assertEqual(-1, runtime_advertising_token.find('/'))
 
         result = decrypt(runtime_advertising_token, EncryptionKeysCollection([_master_key, _site_key]))
-        self.assertEqual(_example_id, result.uid2)
+        self.assertEqual(_example_id, result.uid)
 
         # can also decrypt a known token generated from other SDK
         result = decrypt(crossPlatformAdvertisingToken, EncryptionKeysCollection([_master_key, _site_key]))
-        self.assertEqual(_example_id, result.uid2)
+        self.assertEqual(_example_id, result.uid)
 
 
     def test_decrypt_token_v4(self):
@@ -116,7 +116,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
         result = decrypt(token, keys)
 
-        self.assertEqual(_example_id, result.uid2)
+        self.assertEqual(_example_id, result.uid)
 
 
     def test_decrypt_token_v4_empty_keys(self):
@@ -242,7 +242,7 @@ class TestEncryptionFunctions(unittest.TestCase):
             result = decrypt(token, keys, now=expiry + dt.timedelta(seconds=1))
 
         result = decrypt(token, keys, now=expiry - dt.timedelta(seconds=1))
-        self.assertEqual(_example_id, result.uid2)
+        self.assertEqual(_example_id, result.uid)
 
 
     def test_decrypt_token_v4_invalid_payload(self):
@@ -261,7 +261,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
         result = decrypt(token, keys)
 
-        self.assertEqual(_example_id, result.uid2)
+        self.assertEqual(_example_id, result.uid)
 
 
     def test_decrypt_token_v3_empty_keys(self):
@@ -321,7 +321,7 @@ class TestEncryptionFunctions(unittest.TestCase):
             result = decrypt(token, keys, now=expiry + dt.timedelta(seconds=1))
 
         result = decrypt(token, keys, now=expiry - dt.timedelta(seconds=1))
-        self.assertEqual(_example_id, result.uid2)
+        self.assertEqual(_example_id, result.uid)
 
 
     def test_decrypt_token_v3_invalid_payload(self):
@@ -340,7 +340,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         keys = EncryptionKeysCollection([_master_key, _site_key])
         result = decrypt(token, keys)
 
-        self.assertEqual(_example_id, result.uid2)
+        self.assertEqual(_example_id, result.uid)
 
 
     def test_decrypt_token_v2_empty_keys(self):
@@ -400,7 +400,7 @@ class TestEncryptionFunctions(unittest.TestCase):
             result = decrypt(token, keys, now=expiry + dt.timedelta(seconds=1))
 
         result = decrypt(token, keys, now=expiry - dt.timedelta(seconds=1))
-        self.assertEqual(_example_id, result.uid2)
+        self.assertEqual(_example_id, result.uid)
 
     def test_smoke_token_v3(self):
         uid2 = _example_id
@@ -416,7 +416,7 @@ class TestEncryptionFunctions(unittest.TestCase):
                          ad_token_version=AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
         final = decrypt(result, keys, now=now)
 
-        self.assertEqual(uid2, final.uid2)
+        self.assertEqual(uid2, final.uid)
 
     def test_smoke_token_v4(self):
         uid2 = _example_id
@@ -429,7 +429,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         result = encrypt(uid2, identity_scope, keys, now=now)
         final = decrypt(result, keys, now=now)
 
-        self.assertEqual(uid2, final.uid2)
+        self.assertEqual(uid2, final.uid)
 
     def test_decrypt_token_v2_invalid_payload(self):
         params = Params(dt.datetime.now(tz=timezone.utc) + dt.timedelta(seconds=-1))
@@ -702,7 +702,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         token = self.generate_uid2_token_v4(raw_uid, _master_key, _site_id, _site_key, Params(), expected_identity_type)
         keys = EncryptionKeysCollection([_master_key, _site_key])
         result = decrypt(token, keys)
-        self.assertEqual(raw_uid, result.uid2)
+        self.assertEqual(raw_uid, result.uid)
         self.assertEqual(expected_identity_type, get_identity_type(token))
 
 

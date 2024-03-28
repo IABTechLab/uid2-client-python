@@ -30,7 +30,7 @@ with EncryptionKeysAutoRefresher(client, dt.timedelta(seconds=4), dt.timedelta(s
         if refresh_result.ready:
             print('Keys are ready, last refreshed (UTC):', refresh_result.last_success_time, flush=True)
             result = client.decrypt(ad_token)
-            print('UID2 =', result.uid2, flush=True)
+            print('UID =', result.uid, flush=True)
         else:
             print('Keys are not ready yet, last error:', refresh_result.last_error[1], flush=True)
         time.sleep(1)

@@ -132,7 +132,7 @@ def _token_has_valid_lifetime(keys, client_type, established, expires, now):
 def _is_domain_name_allowed_for_site(client_type, domain_name, privacy_bits):
     if not privacy_bits[1]:  # Is CSTG token
         return True
-    if client_type != ClientType.Bidstream and client_type != ClientType.LegacyWithDomainCheck:
+    if client_type != ClientType.Bidstream:
         return True
     # TODO check domain name matches site's domains
     return True
@@ -155,7 +155,7 @@ def _decrypt_token_v2(token_bytes, keys, domain_name, client_type, now):
     site_key_id = int.from_bytes(master_payload[8:12], 'big')
     site_key = keys.get(site_key_id)
     if site_key is None:
-        raise EncryptionError("not authorized for site key")
+        raise EncryptionError("not authorized for key")
 
     identity_iv = master_payload[12:28]
     identity = _decrypt(master_payload[28:], identity_iv, site_key)
@@ -502,14 +502,14 @@ class DecryptedToken:
     """Details extracted from a decrypted advertising token.
 
     Attrs:
-        uid2 (str): universal ID string
+        uid (str): universal ID string
         established (datetime): UTC date/time for when the token was first generated
         site_id (int): site ID which the token is originating from
         site_key_site_id (int): site ID of the site key which the token is encrypted with
     """
 
-    def __init__(self, uid2, established, site_id, site_key_site_id, identity_scope, advertising_token_version):
-        self.uid2 = uid2
+    def __init__(self, uid, established, site_id, site_key_site_id, identity_scope, advertising_token_version):
+        self.uid = uid
         self.established = established
         self.site_id = site_id
         self.site_key_site_id = site_key_site_id

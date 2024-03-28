@@ -38,8 +38,8 @@ class Uid2Client:
         Connect to the UID2 service and obtain the latest encryption keys:
         >>> from uid2_client import *
         >>> client = Uid2Client('https://prod.uidapi.com', 'my-authorization-key', 'my-secret-key')
-        >>> keys = client.refresh_keys()
-        >>> uid2 = decrypt('some-ad-token', keys).uid2
+        >>> keys = client.refresh()
+        >>> uid2 = decrypt('some-ad-token', keys).uid
     """
 
     def __init__(self, base_url, auth_key, secret_key):

@@ -21,10 +21,10 @@ domain_name = sys.argv[4]
 ad_token = sys.argv[5]
 
 client = BidstreamClient(base_url, auth_key, secret_key)
-client.refresh_keys()
+client.refresh()
 decrypt_result = client.decrypt_token_into_raw_uid(ad_token, domain_name)
 
-print('UID2 =', decrypt_result.uid2)
+print('UID =', decrypt_result.uid)
 print('Established =', decrypt_result.established)
 print('Site ID =', decrypt_result.site_id)
 print('Site Key Site ID =', decrypt_result.site_key_site_id)

@@ -42,7 +42,7 @@ class TestClient(unittest.TestCase):
         self.assertIsInstance(ad_token, str)
 
         result = client.decrypt(ad_token)
-        self.assertEqual(example_uid, result.uid2)
+        self.assertEqual(example_uid, result.uid)
 
     def test_can_decrypt_another_clients_encrypted_token(self, mock_refresh_keys_util):
         mock_refresh_keys_util.return_value = self._key_collection
@@ -55,7 +55,7 @@ class TestClient(unittest.TestCase):
         receiving_client.refresh_keys()
 
         result = receiving_client.decrypt(ad_token)
-        self.assertEqual(example_uid, result.uid2)
+        self.assertEqual(example_uid, result.uid)
 
     def test_sharing_token_is_v4(self, mock_refresh_keys_util):
         mock_refresh_keys_util.return_value = self._key_collection
@@ -111,7 +111,7 @@ class TestClient(unittest.TestCase):
         ad_token = client.encrypt(example_uid)
 
         result = client.decrypt(ad_token)
-        self.assertEqual(example_uid, result.uid2)
+        self.assertEqual(example_uid, result.uid)
 
     def test_cannot_encrypt_if_no_key_from_default_keyset(self, mock_refresh_keys_util):
         def get_post_refresh_keys_response_with_no_default_keyset_key():
@@ -150,7 +150,7 @@ class TestClient(unittest.TestCase):
         ad_token = client.encrypt(example_uid)
 
         result = client.decrypt(ad_token)
-        self.assertEqual(example_uid, result.uid2)
+        self.assertEqual(example_uid, result.uid)
 
         real_decrypt_v3 = encryption._decrypt_token_v3
 

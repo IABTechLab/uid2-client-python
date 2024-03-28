@@ -20,14 +20,13 @@ secret_key = sys.argv[3]
 raw_uid = sys.argv[4]
 
 client = SharingClient(base_url, auth_key, secret_key)
-client.refresh_keys()
+client.refresh()
 new_sharing_token = client.encrypt_raw_uid_into_token(raw_uid)
 
 print('New Sharing Token =', new_sharing_token)
 
 decrypt_result = client.decrypt_token_into_raw_uid(new_sharing_token)
 
-print('Decrypted UID2 =', decrypt_result.uid2)
+print('Decrypted UID =', decrypt_result.uid)
 print('Established =', decrypt_result.established)
 print('Site ID =', decrypt_result.site_id)
-print('Site Key Site ID =', decrypt_result.site_key_site_id)

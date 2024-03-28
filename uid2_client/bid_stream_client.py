@@ -55,7 +55,7 @@ class BidstreamClient:
         """
         return self._decrypt_token_into_raw_uid(token, domain_name, dt.datetime.now(tz=dt.timezone.utc))
 
-    def refresh_keys(self):
+    def refresh(self):
         """Get the latest encryption keys for advertising tokens.
 
         This will synchronously connect to the corresponding UID2 service and fetch the latest

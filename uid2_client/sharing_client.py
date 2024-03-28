@@ -69,7 +69,7 @@ class SharingClient:
         """
         return self._decrypt_token_into_raw_uid(token, dt.datetime.now(tz=dt.timezone.utc))
 
-    def refresh_keys(self):
+    def refresh(self):
         """Get the latest encryption keys for sharing tokens.
 
             This will synchronously connect to the corresponding UID2 service and fetch the latest
