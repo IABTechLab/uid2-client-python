@@ -21,11 +21,11 @@ raw_uid = sys.argv[4]
 
 client = SharingClient(base_url, auth_key, secret_key)
 client.refresh()
-new_sharing_token = client.encrypt_raw_uid_into_token(raw_uid)
+encryption_data_response = client.encrypt_raw_uid_into_token(raw_uid)
 
-print('New Sharing Token =', new_sharing_token)
+print('New Sharing Token =', encryption_data_response.encrypted_data)
 
-decrypt_result = client.decrypt_token_into_raw_uid(new_sharing_token)
+decrypt_result = client.decrypt_token_into_raw_uid(encryption_data_response.encrypted_data)
 
 print('Decrypted UID =', decrypt_result.uid)
 print('Established =', decrypt_result.established)

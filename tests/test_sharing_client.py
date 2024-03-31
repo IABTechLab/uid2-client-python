@@ -2,7 +2,8 @@ import unittest
 from unittest.mock import patch
 
 from test_utils import *
-from uid2_client import SharingClient, ClientType, EncryptionError, encryption
+from uid2_client import SharingClient, EncryptionError, DecryptionStatus
+from uid2_client.encryption_status import EncryptionStatus
 
 
 @patch('uid2_client.sharing_client.refresh_sharing_keys')
@@ -35,9 +36,9 @@ class TestSharingClient(unittest.TestCase):
                                                                                   expected_scope, site_id, 1,
                                                 99999, 86400, max_sharing_lifetime)
                 self._client.refresh()
-                with self.assertRaises(EncryptionError) as context:
-                    self._client.decrypt_token_into_raw_uid(token)
-                self.assertEqual('invalid token lifetime', str(context.exception))
+                result = self._client.decrypt_token_into_raw_uid(token)
+                self.assertFalse(result.success)
+                self.assertEqual(DecryptionStatus.INVALID_TOKEN_LIFETIME, result.status)
 
     def test_token_generated_in_the_future_to_simulate_clock_skew(self, mock_refresh_sharing_keys):  # TokenGeneratedInTheFutureToSimulateClockSkew
         created_at_future = dt.datetime.now(tz=timezone.utc) + dt.timedelta(minutes=31)  #max allowed clock skew is 30m
@@ -48,9 +49,9 @@ class TestSharingClient(unittest.TestCase):
                                                                                   expected_scope, site_id, 1,
                                                 99999, 86400)
                 self._client.refresh()
-                with self.assertRaises(EncryptionError) as context:
-                    self._client.decrypt_token_into_raw_uid(token)
-                self.assertEqual('invalid token lifetime', str(context.exception))
+                result = self._client.decrypt_token_into_raw_uid(token)
+                self.assertFalse(result.success)
+                self.assertEqual(DecryptionStatus.INVALID_TOKEN_LIFETIME, result.status)
 
     def test_token_generated_in_the_future_within_allowed_clock_skew(self, mock_refresh_sharing_keys):  # TokenGeneratedInTheFutureWithinAllowedClockSkew
         created_at_future = dt.datetime.now(tz=timezone.utc) + dt.timedelta(minutes=29)  #max allowed clock skew is 30m
@@ -87,15 +88,15 @@ class TestSharingClient(unittest.TestCase):
         mock_refresh_keys_util.return_value = self._key_collection
         self._client.refresh()
 
-        token = self._client.encrypt_raw_uid_into_token(example_uid)
-        self.assertEqual("A", token[0])
+        encryption_data_response = self._client.encrypt_raw_uid_into_token(example_uid)
+        self.assertEqual("A", encryption_data_response.encrypted_data[0])
 
     def test_sharing_client_produces_euid_token(self, mock_refresh_keys_util):  #ClientProducesTokenWithCorrectPrefix
         mock_refresh_keys_util.return_value = create_key_collection(IdentityScope.EUID)
         self._client.refresh()
 
-        token = self._client.encrypt_raw_uid_into_token(example_uid)
-        self.assertEqual("E", token[0])
+        encryption_data_response = self._client.encrypt_raw_uid_into_token(example_uid)
+        self.assertEqual("E", encryption_data_response.encrypted_data[0])
 
     def test_encrypt_decrypt(self, mock_refresh_sharing_keys):  #CanEncryptAndDecryptForSharing
         key_collection = self._key_collection
@@ -104,8 +105,8 @@ class TestSharingClient(unittest.TestCase):
         self._client.refresh()
         sharing_token = self._client.encrypt_raw_uid_into_token(example_uid, key_collection.get_default_keyset_id())
         self.assertIsNotNone(sharing_token)
-        self.assertIsInstance(sharing_token, str)
-        result = self._client.decrypt_token_into_raw_uid(sharing_token)
+        # self.assertIsInstance(sharing_token, str)
+        result = self._client.decrypt_token_into_raw_uid(sharing_token.encrypted_data)
         self.assertEqual(example_uid, result.uid)
         mock_refresh_sharing_keys.assert_called_once()
 
@@ -119,31 +120,31 @@ class TestSharingClient(unittest.TestCase):
         receiving_client = SharingClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
         receiving_client.refresh()
 
-        result = receiving_client.decrypt_token_into_raw_uid(token)
+        result = receiving_client.decrypt_token_into_raw_uid(token.encrypted_data)
         self.assertEqual(example_uid, result.uid)
 
     def test_sharing_token_is_v4(self, mock_refresh_keys_util):
         mock_refresh_keys_util.return_value = self._key_collection
         self._client.refresh()
 
-        token = self._client.encrypt_raw_uid_into_token(example_uid)
+        encryption_data_response = self._client.encrypt_raw_uid_into_token(example_uid)
+        token = encryption_data_response.encrypted_data
         contains_base_64_special_chars = "+" in token or "/" in token or "=" in token
         self.assertFalse(contains_base_64_special_chars)
 
     def test_raw_uid_produces_correct_identity_type_in_token(self, mock_refresh_keys_util):  #RawUidProducesCorrectIdentityTypeInToken
         mock_refresh_keys_util.return_value = self._key_collection
         self._client.refresh()
-
-        self.assertEqual(IdentityType.Email, get_identity_type(self._client.encrypt_raw_uid_into_token(
-            "Q4bGug8t1xjsutKLCNjnb5fTlXSvIQukmahYDJeLBtk=")))
-        self.assertEqual(IdentityType.Phone, get_identity_type(self._client.encrypt_raw_uid_into_token(
-            "BEOGxroPLdcY7LrSiwjY52+X05V0ryELpJmoWAyXiwbZ")))
-        self.assertEqual(IdentityType.Email, get_identity_type(self._client.encrypt_raw_uid_into_token(
-            "oKg0ZY9ieD/CGMEjAA0kcq+8aUbLMBG0MgCT3kWUnJs=")))
-        self.assertEqual(IdentityType.Email, get_identity_type(self._client.encrypt_raw_uid_into_token(
-            "AKCoNGWPYng/whjBIwANJHKvvGlGyzARtDIAk95FlJyb")))
-        self.assertEqual(IdentityType.Email, get_identity_type(self._client.encrypt_raw_uid_into_token(
-            "EKCoNGWPYng/whjBIwANJHKvvGlGyzARtDIAk95FlJyb")))
+        raw_uids = [[IdentityType.Email, "Q4bGug8t1xjsutKLCNjnb5fTlXSvIQukmahYDJeLBtk="],
+                    [IdentityType.Phone, "BEOGxroPLdcY7LrSiwjY52+X05V0ryELpJmoWAyXiwbZ"],
+                    [IdentityType.Email, "oKg0ZY9ieD/CGMEjAA0kcq+8aUbLMBG0MgCT3kWUnJs="],
+                    [IdentityType.Email, "AKCoNGWPYng/whjBIwANJHKvvGlGyzARtDIAk95FlJyb"],
+                    [IdentityType.Email, "EKCoNGWPYng/whjBIwANJHKvvGlGyzARtDIAk95FlJyb"]
+        ]
+        for identity_type, raw_uid  in raw_uids:
+            with self.subTest(identity_type=identity_type, raw_uid=raw_uid):
+                self.assertEqual(identity_type, get_identity_type(self._client.encrypt_raw_uid_into_token(
+                    raw_uid).encrypted_data))
 
     def test_multiple_keys_per_keyset(self, mock_refresh_keys_util):  # MultipleKeysPerKeyset
         def get_post_refresh_keys_response_with_multiple_keys():
@@ -154,7 +155,7 @@ class TestSharingClient(unittest.TestCase):
 
         sharing_token = self._client.encrypt_raw_uid_into_token(example_uid)
 
-        result = self._client.decrypt_token_into_raw_uid(sharing_token)
+        result = self._client.decrypt_token_into_raw_uid(sharing_token.encrypted_data)
         self.assertEqual(example_uid, result.uid)
 
     def test_cannot_encrypt_if_no_key_from_default_keyset(self, mock_refresh_keys_util):  #CannotEncryptIfNoKeyFromTheDefaultKeyset
@@ -185,11 +186,18 @@ class TestSharingClient(unittest.TestCase):
 
         mock_refresh_keys_util.return_value = create_default_key_collection([master_key, site_key])
         self._client.refresh()
-        token = self._client.encrypt_raw_uid_into_token(example_uid)
-        self._client._decrypt_token_into_raw_uid(token, now + dt.timedelta(seconds=1))
-        with self.assertRaises(EncryptionError) as context:
-            self._client._decrypt_token_into_raw_uid(token, now + dt.timedelta(seconds=3))
-        self.assertEqual('token expired', str(context.exception))
+
+        encryption_data_response = self._client.encrypt_raw_uid_into_token(example_uid)
+        self.assertEqual(encryption_data_response.status, EncryptionStatus.SUCCESS)
+
+        result = self._client._decrypt_token_into_raw_uid(encryption_data_response.encrypted_data, now + dt.timedelta(seconds=1))
+        self.assertTrue(result.status)
+        self.assertEqual(example_uid, result.uid)
+
+        result = self._client._decrypt_token_into_raw_uid(encryption_data_response.encrypted_data, now + dt.timedelta(seconds=3))
+        self.assertFalse(result.success)
+        self.assertEqual(DecryptionStatus.TOKEN_EXPIRED, result.status)
+
 
     def test_encrypt_key_inactive(self, mock_refresh_keys_util):  #EncryptKeyInactive
         def get_post_refresh_keys_response_with_key_inactive():

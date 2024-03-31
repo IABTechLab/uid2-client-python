@@ -14,6 +14,8 @@ from enum import Enum
 
 from uid2_client.advertising_token_version import AdvertisingTokenVersion
 from uid2_client.client_type import ClientType
+from uid2_client.decryption_status import DecryptionStatus
+from uid2_client.encryption_data_response import EncryptionDataResponse
 from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
 from uid2_client.identity_type import IdentityType
 from uid2_client.identity_scope import IdentityScope
@@ -54,7 +56,11 @@ def decrypt(token, keys, now=None):
     """
 
     try:
-        return _decrypt_token(token, keys, None, ClientType.LegacyWithoutDomainCheck, now)
+        decrypted_token = _decrypt_token(token, keys, None, ClientType.LegacyWithoutDomainCheck, now)
+        if decrypted_token.status != DecryptionStatus.SUCCESS:
+            raise EncryptionError(str(decrypted_token.status))
+        else:
+            return decrypted_token
     except Exception as exc:
         if isinstance(exc, EncryptionError):
             raise
@@ -80,7 +86,11 @@ def decrypt_token(token, keys, domain_name, client_type, now=None):
     """
 
     try:
-        return _decrypt_token(token, keys, domain_name, client_type, now)
+        decrypted_token = _decrypt_token(token, keys, domain_name, client_type, now)
+        if client_type == ClientType.LegacyWithoutDomainCheck and decrypted_token.status != DecryptionStatus.SUCCESS:
+            raise EncryptionError(str(decrypted_token.status))
+        else:
+            return decrypted_token
     except Exception as exc:
         if isinstance(exc, EncryptionError):
             raise
@@ -91,11 +101,14 @@ def _decrypt_token(token, keys, domain_name, client_type, now):
     if now is None:
         now = dt.datetime.now(tz=dt.timezone.utc)
     if keys is None:
-        raise EncryptionError('keys not initialized')
+        return DecryptedToken.make_error(DecryptionStatus.NOT_INITIALIZED)
+        # raise EncryptionError('keys not initialized')
     if not keys.valid(now):
-        raise EncryptionError('no keys available or all keys have expired; refresh the latest keys from UID2 service')
+        return DecryptedToken.make_error(DecryptionStatus.KEYS_NOT_SYNCED)
+        # raise EncryptionError('no keys available or all keys have expired; refresh the latest keys from UID2 service')
     if len(token) < 4:
-        raise EncryptionError('invalid payload')
+        return DecryptedToken.make_error(DecryptionStatus.INVALID_PAYLOAD)
+        # raise EncryptionError('invalid payload')
 
     header_str = token[0:4]
     index = next((i for i, ch in enumerate(header_str) if ch in base64_url_special_chars), None)
@@ -110,7 +123,8 @@ def _decrypt_token(token, keys, domain_name, client_type, now):
         # same as V3 but use Base64URL encoding
         return _decrypt_token_v3(Uid2Base64UrlCoder.decode(token), keys, domain_name, client_type, now, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
     else:
-        raise EncryptionError('token version not supported')
+        return DecryptedToken.make_error(DecryptionStatus.VERSION_NOT_SUPPORTED)
+        # raise EncryptionError('token version not supported')
 
 
 def _token_has_valid_lifetime(keys, client_type, established, expires, now):
@@ -130,10 +144,6 @@ def _token_has_valid_lifetime(keys, client_type, established, expires, now):
 
 
 def _is_domain_name_allowed_for_site(client_type, domain_name, privacy_bits):
-    if not privacy_bits[1]:  # Is CSTG token
-        return True
-    if client_type != ClientType.Bidstream:
-        return True
     # TODO check domain name matches site's domains
     return True
 
@@ -142,7 +152,7 @@ def _decrypt_token_v2(token_bytes, keys, domain_name, client_type, now):
     master_key_id = int.from_bytes(token_bytes[1:5], 'big')
     master_key = keys.get(master_key_id)
     if master_key is None:
-        raise EncryptionError("not authorized for master key")
+        return DecryptedToken.make_error(DecryptionStatus.NOT_AUTHORIZED_FOR_MASTER_KEY)
 
     master_iv = token_bytes[5:21]
     master_payload = _decrypt(token_bytes[21:], master_iv, master_key)
@@ -150,12 +160,12 @@ def _decrypt_token_v2(token_bytes, keys, domain_name, client_type, now):
     expires_ms = int.from_bytes(master_payload[:8], 'big')
     expires = dt.datetime.fromtimestamp(expires_ms / 1000.0, tz=timezone.utc)
     if expires < now:
-        raise EncryptionError("token expired")
+        return DecryptedToken.make_error(DecryptionStatus.TOKEN_EXPIRED)
 
     site_key_id = int.from_bytes(master_payload[8:12], 'big')
     site_key = keys.get(site_key_id)
     if site_key is None:
-        raise EncryptionError("not authorized for key")
+        return DecryptedToken.make_error(DecryptionStatus.NOT_AUTHORIZED_FOR_KEY)
 
     identity_iv = master_payload[12:28]
     identity = _decrypt(master_payload[28:], identity_iv, site_key)
@@ -170,23 +180,24 @@ def _decrypt_token_v2(token_bytes, keys, domain_name, client_type, now):
     established = dt.datetime.fromtimestamp(established_ms / 1000.0, tz=timezone.utc)
 
     if not _token_has_valid_lifetime(keys, client_type, established, expires, now):
-        raise EncryptionError("invalid token lifetime")
+        return DecryptedToken.make_error(DecryptionStatus.INVALID_TOKEN_LIFETIME)
 
-    return DecryptedToken(id_str, established, site_id, site_key.site_id, keys.get_identity_scope(),  AdvertisingTokenVersion.ADVERTISING_TOKEN_V2)
+    return DecryptedToken(DecryptionStatus.SUCCESS, id_str, established, site_id, site_key.site_id,
+                          keys.get_identity_scope(), AdvertisingTokenVersion.ADVERTISING_TOKEN_V2)
 
 
 def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_version):
     master_key_id = int.from_bytes(token_bytes[2:6], 'big')
     master_key = keys.get(master_key_id)
     if master_key is None:
-        raise EncryptionError("not authorized for master key")
+        return DecryptedToken.make_error(DecryptionStatus.NOT_AUTHORIZED_FOR_MASTER_KEY)
 
     master_payload = _decrypt_gcm(token_bytes[6:], master_key.secret)
 
     expires_ms = int.from_bytes(master_payload[:8], 'big')
     expires = dt.datetime.fromtimestamp(expires_ms / 1000.0, tz=timezone.utc)
     if expires < now:
-        raise EncryptionError("token expired")
+        return DecryptedToken.make_error(DecryptionStatus.TOKEN_EXPIRED)
 
     # created 8:16
     # operator site id 16:20
@@ -197,7 +208,7 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_ve
     site_key_id = int.from_bytes(master_payload[29:33], 'big')
     site_key = keys.get(site_key_id)
     if site_key is None:
-        raise EncryptionError("not authorized for site key")
+        return DecryptedToken.make_error(DecryptionStatus.NOT_AUTHORIZED_FOR_KEY)
 
     site_payload = _decrypt_gcm(master_payload[33:], site_key.secret)
 
@@ -209,19 +220,20 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_ve
     privacy_bits.frombytes(site_payload[16:20])
 
     if not _is_domain_name_allowed_for_site(client_type, domain_name, privacy_bits):
-        return EncryptionError("domain name check failed")
+        return DecryptedToken.make_error(DecryptionStatus.DOMAIN_NAME_CHECK_FAILED)
 
     established_ms = int.from_bytes(site_payload[20:28], 'big')
     established = dt.datetime.fromtimestamp(established_ms / 1000.0, tz=timezone.utc)
     # refreshed_ms 28:36
 
     if not _token_has_valid_lifetime(keys, client_type, established, expires, now):
-        raise EncryptionError("invalid token lifetime")
+        return DecryptedToken.make_error(DecryptionStatus.INVALID_TOKEN_LIFETIME)
 
     id_bytes = site_payload[36:]
     id_str = base64.b64encode(id_bytes).decode('ascii')
 
-    return DecryptedToken(id_str, established, site_id, site_key.site_id, keys.get_identity_scope(), token_version)
+    return DecryptedToken(DecryptionStatus.SUCCESS, id_str, established, site_id, site_key.site_id,
+                          keys.get_identity_scope(), token_version)
 
 
 def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, token_expiry, ad_token_version):
@@ -261,9 +273,9 @@ def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, tok
     root_writer[6:] = bytes(encrypted_master_payload)
 
     if ad_token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4:
-        return Uid2Base64UrlCoder.encode(root_writer)
+        return EncryptionDataResponse.make_success(Uid2Base64UrlCoder.encode(root_writer))
 
-    return base64.b64encode(root_writer)
+    return EncryptionDataResponse.make_success(base64.b64encode(root_writer))
 
 
 # DEPRECATED, DO NOT CALL DIRECTLY. PLEASE USE Uid2Client's client.encrypt()
@@ -508,13 +520,22 @@ class DecryptedToken:
         site_key_site_id (int): site ID of the site key which the token is encrypted with
     """
 
-    def __init__(self, uid, established, site_id, site_key_site_id, identity_scope, advertising_token_version):
+    def __init__(self, status, uid, established, site_id, site_key_site_id, identity_scope, advertising_token_version):
+        self.status = status
         self.uid = uid
         self.established = established
         self.site_id = site_id
         self.site_key_site_id = site_key_site_id
         self.identity_scope = identity_scope
         self.advertising_token_version = advertising_token_version
+
+    @property
+    def success(self):
+        return self.status == DecryptionStatus.SUCCESS
+
+    @staticmethod
+    def make_error(decryption_status):
+        return DecryptedToken(decryption_status, None, None, None, None, None, None)
 
 
 class DecryptedData:

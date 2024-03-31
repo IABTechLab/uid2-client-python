@@ -90,15 +90,15 @@ class TestClient(unittest.TestCase):
         ad_token = client.encrypt(example_uid)
 
         self.assertEqual(IdentityType.Email,
-                         get_token_identity_type("Q4bGug8t1xjsutKLCNjnb5fTlXSvIQukmahYDJeLBtk=", client._keys))
+                         get_identity_type(client.encrypt("Q4bGug8t1xjsutKLCNjnb5fTlXSvIQukmahYDJeLBtk=")))
         self.assertEqual(IdentityType.Phone,
-                         get_token_identity_type("BEOGxroPLdcY7LrSiwjY52+X05V0ryELpJmoWAyXiwbZ", client._keys))
+                         get_identity_type(client.encrypt("BEOGxroPLdcY7LrSiwjY52+X05V0ryELpJmoWAyXiwbZ")))
         self.assertEqual(IdentityType.Email,
-                         get_token_identity_type("oKg0ZY9ieD/CGMEjAA0kcq+8aUbLMBG0MgCT3kWUnJs=", client._keys))
+                         get_identity_type(client.encrypt("oKg0ZY9ieD/CGMEjAA0kcq+8aUbLMBG0MgCT3kWUnJs=")))
         self.assertEqual(IdentityType.Email,
-                         get_token_identity_type("AKCoNGWPYng/whjBIwANJHKvvGlGyzARtDIAk95FlJyb", client._keys))
+                         get_identity_type(client.encrypt("AKCoNGWPYng/whjBIwANJHKvvGlGyzARtDIAk95FlJyb")))
         self.assertEqual(IdentityType.Email,
-                         get_token_identity_type("EKCoNGWPYng/whjBIwANJHKvvGlGyzARtDIAk95FlJyb", client._keys))
+                         get_identity_type(client.encrypt("EKCoNGWPYng/whjBIwANJHKvvGlGyzARtDIAk95FlJyb")))
 
     def test_multiple_keys_per_keyset(self, mock_refresh_keys_util):
         def get_post_refresh_keys_response_with_multiple_keys():
@@ -123,7 +123,7 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaises(EncryptionError) as context:
             client.encrypt(example_uid)
-            self.assertTrue('No Site ID in keys' in context.exception)
+        self.assertEqual('No Keyset Key Found', str(context.exception))
 
     def test_cannot_encrypt_if_theres_no_default_keyset_header(self, mock_refresh_keys_util):
         def get_post_refresh_keys_response_with_no_default_keyset_header():
@@ -137,7 +137,7 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaises(EncryptionError) as context:
             client.encrypt(example_uid)
-            self.assertTrue('No Keyset Key Found' in context.exception)
+        self.assertEqual('No Keyset Key Found', str(context.exception))
 
     def test_expiry_in_token_matches_expiry_in_response(self, mock_refresh_keys_util):
         def get_post_refresh_keys_response_with_token_expiry():
@@ -162,7 +162,7 @@ class TestClient(unittest.TestCase):
 
             with self.assertRaises(EncryptionError) as context:
                 client.decrypt(ad_token)
-                self.assertTrue('token expired' in context.exception)
+            self.assertEqual('invalid payload', str(context.exception))
 
     def test_encrypt_key_inactive(self, mock_refresh_keys_util):
         def get_post_refresh_keys_response_with_key_inactive():
@@ -176,7 +176,7 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaises(EncryptionError) as context:
             client.encrypt(example_uid)
-            self.assertTrue('No Keyset Key Found' in context.exception)
+        self.assertEqual('No Keyset Key Found', str(context.exception))
 
     def test_encrypt_key_expired(self, mock_refresh_keys_util):
         def get_post_refresh_keys_response_with_key_expired():
@@ -190,4 +190,4 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaises(EncryptionError) as context:
             client.encrypt(example_uid)
-            self.assertTrue('No Keyset Key Found' in context.exception)
+        self.assertEqual('No Keyset Key Found', str(context.exception))

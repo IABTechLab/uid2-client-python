@@ -98,7 +98,7 @@ class Uid2Client:
 
             Returns (str): Sharing Token
             """
-        return encryption.encrypt(uid2, self._identity_scope, self._keys, keyset_id)
+        return encryption.encrypt(uid2, self._identity_scope, self._keys, keyset_id).encrypted_data
 
     def decrypt(self, token):
         """Decrypt advertising token to extract UID2 details.

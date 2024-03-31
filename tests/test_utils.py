@@ -69,8 +69,8 @@ def get_identity_type(token):
 
 
 def get_token_identity_type(uid2, keys):
-    token = encrypt(uid2, IdentityScope.UID2, keys)
-    return get_identity_type(token)
+    encrypted_data_response = encrypt(uid2, IdentityScope.UID2, keys)
+    return get_identity_type(encrypted_data_response.encrypted_data)
 
 
 def key_set_to_json_for_sharing(keys):

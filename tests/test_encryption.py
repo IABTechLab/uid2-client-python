@@ -1,9 +1,9 @@
 import unittest
 
-from tests.uid2_token_generator import UID2TokenGenerator, Params
+from test_utils import *
+from tests.uid2_token_generator import Params
 from uid2_client import *
 from uid2_client.encryption import _encrypt_token
-from test_utils import *
 
 _master_secret = bytes([139, 37, 241, 173, 18, 92, 36, 232, 165, 168, 23, 18, 38, 195, 123, 92, 160, 136, 185, 40, 91, 173, 165, 221, 168, 16, 169, 164, 38, 139, 8, 155])
 _site_secret =   bytes([32, 251, 7, 194, 132, 154, 250, 86, 202, 116, 104, 29, 131, 192, 139, 215, 48, 164, 11, 65, 226, 110, 167, 14, 108, 51, 254, 125, 65, 24, 23, 133])
@@ -19,6 +19,7 @@ _master_key = EncryptionKey(_master_key_id, -1, _now - dt.timedelta(days=-1), _n
 _site_key = EncryptionKey(_site_key_id, _site_id, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _site_secret)
 _keyset_key = EncryptionKey(_site_key_id, _site_id, _now - dt.timedelta(days=-1), _now, _now + dt.timedelta(days=1), _site_secret, keyset_id=20)
 _test_site_key = EncryptionKey(_test_site_key_id, _site_id, dt.datetime(2020, 1, 1, tzinfo=timezone.utc), dt.datetime(2020, 1, 1, tzinfo=timezone.utc), _now + dt.timedelta(days=1), encryption_block_size * b'9')
+
 
 class TestEncryptionFunctions(unittest.TestCase):
 
@@ -200,11 +201,8 @@ class TestEncryptionFunctions(unittest.TestCase):
                                                           None, None,
                                                           max_sharing_lifetime_seconds, max_bidstream_lifetime_seconds,
                                                           None)
-
-                with self.assertRaises(EncryptionError) as context:
-                    decrypt_token(token, key_collection, "", client_type)
-
-                self.assertEqual(str(context.exception), "invalid token lifetime")
+                decrypted_token = decrypt_token(token, key_collection, "", client_type)
+                self.assertEqual(decrypted_token.status, DecryptionStatus.INVALID_TOKEN_LIFETIME)
 
     def test_decrypt_token_invalid_lifetime_pass(self):
         seconds_since_established = 3600  # from UID2TokenGenerator.generate_uid2_token_v4
@@ -414,7 +412,7 @@ class TestEncryptionFunctions(unittest.TestCase):
                                 token_expiry=now + dt.timedelta(days=30) if keys.get_token_expiry_seconds() is None \
                                     else now + dt.timedelta(seconds=int(keys.get_token_expiry_seconds())),
                          ad_token_version=AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
-        final = decrypt(result, keys, now=now)
+        final = decrypt(result.encrypted_data, keys, now=now)
 
         self.assertEqual(uid2, final.uid)
 
@@ -427,7 +425,7 @@ class TestEncryptionFunctions(unittest.TestCase):
                                         master_keyset_id=9999, caller_site_id=20)
 
         result = encrypt(uid2, identity_scope, keys, now=now)
-        final = decrypt(result, keys, now=now)
+        final = decrypt(result.encrypted_data, keys, now=now)
 
         self.assertEqual(uid2, final.uid)
 
