@@ -196,6 +196,7 @@ class TestSharingClient(unittest.TestCase):
         result = self._client._decrypt_token_into_raw_uid(encryption_data_response.encrypted_data, now + dt.timedelta(seconds=3))
         self.assertFalse(result.success)
         self.assertEqual(DecryptionStatus.TOKEN_EXPIRED, result.status)
+        self.assertEqual(now + dt.timedelta(seconds=2), result.expiry)
 
     def test_encrypt_key_inactive(self, mock_refresh_keys_util):  #EncryptKeyInactive
         def get_post_refresh_keys_response_with_key_inactive():
