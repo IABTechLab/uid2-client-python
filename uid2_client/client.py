@@ -6,13 +6,13 @@ Do not use this module directly, import through uid2_client module instead, e.g.
 """
 
 import datetime as dt
-from datetime import timezone
 import json
+from datetime import timezone
 
-from uid2_client import encryption
-from .client_type import ClientType
-from .keys import EncryptionKey, EncryptionKeysCollection
+#from uid2_client import encryption, EncryptionError, EncryptionStatus
+from .encryption import *
 from .identity_scope import IdentityScope
+from .keys import EncryptionKeysCollection
 from .refresh_keys_util import refresh_sharing_keys, parse_keys_json
 from .request_response_util import *
 
@@ -98,7 +98,11 @@ class Uid2Client:
 
             Returns (str): Sharing Token
             """
-        return encryption.encrypt(uid2, self._identity_scope, self._keys, keyset_id).encrypted_data
+        result = encrypt(uid2, self._identity_scope, self._keys, keyset_id)
+        if result.status == EncryptionStatus.SUCCESS:
+            return result.encrypted_data
+        else:
+            raise EncryptionError(result.status.value)
 
     def decrypt(self, token):
         """Decrypt advertising token to extract UID2 details.
@@ -115,7 +119,7 @@ class Uid2Client:
                 EncryptionError: if token version is not supported, the token has expired,
                                  or no required decryption keys present in the keys collection
         """
-        return encryption.decrypt(token, self._keys)
+        return decrypt(token, self._keys)
 
 class Uid2ClientError(Exception):
     """Raised for problems encountered while interacting with UID2 services."""

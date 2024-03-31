@@ -16,6 +16,7 @@ from uid2_client.advertising_token_version import AdvertisingTokenVersion
 from uid2_client.client_type import ClientType
 from uid2_client.decryption_status import DecryptionStatus
 from uid2_client.encryption_data_response import EncryptionDataResponse
+from uid2_client.encryption_status import EncryptionStatus
 from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
 from uid2_client.identity_type import IdentityType
 from uid2_client.identity_scope import IdentityScope
@@ -102,13 +103,10 @@ def _decrypt_token(token, keys, domain_name, client_type, now):
         now = dt.datetime.now(tz=dt.timezone.utc)
     if keys is None:
         return DecryptedToken.make_error(DecryptionStatus.NOT_INITIALIZED)
-        # raise EncryptionError('keys not initialized')
     if not keys.valid(now):
         return DecryptedToken.make_error(DecryptionStatus.KEYS_NOT_SYNCED)
-        # raise EncryptionError('no keys available or all keys have expired; refresh the latest keys from UID2 service')
     if len(token) < 4:
         return DecryptedToken.make_error(DecryptionStatus.INVALID_PAYLOAD)
-        # raise EncryptionError('invalid payload')
 
     header_str = token[0:4]
     index = next((i for i, ch in enumerate(header_str) if ch in base64_url_special_chars), None)
@@ -124,7 +122,6 @@ def _decrypt_token(token, keys, domain_name, client_type, now):
         return _decrypt_token_v3(Uid2Base64UrlCoder.decode(token), keys, domain_name, client_type, now, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
     else:
         return DecryptedToken.make_error(DecryptionStatus.VERSION_NOT_SUPPORTED)
-        # raise EncryptionError('token version not supported')
 
 
 def _token_has_valid_lifetime(keys, client_type, established, expires, now):
@@ -312,7 +309,7 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
         return
 
     if key is None:
-        raise EncryptionError("No Keyset Key Found")
+        return EncryptionDataResponse.make_error(EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)
     if identity_scope is None:
         identity_scope = keys.get_identity_scope()
     return _encrypt_token(uid2, identity_scope, master_key, key, site_id, now, token_expiry, ad_token_version)
@@ -404,6 +401,7 @@ def encrypt_data(data, identity_scope, **kwargs):
 
 def _encrypt_data_v1(data, key, iv):
     return int.to_bytes(key.key_id, 4, 'big') + iv + _encrypt(data, iv, key)
+
 
 # DEPRECATED, DO NOT CALL
 def decrypt_data(encrypted_data, keys):

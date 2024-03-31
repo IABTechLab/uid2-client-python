@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from uid2_client import *
 from test_utils import *
@@ -65,19 +66,21 @@ class TestSharing(unittest.TestCase):
 
         self.assertEqual(example_uid, result.uid)
 
-    def test_cannot_encrypt_if_no_key_from_default_keyset(self):
+    @patch('uid2_client.client.refresh_sharing_keys')
+    def test_cannot_encrypt_if_no_key_from_default_keyset(self, mock_refresh_sharing_keys):
         client = Uid2Client("endpoint", "authkey", client_secret)
-        json_body = key_set_to_json_for_sharing([master_key])
-        keys = client.refresh_json(json_body)
+        mock_refresh_sharing_keys.return_value = create_default_key_collection([master_key])
+        client.refresh_keys()
+        self.assertRaises(EncryptionError, client.encrypt, example_uid)
 
-        self.assertRaises(EncryptionError, encrypt, example_uid, IdentityScope.UID2, keys)
-
-    def test_cannot_encrypt_if_theres_no_default_keyset_header(self):
+    @patch('uid2_client.client.refresh_sharing_keys')
+    def test_cannot_encrypt_if_theres_no_default_keyset_header(self, mock_refresh_sharing_keys):
         client = Uid2Client("endpoint", "authkey", client_secret)
-        json_body = key_set_to_json_for_sharing_with_header("", site_id, [master_key, site_key])
-        keys = client.refresh_json(json_body)
-        self.assertRaises(EncryptionError, encrypt, example_uid, IdentityScope.UID2, keys)
-
+        key_set = [master_key, site_key]
+        mock_refresh_sharing_keys.return_value = EncryptionKeysCollection(key_set, IdentityScope.UID2, site_id, 1,
+                                        "", 86400)
+        client.refresh_keys()
+        self.assertRaises(EncryptionError, client.encrypt, example_uid)
 
     def test_expiry_in_token_matches_expiry_in_reponse(self):
         client = Uid2Client("endpoint", "authkey", client_secret)
@@ -92,14 +95,18 @@ class TestSharing(unittest.TestCase):
 
         self.assertRaises(EncryptionError, decrypt, encrypted_data_response.encrypted_data, keys, now=now + dt.timedelta(seconds=3))
 
-    def test_encrypt_key_inactive(self):
+    @patch('uid2_client.client.refresh_sharing_keys')
+    def test_encrypt_key_inactive(self, mock_refresh_sharing_keys):
         client = Uid2Client("endpoint", "authkey", client_secret)
         key = EncryptionKey(245, site_id, now, now + dt.timedelta(days=1), now +dt.timedelta(days=2), site_secret, keyset_id=99999)
-        keys = client.refresh_json(key_set_to_json_for_sharing([master_key, key]))
-        self.assertRaises(EncryptionError, encrypt, example_uid, IdentityScope.UID2, keys)
+        mock_refresh_sharing_keys.return_value = create_default_key_collection([master_key, key])
+        client.refresh_keys()
+        self.assertRaises(EncryptionError, client.encrypt, example_uid)
 
-    def test_encrypt_key_expired(self):
+    @patch('uid2_client.client.refresh_sharing_keys')
+    def test_encrypt_key_expired(self, mock_refresh_sharing_keys):
         client = Uid2Client("endpoint", "authkey", client_secret)
         key = EncryptionKey(245, site_id, now, now, now - dt.timedelta(days=1), site_secret, keyset_id=99999)
-        keys = client.refresh_json(key_set_to_json_for_sharing([master_key, key]))
-        self.assertRaises(EncryptionError, encrypt, example_uid, IdentityScope.UID2, keys)
+        mock_refresh_sharing_keys.return_value = create_default_key_collection([master_key, key])
+        client.refresh_keys()
+        self.assertRaises(EncryptionError, client.encrypt, example_uid)

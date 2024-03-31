@@ -3,7 +3,7 @@ from enum import Enum
 
 class EncryptionStatus(Enum):
     SUCCESS = "success",
-    # NOT_AUTHORIZED_FOR_KEY = "not_authorized_for_key",
+    NOT_AUTHORIZED_FOR_KEY = "No Keyset Key Found",
     # NOT_AUTHORIZED_FOR_MASTER_KEY = "not_authorized_for_master_key",
     # NOT_INITIALIZED = "not_initialized",
     # KEYS_NOT_SYNCED = "keys_not_synced",

@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from test_utils import *
-from uid2_client import SharingClient, EncryptionError, DecryptionStatus
+from uid2_client import SharingClient, DecryptionStatus
 from uid2_client.encryption_status import EncryptionStatus
 
 
@@ -165,9 +165,8 @@ class TestSharingClient(unittest.TestCase):
         mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_no_default_keyset_key()
         self._client.refresh()
 
-        with self.assertRaises(EncryptionError) as context:
-            self._client.encrypt_raw_uid_into_token(example_uid)
-        self.assertEqual('No Keyset Key Found', str(context.exception))
+        result = self._client.encrypt_raw_uid_into_token(example_uid)
+        self.assertEqual(result.status, EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)
 
     def test_cannot_encrypt_if_theres_no_default_keyset_header(self, mock_refresh_keys_util):  #CannotEncryptIfTheresNoDefaultKeysetHeader
         def get_post_refresh_keys_response_with_no_default_keyset_header():
@@ -177,10 +176,10 @@ class TestSharingClient(unittest.TestCase):
 
         mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_no_default_keyset_header()
         self._client.refresh()
+        self._client.encrypt_raw_uid_into_token(example_uid)
 
-        with self.assertRaises(EncryptionError) as context:
-            self._client.encrypt_raw_uid_into_token(example_uid)
-        self.assertEqual('No Keyset Key Found', str(context.exception))
+        result = self._client.encrypt_raw_uid_into_token(example_uid)
+        self.assertEqual(result.status, EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)
 
     def test_expiry_in_token_matches_expiry_in_response(self, mock_refresh_keys_util):  # ExpiryInTokenMatchesExpiryInResponse
 
@@ -198,7 +197,6 @@ class TestSharingClient(unittest.TestCase):
         self.assertFalse(result.success)
         self.assertEqual(DecryptionStatus.TOKEN_EXPIRED, result.status)
 
-
     def test_encrypt_key_inactive(self, mock_refresh_keys_util):  #EncryptKeyInactive
         def get_post_refresh_keys_response_with_key_inactive():
             inactive_key = EncryptionKey(245, site_id, now, TOMORROW, IN_2_DAYS,
@@ -208,9 +206,8 @@ class TestSharingClient(unittest.TestCase):
         mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_key_inactive()
         self._client.refresh()
 
-        with self.assertRaises(EncryptionError) as context:
-            self._client.encrypt_raw_uid_into_token(example_uid)
-        self.assertEqual('No Keyset Key Found', str(context.exception))
+        result = self._client.encrypt_raw_uid_into_token(example_uid)
+        self.assertEqual(result.status, EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)
 
     def test_encrypt_key_expired(self, mock_refresh_keys_util):  #EncryptKeyExpired
         def get_post_refresh_keys_response_with_key_expired():
@@ -221,9 +218,8 @@ class TestSharingClient(unittest.TestCase):
         mock_refresh_keys_util.return_value = get_post_refresh_keys_response_with_key_expired()
         self._client.refresh()
 
-        with self.assertRaises(EncryptionError) as context:
-            self._client.encrypt_raw_uid_into_token(example_uid)
-        self.assertEqual('No Keyset Key Found', str(context.exception))
+        result = self._client.encrypt_raw_uid_into_token(example_uid)
+        self.assertEqual(result.status, EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)
 
     def test_refresh_keys(self, mock_refresh_sharing_keys):
         key_collection = create_default_key_collection([master_key])
