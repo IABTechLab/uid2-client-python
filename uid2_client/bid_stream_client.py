@@ -65,4 +65,8 @@ class BidstreamClient:
         Returns:
             EncryptionKeysCollection containing the keys
         """
-        self._keys = refresh_bidstream_keys(self._base_url, self._auth_key, self._secret_key)
+        refresh_response = refresh_bidstream_keys(self._base_url, self._auth_key, self._secret_key)
+        if refresh_response.success:
+            self._keys = refresh_response.keys
+
+        return refresh_response

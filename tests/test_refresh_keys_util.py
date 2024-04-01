@@ -58,15 +58,18 @@ class TestRefreshKeysUtil(unittest.TestCase):
     @patch('uid2_client.refresh_keys_util.post')
     def test_refresh_sharing_keys(self, mock_post):
         mock_post.side_effect = self._get_post_refresh_keys_response
-        keys = refresh_keys_util.refresh_sharing_keys("base_url", "auth_key", base64.b64decode(client_secret))
-        self._validate_master_and_site_key(keys)
+        refresh_response = refresh_keys_util.refresh_sharing_keys("base_url", "auth_key", base64.b64decode(client_secret))
+        self.assertTrue(refresh_response.success)
+        self._validate_master_and_site_key(refresh_response.keys)
         mock_post.assert_called_once()
         self.assertEqual(mock_post.call_args[0], ('base_url', '/v2/key/sharing'))
 
     @patch('uid2_client.refresh_keys_util.post')
     def test_refresh_bidstream_keys(self, mock_post):
         mock_post.side_effect = self._get_post_refresh_keys_response
-        refresh_keys_util.refresh_bidstream_keys("base_url", "auth_key", base64.b64decode(client_secret))
+        refresh_response = refresh_keys_util.refresh_bidstream_keys("base_url", "auth_key", base64.b64decode(client_secret))
+        self.assertTrue(refresh_response.success)
+        self._validate_master_and_site_key(refresh_response.keys)
         mock_post.assert_called_once()
         self.assertEqual(mock_post.call_args[0], ('base_url', '/v2/key/bidstream'))
 

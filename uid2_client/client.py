@@ -5,14 +5,10 @@ Do not use this module directly, import through uid2_client module instead, e.g.
 >>> from uid2_client import Uid2Client
 """
 
-import datetime as dt
 import json
-from datetime import timezone
 
-#from uid2_client import encryption, EncryptionError, EncryptionStatus
 from .encryption import *
 from .identity_scope import IdentityScope
-from .keys import EncryptionKeysCollection
 from .refresh_keys_util import refresh_sharing_keys, parse_keys_json
 from .request_response_util import *
 
@@ -38,7 +34,7 @@ class Uid2Client:
         Connect to the UID2 service and obtain the latest encryption keys:
         >>> from uid2_client import *
         >>> client = Uid2Client('https://prod.uidapi.com', 'my-authorization-key', 'my-secret-key')
-        >>> keys = client.refresh()
+        >>> keys = client.refresh_keys()
         >>> uid2 = decrypt('some-ad-token', keys).uid
     """
 
@@ -81,8 +77,12 @@ class Uid2Client:
         Returns:
             EncryptionKeysCollection containing the keys
         """
-        self._keys = refresh_sharing_keys(self._base_url, self._auth_key, self._secret_key)
-        return self._keys
+        refresh_response = refresh_sharing_keys(self._base_url, self._auth_key, self._secret_key)
+        if refresh_response.success:
+            self._keys = refresh_response.keys
+            return self._keys
+        else:
+            raise Exception(refresh_response.reason)
 
     def refresh_json(self, json_str):
         body = json.loads(json_str)
@@ -93,7 +93,6 @@ class Uid2Client:
 
             Args:
                 uid2: the UID2 or EUID to be encrypted
-                keys (EncryptionKeysCollection): collection of keys to choose from for encryption
                 keyset_id (int) : An optional keyset id to use for the encryption. Will use default keyset if left blank
 
             Returns (str): Sharing Token
@@ -109,8 +108,6 @@ class Uid2Client:
 
             Args:
                 token (str): advertising token to decrypt
-                keys (EncryptionKeysCollection): collection of keys to decrypt the token
-                now (datetime): date/time to use as "now" when doing token expiration check
 
             Returns:
                 DecryptedToken: details extracted from the advertising token

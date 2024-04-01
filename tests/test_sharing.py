@@ -6,6 +6,8 @@ from test_utils import *
 
 import datetime as dt
 
+from uid2_client.refresh_response import RefreshResponse
+
 
 class TestSharing(unittest.TestCase):
     def setup_sharing_and_encrypt(self, id_scope=IdentityScope.UID2):
@@ -69,7 +71,7 @@ class TestSharing(unittest.TestCase):
     @patch('uid2_client.client.refresh_sharing_keys')
     def test_cannot_encrypt_if_no_key_from_default_keyset(self, mock_refresh_sharing_keys):
         client = Uid2Client("endpoint", "authkey", client_secret)
-        mock_refresh_sharing_keys.return_value = create_default_key_collection([master_key])
+        mock_refresh_sharing_keys.return_value = RefreshResponse.make_success(create_default_key_collection([master_key]))
         client.refresh_keys()
         self.assertRaises(EncryptionError, client.encrypt, example_uid)
 
@@ -77,8 +79,8 @@ class TestSharing(unittest.TestCase):
     def test_cannot_encrypt_if_theres_no_default_keyset_header(self, mock_refresh_sharing_keys):
         client = Uid2Client("endpoint", "authkey", client_secret)
         key_set = [master_key, site_key]
-        mock_refresh_sharing_keys.return_value = EncryptionKeysCollection(key_set, IdentityScope.UID2, site_id, 1,
-                                        "", 86400)
+        mock_refresh_sharing_keys.return_value = RefreshResponse.make_success(EncryptionKeysCollection(key_set, IdentityScope.UID2, site_id, 1,
+                                        "", 86400))
         client.refresh_keys()
         self.assertRaises(EncryptionError, client.encrypt, example_uid)
 
@@ -99,7 +101,7 @@ class TestSharing(unittest.TestCase):
     def test_encrypt_key_inactive(self, mock_refresh_sharing_keys):
         client = Uid2Client("endpoint", "authkey", client_secret)
         key = EncryptionKey(245, site_id, now, now + dt.timedelta(days=1), now +dt.timedelta(days=2), site_secret, keyset_id=99999)
-        mock_refresh_sharing_keys.return_value = create_default_key_collection([master_key, key])
+        mock_refresh_sharing_keys.return_value = RefreshResponse.make_success(create_default_key_collection([master_key, key]))
         client.refresh_keys()
         self.assertRaises(EncryptionError, client.encrypt, example_uid)
 
@@ -107,6 +109,6 @@ class TestSharing(unittest.TestCase):
     def test_encrypt_key_expired(self, mock_refresh_sharing_keys):
         client = Uid2Client("endpoint", "authkey", client_secret)
         key = EncryptionKey(245, site_id, now, now, now - dt.timedelta(days=1), site_secret, keyset_id=99999)
-        mock_refresh_sharing_keys.return_value = create_default_key_collection([master_key, key])
+        mock_refresh_sharing_keys.return_value = RefreshResponse.make_success(create_default_key_collection([master_key, key]))
         client.refresh_keys()
         self.assertRaises(EncryptionError, client.encrypt, example_uid)

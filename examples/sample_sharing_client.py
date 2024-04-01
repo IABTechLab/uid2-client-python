@@ -20,7 +20,11 @@ secret_key = sys.argv[3]
 raw_uid = sys.argv[4]
 
 client = SharingClient(base_url, auth_key, secret_key)
-client.refresh()
+refresh_response = client.refresh()
+if not refresh_response.success:
+    print('Failed to refresh keys due to =', refresh_response.reason)
+    sys.exit(1)
+
 encryption_data_response = client.encrypt_raw_uid_into_token(raw_uid)
 
 print('New Sharing Token =', encryption_data_response.encrypted_data)

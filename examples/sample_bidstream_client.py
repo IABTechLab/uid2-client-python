@@ -21,7 +21,11 @@ domain_name = sys.argv[4]
 ad_token = sys.argv[5]
 
 client = BidstreamClient(base_url, auth_key, secret_key)
-client.refresh()
+refresh_response = client.refresh()
+if not refresh_response.success:
+    print('Failed to refresh keys due to =', refresh_response.reason)
+    sys.exit(1)
+
 decrypt_result = client.decrypt_token_into_raw_uid(ad_token, domain_name)
 
 print('Status =', decrypt_result.status)

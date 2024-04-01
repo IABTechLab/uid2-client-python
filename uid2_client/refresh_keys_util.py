@@ -3,6 +3,7 @@ import json
 from datetime import timezone
 
 from .keys import EncryptionKey, EncryptionKeysCollection
+from .refresh_response import RefreshResponse
 from .request_response_util import *
 from .identity_scope import IdentityScope
 
@@ -34,11 +35,14 @@ def parse_keys_json(resp_body):
 
 
 def _fetch_keys(base_url, path, auth_key, secret_key):
-    req, nonce = make_v2_request(secret_key, dt.datetime.now(tz=timezone.utc))
-    resp = post(base_url, path, headers=auth_headers(auth_key), data=req)
-    resp_body = json.loads(parse_v2_response(secret_key, resp.read(), nonce)).get('body')
-    keys = parse_keys_json(resp_body)
-    return keys
+    try:
+        req, nonce = make_v2_request(secret_key, dt.datetime.now(tz=timezone.utc))
+        resp = post(base_url, path, headers=auth_headers(auth_key), data=req)
+        resp_body = json.loads(parse_v2_response(secret_key, resp.read(), nonce)).get('body')
+        keys = parse_keys_json(resp_body)
+        return RefreshResponse.make_success(keys)
+    except Exception as exc:
+        return RefreshResponse.make_error(exc.args)
 
 
 def refresh_sharing_keys(base_url, auth_key, secret_key):
@@ -50,8 +54,7 @@ def refresh_sharing_keys(base_url, auth_key, secret_key):
     Returns:
         EncryptionKeysCollection containing the keys
     """
-    keys = _fetch_keys(base_url, '/v2/key/sharing', auth_key, secret_key)
-    return keys
+    return _fetch_keys(base_url, '/v2/key/sharing', auth_key, secret_key)
 
 
 def refresh_bidstream_keys(base_url, auth_key, secret_key):
@@ -64,5 +67,4 @@ def refresh_bidstream_keys(base_url, auth_key, secret_key):
     Returns:
         EncryptionKeysCollection containing the keys
     """
-    keys = _fetch_keys(base_url, '/v2/key/bidstream', auth_key, secret_key)
-    return keys
+    return _fetch_keys(base_url, '/v2/key/bidstream', auth_key, secret_key)
