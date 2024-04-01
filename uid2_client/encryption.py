@@ -135,7 +135,7 @@ def _token_has_valid_lifetime(keys, client_type, established, expires, now):
     if (expires - established).total_seconds() > max_life_time_seconds:
         return False
     elif established > now:
-        return (established - now).total_seconds() < keys.get_allow_clock_skew_seconds()
+        return (established - now).total_seconds() <= keys.get_allow_clock_skew_seconds()
     else:
         return True
 
