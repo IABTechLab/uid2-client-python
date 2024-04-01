@@ -12,6 +12,11 @@ class TestBidStreamClient(unittest.TestCase):
 
     def assert_success(self, decryption_response, token_version, scope):
         self.assertEqual(decryption_response.advertising_token_version, token_version)
+        if (token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V3
+                or token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4):
+            self.assertEqual(decryption_response.identity_type, IdentityType.Email)
+        else:
+            self.assertEqual(decryption_response.identity_type, None)
         self.assertEqual(decryption_response.uid, example_uid)
         self.assertEqual(decryption_response.identity_scope, scope)
         self.assertEqual((now - decryption_response.established).total_seconds(), 0)
@@ -45,6 +50,7 @@ class TestBidStreamClient(unittest.TestCase):
                 result = self._client.decrypt_token_into_raw_uid(token, None)
                 self.assertIsNotNone(result)
                 self.assertEqual(result.uid, phone_uid)
+                self.assertEqual(result.identity_type, IdentityType.Phone)
                 self.assertEqual(result.identity_scope, expected_scope)
                 self.assertEqual(result.advertising_token_version, expected_version)
 
