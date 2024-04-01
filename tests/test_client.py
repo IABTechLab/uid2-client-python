@@ -132,7 +132,7 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaises(EncryptionError) as context:
             client.encrypt(example_uid)
-        self.assertEqual("('No Keyset Key Found',)", str(context.exception))
+        self.assertEqual("No Keyset Key Found", str(context.exception))
 
     def test_cannot_encrypt_if_theres_no_default_keyset_header(self, mock_refresh_keys_util):
         def get_post_refresh_keys_response_with_no_default_keyset_header():
@@ -146,7 +146,7 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaises(EncryptionError) as context:
             client.encrypt(example_uid)
-        self.assertEqual("('No Keyset Key Found',)", str(context.exception))
+        self.assertEqual("No Keyset Key Found", str(context.exception))
 
     def test_expiry_in_token_matches_expiry_in_response(self, mock_refresh_keys_util):
         def get_post_refresh_keys_response_with_token_expiry():
@@ -185,7 +185,7 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaises(EncryptionError) as context:
             client.encrypt(example_uid)
-        self.assertEqual("('No Keyset Key Found',)", str(context.exception))
+        self.assertEqual("No Keyset Key Found", str(context.exception))
 
     def test_encrypt_key_expired(self, mock_refresh_keys_util):
         def get_post_refresh_keys_response_with_key_expired():
@@ -199,4 +199,4 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaises(EncryptionError) as context:
             client.encrypt(example_uid)
-        self.assertEqual("('No Keyset Key Found',)", str(context.exception))
+        self.assertEqual("No Keyset Key Found", str(context.exception))
