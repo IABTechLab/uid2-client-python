@@ -19,6 +19,7 @@ class TestBidStreamClient(unittest.TestCase):
             self.assertEqual(decryption_response.identity_type, None)
         self.assertEqual(decryption_response.uid, example_uid)
         self.assertEqual(decryption_response.identity_scope, scope)
+        self.assertEqual(decryption_response.is_client_side_generated, False)
         self.assertEqual((now - decryption_response.established).total_seconds(), 0)
 
     def decrypt_and_assert_success(self, token, token_version, scope):
@@ -36,7 +37,6 @@ class TestBidStreamClient(unittest.TestCase):
                 mock_refresh_bidstream_keys.return_value = create_key_collection(expected_scope)
                 self._client.refresh()
                 self.decrypt_and_assert_success(token, expected_version, expected_scope)
-
 
     def test_phone_uids(self, mock_refresh_bidstream_keys):  # PhoneTest
         for expected_scope, expected_version in test_cases_all_scopes_v3_v4_versions:

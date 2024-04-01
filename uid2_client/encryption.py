@@ -158,13 +158,13 @@ def _decrypt_token_v2(token_bytes, keys, domain_name, client_type, now):
     expires = dt.datetime.fromtimestamp(expires_ms / 1000.0, tz=timezone.utc)
     if expires < now:
         return DecryptedToken(DecryptionStatus.TOKEN_EXPIRED, None, None, None, None,
-                          keys.get_identity_scope(), None, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2, expires)
+                          keys.get_identity_scope(), None, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2, False, expires)
 
     site_key_id = int.from_bytes(master_payload[8:12], 'big')
     site_key = keys.get(site_key_id)
     if site_key is None:
-        return DecryptedToken(DecryptionStatus.NOT_AUTHORIZED_FOR_KEY, None, None, None, site_key.site_id,
-                          keys.get_identity_scope(), None, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2, expires)
+        return DecryptedToken(DecryptionStatus.NOT_AUTHORIZED_FOR_KEY, None, None, None, None,
+                          keys.get_identity_scope(), None, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2, False, expires)
 
     identity_iv = master_payload[12:28]
     identity = _decrypt(master_payload[28:], identity_iv, site_key)
@@ -180,10 +180,10 @@ def _decrypt_token_v2(token_bytes, keys, domain_name, client_type, now):
 
     if not _token_has_valid_lifetime(keys, client_type, established, expires, now):
         return DecryptedToken(DecryptionStatus.INVALID_TOKEN_LIFETIME, id_str, established, site_id, site_key.site_id,
-                          keys.get_identity_scope(), None, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2, expires)
+                          keys.get_identity_scope(), None, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2, False, expires)
 
     return DecryptedToken(DecryptionStatus.SUCCESS, id_str, established, site_id, site_key.site_id,
-                          keys.get_identity_scope(), None, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2, expires)
+                          keys.get_identity_scope(), None, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2, False, expires)
 
 
 def _get_identity_type_from_token(token_bytes):
@@ -210,7 +210,7 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_ve
     expires = dt.datetime.fromtimestamp(expires_ms / 1000.0, tz=timezone.utc)
     if expires < now:
         return DecryptedToken(DecryptionStatus.TOKEN_EXPIRED, None, None, None, None,
-                          keys.get_identity_scope(), identity_type, token_version, expires)
+                          keys.get_identity_scope(), identity_type, token_version, None, expires)
 
     # created 8:16
     # operator site id 16:20
@@ -221,8 +221,8 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_ve
     site_key_id = int.from_bytes(master_payload[29:33], 'big')
     site_key = keys.get(site_key_id)
     if site_key is None:
-        return DecryptedToken(DecryptionStatus.NOT_AUTHORIZED_FOR_KEY, None, None, None, site_key.site_id,
-                          keys.get_identity_scope(), identity_type, token_version, expires)
+        return DecryptedToken(DecryptionStatus.NOT_AUTHORIZED_FOR_KEY, None, None, None, None,
+                          keys.get_identity_scope(), identity_type, token_version, None, expires)
 
     site_payload = _decrypt_gcm(master_payload[33:], site_key.secret)
 
@@ -232,10 +232,13 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_ve
     # privacy bits 16:20
     privacy_bits = bitarray()
     privacy_bits.frombytes(site_payload[16:20])
+    is_client_side_generated = False
+    if privacy_bits[1]:
+        is_client_side_generated = True
 
     if not _is_domain_name_allowed_for_site(client_type, domain_name, privacy_bits):
         return DecryptedToken(DecryptionStatus.DOMAIN_NAME_CHECK_FAILED, None, None, site_id, site_key.site_id,
-                          keys.get_identity_scope(), identity_type, token_version, expires)
+                          keys.get_identity_scope(), identity_type, token_version, is_client_side_generated, expires)
 
     established_ms = int.from_bytes(site_payload[20:28], 'big')
     established = dt.datetime.fromtimestamp(established_ms / 1000.0, tz=timezone.utc)
@@ -243,13 +246,13 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_ve
 
     if not _token_has_valid_lifetime(keys, client_type, established, expires, now):
         return DecryptedToken(DecryptionStatus.INVALID_TOKEN_LIFETIME, None, established, site_id, site_key.site_id,
-                          keys.get_identity_scope(), identity_type, token_version, expires)
+                          keys.get_identity_scope(), identity_type, token_version, is_client_side_generated, expires)
 
     id_bytes = site_payload[36:]
     id_str = base64.b64encode(id_bytes).decode('ascii')
 
     return DecryptedToken(DecryptionStatus.SUCCESS, id_str, established, site_id, site_key.site_id,
-                          keys.get_identity_scope(), identity_type, token_version, expires)
+                          keys.get_identity_scope(), identity_type, token_version, is_client_side_generated, expires)
 
 
 def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, token_expiry, ad_token_version):
@@ -537,7 +540,8 @@ class DecryptedToken:
         site_key_site_id (int): site ID of the site key which the token is encrypted with
     """
 
-    def __init__(self, status, uid, established, site_id, site_key_site_id, identity_scope, identity_type, advertising_token_version, expiry):
+    def __init__(self, status, uid, established, site_id, site_key_site_id, identity_scope, identity_type,
+                 advertising_token_version, is_client_side_generated, expiry):
         self.status = status
         self.uid = uid
         self.established = established
@@ -546,6 +550,7 @@ class DecryptedToken:
         self.identity_type = identity_type
         self.identity_scope = identity_scope
         self.advertising_token_version = advertising_token_version
+        self.is_client_side_generated = is_client_side_generated
         self.expiry = expiry
 
     @property
@@ -554,7 +559,7 @@ class DecryptedToken:
 
     @staticmethod
     def make_error(decryption_status):
-        return DecryptedToken(decryption_status, None, None, None, None, None, None, None, None)
+        return DecryptedToken(decryption_status, None, None, None, None, None, None, None, None, None)
 
 
 class DecryptedData:
