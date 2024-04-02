@@ -35,6 +35,8 @@ site_key2 = EncryptionKey(site_key_id, site_id, now - dt.timedelta(days=-2), now
 client_secret = "ioG3wKxAokmp+rERx6A4kM/13qhyolUXIu14WN16Spo="
 client_secret_bytes = base64.b64decode(client_secret)
 example_uid = "ywsvDNINiZOVSsfkHpLpSJzXzhr6Jx9Z/4Q0+lsEUvM="
+example_email_raw_uid2_v2 = example_uid
+example_phone_raw_uid2_v2 = "BFOsW2SkK0egqbfyiALtpti5G/cG+PcEvjkoHl56rEV8"
 phone_uid = "BEOGxroPLdcY7LrSiwjY52+X05V0ryELpJmoWAyXiwbZ"
 
 test_cases_all_scopes_all_versions = [
