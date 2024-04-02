@@ -12,7 +12,7 @@ def _make_dt(timestamp):
     return dt.datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
 
-def parse_keys_json(resp_body):
+def _parse_keys_json(resp_body):
     keys = []
     identity_scope = IdentityScope.UID2
     if resp_body["identity_scope"] == "EUID":
@@ -39,7 +39,15 @@ def _fetch_keys(base_url, path, auth_key, secret_key):
         req, nonce = make_v2_request(secret_key, dt.datetime.now(tz=timezone.utc))
         resp = post(base_url, path, headers=auth_headers(auth_key), data=req)
         resp_body = json.loads(parse_v2_response(secret_key, resp.read(), nonce)).get('body')
-        keys = parse_keys_json(resp_body)
+        keys = _parse_keys_json(resp_body)
+        return RefreshResponse.make_success(keys)
+    except Exception as exc:
+        return RefreshResponse.make_error(exc.args)
+
+
+def parse_keys_json(resp_body):
+    try:
+        keys = _parse_keys_json(resp_body)
         return RefreshResponse.make_success(keys)
     except Exception as exc:
         return RefreshResponse.make_error(exc.args)

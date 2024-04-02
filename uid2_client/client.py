@@ -86,7 +86,12 @@ class Uid2Client:
 
     def refresh_json(self, json_str):
         body = json.loads(json_str)
-        return parse_keys_json(body['body'])
+        refresh_response = parse_keys_json(body['body'])
+        if refresh_response.success:
+            self._keys = refresh_response.keys
+            return refresh_response.keys
+        else:
+            raise Exception(refresh_response.reason)
 
     def encrypt(self, uid2, keyset_id=None):
         """ Encrypt an UID2 into a sharing token
@@ -117,6 +122,7 @@ class Uid2Client:
                                  or no required decryption keys present in the keys collection
         """
         return decrypt(token, self._keys)
+
 
 class Uid2ClientError(Exception):
     """Raised for problems encountered while interacting with UID2 services."""

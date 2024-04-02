@@ -60,11 +60,12 @@ TOMORROW = now + dt.timedelta(days=1)
 IN_2_DAYS = now + dt.timedelta(days=2)
 IN_3_DAYS = now + dt.timedelta(days=3)
 
+
 def get_identity_type(token):
     first_char = token[0]
-    if ('A' == first_char or 'E' == first_char):
+    if 'A' == first_char or 'E' == first_char:
         return IdentityType.Email
-    if ('F' == first_char or 'B' == first_char):
+    if 'F' == first_char or 'B' == first_char:
         return IdentityType.Phone
 
     raise Exception("unknown IdentityType")
@@ -108,6 +109,7 @@ def format_key(key: EncryptionKey):
                                          int(key.activates.timestamp()),
                                          int(key.expires.timestamp()),
                                          base64.b64encode(key.secret).decode("utf-8"))
+
 
 
 def create_default_key_collection(key_set):

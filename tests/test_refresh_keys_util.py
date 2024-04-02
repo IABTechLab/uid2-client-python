@@ -85,7 +85,9 @@ class TestRefreshKeysUtil(unittest.TestCase):
         response_body['max_bidstream_lifetime_seconds'] = '100'
         response_body['max_sharing_lifetime_seconds'] = '200'
         response_body['allow_clock_skew_seconds'] = '300'
-        keys = refresh_keys_util.parse_keys_json(response_body)
+        refresh_response = refresh_keys_util.parse_keys_json(response_body)
+        self.assertTrue(refresh_response.success)
+        keys = refresh_response.keys
         self.assertIsNotNone(keys)
         self.assertEqual(IdentityScope.EUID, keys.get_identity_scope())
         self.assertEqual('1', keys.get_caller_site_id())

@@ -16,16 +16,38 @@ class TestSharingClient(unittest.TestCase):
         self._key_collection = create_key_collection(IdentityScope.UID2)
         self._client = SharingClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
 
+    def _assert_success(self, decryption_response, token_version, scope):
+        self.assertTrue(decryption_response.success)
+        self.assertEqual(decryption_response.uid, example_uid)
+        self.assertEqual(decryption_response.advertising_token_version, token_version)
+        if (token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V3
+                or token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4):
+            self.assertEqual(decryption_response.identity_type, IdentityType.Email)
+        else:
+            self.assertEqual(decryption_response.identity_type, None)
+        self.assertEqual(decryption_response.identity_scope, scope)
+        self.assertEqual(decryption_response.is_client_side_generated, False)
+
+    def _assert_fails(self, decryption_response, token_version, scope):
+        self.assertFalse(decryption_response.success)
+        self.assertEqual(decryption_response.status, DecryptionStatus.INVALID_TOKEN_LIFETIME)
+        self.assertEqual(decryption_response.advertising_token_version, token_version)
+        self.assertEqual(decryption_response.identity_scope, scope)
+        if (token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V3
+                or token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4):
+            self.assertEqual(decryption_response.identity_type, IdentityType.Email)
+
+    def decrypt_and_assert_success(self, token, token_version, scope):
+        decrypted = self._client.decrypt_token_into_raw_uid(token)
+        self._assert_success(decrypted, token_version, scope)
+
     def test_smoke_test(self, mock_refresh_sharing_keys):  # SmokeTest
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version)
                 mock_refresh_sharing_keys.return_value = RefreshResponse.make_success(create_key_collection(expected_scope))
                 self._client.refresh()
-                decrypted = self._client.decrypt_token_into_raw_uid(token)
-                self.assertEqual(decrypted.identity_scope, expected_scope)
-                self.assertEqual(decrypted.advertising_token_version, expected_version)
-                self.assertEqual((now - decrypted.established).total_seconds(), 0)
+                self.decrypt_and_assert_success(token, expected_version, expected_scope)
 
     def test_token_lifetime_too_long_for_sharing(self, mock_refresh_sharing_keys):  # TokenLifetimeTooLongForSharing
         expires_in_sec = dt.datetime.now(tz=timezone.utc) + dt.timedelta(days=31)
@@ -38,8 +60,7 @@ class TestSharingClient(unittest.TestCase):
                                                 99999, 86400, max_sharing_lifetime))
                 self._client.refresh()
                 result = self._client.decrypt_token_into_raw_uid(token)
-                self.assertFalse(result.success)
-                self.assertEqual(DecryptionStatus.INVALID_TOKEN_LIFETIME, result.status)
+                self._assert_fails(result, expected_version, expected_scope)
 
     def test_token_generated_in_the_future_to_simulate_clock_skew(self, mock_refresh_sharing_keys):  # TokenGeneratedInTheFutureToSimulateClockSkew
         created_at_future = dt.datetime.now(tz=timezone.utc) + dt.timedelta(minutes=31)  #max allowed clock skew is 30m
@@ -51,8 +72,7 @@ class TestSharingClient(unittest.TestCase):
                                                 99999, 86400))
                 self._client.refresh()
                 result = self._client.decrypt_token_into_raw_uid(token)
-                self.assertFalse(result.success)
-                self.assertEqual(DecryptionStatus.INVALID_TOKEN_LIFETIME, result.status)
+                self._assert_fails(result, expected_version, expected_scope)
 
     def test_token_generated_in_the_future_within_allowed_clock_skew(self, mock_refresh_sharing_keys):  # TokenGeneratedInTheFutureWithinAllowedClockSkew
         created_at_future = dt.datetime.now(tz=timezone.utc) + dt.timedelta(minutes=29)  #max allowed clock skew is 30m
