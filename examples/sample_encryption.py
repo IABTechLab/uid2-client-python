@@ -12,14 +12,19 @@ def _usage():
     sys.exit(1)
 
 
-if len(sys.argv) <= 5:
-    _usage()
+# if len(sys.argv) <= 5:
+#     _usage()
 
-base_url = sys.argv[1]
-auth_key = sys.argv[2]
-secret_key = sys.argv[3]
-ad_token = sys.argv[4]
-str_data = sys.argv[5]
+# base_url = sys.argv[1]
+# auth_key = sys.argv[2]
+# secret_key = sys.argv[3]
+# ad_token = sys.argv[4]
+# str_data = sys.argv[5]
+base_url = "https://operator-integ.uidapi.com"
+auth_key = "UID2-C-I-110-XlrU/d.9MyGWqXP2LbwYijahYYWIkOmtyeauS1Jxjku0="
+secret_key = "r5Uw+piQboL3gUsNNtQwlhft3c6zXm35LoVj9GbL6dk="
+ad_token = "A4AAAA0l9Yo1fmExhC4dysj34QS0y9G4yAK5j502INSBfM9HED9tfEmEi-yMggOmXcOd8zo99gopfjXXZooYaCQwlvB2StTE1Z0xcFN4wmY7EbKWmg645RrzdJGf5vmGEY4jEIm0HNOT5qU3RIp-uyGRzJ7-dZqgYi5-ThilVMe4WnLjtJnK-xraHnWlD4MkMiN8F5FHbeHBGCaZFzsASzslrw"
+str_data = "abcd123"
 
 client = Uid2Client(base_url, auth_key, secret_key)
 keys = client.refresh_keys()
