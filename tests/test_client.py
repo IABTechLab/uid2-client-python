@@ -185,7 +185,7 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaises(EncryptionError) as context:
             client.encrypt(example_uid)
-        self.assertEqual("No Keyset Key Found", str(context.exception))
+        self.assertEqual(EncryptionStatus.NOT_AUTHORIZED_FOR_MASTER_KEY.value, str(context.exception))
 
     def test_encrypt_key_expired(self, mock_refresh_keys_util):
         def get_post_refresh_keys_response_with_key_expired():
@@ -199,4 +199,4 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaises(EncryptionError) as context:
             client.encrypt(example_uid)
-        self.assertEqual("No Keyset Key Found", str(context.exception))
+        self.assertEqual(EncryptionStatus.KEYS_NOT_SYNCED.value, str(context.exception))

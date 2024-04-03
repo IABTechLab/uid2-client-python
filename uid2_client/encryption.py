@@ -318,9 +318,15 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
         now = dt.datetime.now(tz=timezone.utc)
 
     ad_token_version = AdvertisingTokenVersion.ADVERTISING_TOKEN_V4
+    if keys is None:
+        return EncryptionDataResponse.make_error(EncryptionStatus.NOT_INITIALIZED)
+    if not keys.valid(now):
+        return EncryptionDataResponse.make_error(EncryptionStatus.KEYS_NOT_SYNCED)
 
     key = keys.get_default_keyset_key(now) if keyset_id is None else keys.get_by_keyset_key(keyset_id, now)
     master_key = keys.get_by_keyset_key(keys.get_master_keyset_id(), now)
+    if master_key is None:
+        return EncryptionDataResponse.make_error(EncryptionStatus.NOT_AUTHORIZED_FOR_MASTER_KEY)
 
     token_expiry = now + dt.timedelta(days=30) if keys.get_token_expiry_seconds() is None \
         else now + dt.timedelta(seconds=int(keys.get_token_expiry_seconds()))
@@ -334,7 +340,11 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
         return EncryptionDataResponse.make_error(EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)
     if identity_scope is None:
         identity_scope = keys.get_identity_scope()
-    return _encrypt_token(uid2, identity_scope, master_key, key, site_id, now, token_expiry, ad_token_version)
+    try:
+        return _encrypt_token(uid2, identity_scope, master_key, key, site_id, now, token_expiry, ad_token_version)
+    except Exception:
+        return EncryptionDataResponse.make_error(EncryptionStatus.ENCRYPTION_FAILURE)
+
 
 
 # DEPRECATED, DO NOT CALL

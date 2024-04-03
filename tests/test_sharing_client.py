@@ -283,7 +283,7 @@ class TestSharingClient(unittest.TestCase):
 
     def test_encrypt_key_expired(self):  #EncryptKeyExpired
         expired_key = EncryptionKey(site_key_id, site_id, created=now, activates=now, expires=YESTERDAY, secret=site_secret)
-        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([expired_key]))
+        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([master_key, expired_key]))
         self.assertTrue(refresh_response.success)
 
         result = self._client.encrypt_raw_uid_into_token(example_uid)
@@ -291,7 +291,7 @@ class TestSharingClient(unittest.TestCase):
 
     def test_encrypt_key_inactive(self):  #EncryptKeyInactive
         inactive_key = EncryptionKey(site_key_id, site_id, now, TOMORROW, IN_2_DAYS, site_secret)
-        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([inactive_key]))
+        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([master_key, inactive_key]))
         self.assertTrue(refresh_response.success)
 
         result = self._client.encrypt_raw_uid_into_token(example_uid)
