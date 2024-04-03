@@ -3,10 +3,11 @@
 """
 import base64
 import datetime as dt
+import json
 
 from .client_type import ClientType
 from .encryption import encrypt, decrypt_token
-from .refresh_keys_util import refresh_sharing_keys
+from .refresh_keys_util import refresh_sharing_keys, parse_keys_json
 
 
 class SharingClient:
@@ -79,6 +80,14 @@ class SharingClient:
             EncryptionKeysCollection containing the keys
         """
         refresh_response = refresh_sharing_keys(self._base_url, self._auth_key, self._secret_key)
+        if refresh_response.success:
+            self._keys = refresh_response.keys
+
+        return refresh_response
+
+    def _refresh_json(self, json_str):
+        body = json.loads(json_str)
+        refresh_response = parse_keys_json(body['body'])
         if refresh_response.success:
             self._keys = refresh_response.keys
 

@@ -286,7 +286,7 @@ def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, tok
     root_writer = bytearray(len(encrypted_master_payload) + 6)
     first_char = uid2[0]
     identity_type = IdentityType.Phone if first_char == 'F' or first_char == 'B' else IdentityType.Email
-    root_writer[0:1] = int.to_bytes((int(identity_scope) << 4 | int(identity_type) << 2), byteorder='big', length=1)
+    root_writer[0:1] = int.to_bytes((int(identity_scope) << 4 | int(identity_type) << 2) | 3, byteorder='big', length=1)
     root_writer[1:2] = int.to_bytes(ad_token_version.value, byteorder='big', length=1)
     root_writer[2:6] = int.to_bytes(master_key.key_id, byteorder='big', length=4)
     root_writer[6:] = bytes(encrypted_master_payload)

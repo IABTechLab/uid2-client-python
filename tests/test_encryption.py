@@ -45,7 +45,14 @@ class TestEncryptionFunctions(unittest.TestCase):
         decoded = Uid2Base64UrlCoder.decode(base64_url_encoded_str)
         self.assertEqual(decoded, raw_input)
 
-    def validate_advertising_token(self, advertising_token_string, identity_scope, identity_type):
+    def validate_advertising_token(self, advertising_token_string, identity_scope, identity_type,
+                                   token_version=AdvertisingTokenVersion.ADVERTISING_TOKEN_V4):
+
+        if token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V2:
+            self.assertEqual("A", advertising_token_string[0])
+            self.assertEqual("g", advertising_token_string[1])
+            return
+
         first_char = advertising_token_string[0]
         if identity_scope == IdentityScope.UID2:
             self.assertEqual("A" if identity_type == IdentityType.Email.value else "B", first_char)
@@ -53,13 +60,16 @@ class TestEncryptionFunctions(unittest.TestCase):
             self.assertEqual("E" if identity_type == IdentityType.Email.value else "F", first_char)
 
         second_char = advertising_token_string[1]
-        self.assertEqual("4", second_char)
+        if token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V3:
+            self.assertEqual("3", second_char)
+            return
+        else:
+            self.assertEqual("4", second_char)
 
-        # No URL-unfriendly characters allowed
-        self.assertEqual(-1, advertising_token_string.find("="))
-        self.assertEqual(-1, advertising_token_string.find("+"))
-        self.assertEqual(-1, advertising_token_string.find("/"))
-
+            # No URL-unfriendly characters allowed
+            self.assertEqual(-1, advertising_token_string.find("="))
+            self.assertEqual(-1, advertising_token_string.find("+"))
+            self.assertEqual(-1, advertising_token_string.find("/"))
 
     def generate_uid2_token_v4(self, uid, master_key, site_id, site_key, params = Params(), identity_type = IdentityType.Email, identity_scope = IdentityScope.UID2):
         advertising_token = UID2TokenGenerator.generate_uid2_token_v4(uid, master_key, site_id, site_key, params)
