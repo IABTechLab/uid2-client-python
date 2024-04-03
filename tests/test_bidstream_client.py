@@ -86,7 +86,6 @@ class TestBidStreamClient(unittest.TestCase):
         self._assert_success(decrypted, token_version, scope)
 
     def setUp(self):
-        self._key_collection = create_key_collection(IdentityScope.UID2)
         self._client = BidstreamClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
 
     def test_smoke_test(self):  # SmokeTest
@@ -203,10 +202,10 @@ class TestBidStreamClient(unittest.TestCase):
         self.assertEqual(result.status, DecryptionStatus.NOT_INITIALIZED)
 
     def test_master_key_expired(self):  #ExpiredKeyContainer
-        master_key_expired = EncryptionKey(master_key_id, -1, created=now, activates=now - dt.timedelta(hours=2), expires=now - dt.timedelta(hours=1), secret=master_secret,
-                                        keyset_id=99999)
-        site_key_expired = EncryptionKey(site_key_id, site_id, created=now, activates=now - dt.timedelta(hours=2), expires=now - dt.timedelta(hours=1), secret=site_secret,
-                                        keyset_id=99999)
+        master_key_expired = EncryptionKey(master_key_id, -1, created=now, activates=now - dt.timedelta(hours=2),
+                                           expires=now - dt.timedelta(hours=1), secret=master_secret, keyset_id=99999)
+        site_key_expired = EncryptionKey(site_key_id, site_id, created=now, activates=now - dt.timedelta(hours=2),
+                                         expires=now - dt.timedelta(hours=1), secret=site_secret, keyset_id=99999)
 
         refresh_response = self._client._refresh_json(create_bidstream_response_json(
             [master_key_expired, site_key_expired], IdentityScope.UID2))

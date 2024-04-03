@@ -62,7 +62,6 @@ class TestSharingClient(unittest.TestCase):
     _CONST_API_KEY = 'api_key'
 
     def setUp(self):
-        self._key_collection = create_key_collection(IdentityScope.UID2)
         self._client = SharingClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
 
     def _assert_success(self, decryption_response, token_version, scope):

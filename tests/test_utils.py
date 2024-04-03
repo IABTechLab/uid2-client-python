@@ -83,7 +83,6 @@ def key_set_to_json_for_sharing(keys):
 def key_set_to_json_for_sharing_with_header(default_keyset, caller_site_id, keys):
     return """{{
                     "body": {{
-                        "identity_scope": "UID2",
                         "caller_site_id": {0}, 
                         "master_keyset_id": 1,
                         "token_expiry_seconds": 86400,
@@ -111,16 +110,9 @@ def format_key(key: EncryptionKey):
                                          base64.b64encode(key.secret).decode("utf-8"))
 
 
-
 def create_default_key_collection(key_set):
     return EncryptionKeysCollection(key_set, IdentityScope.UID2, 9000, 1,
                                     99999, 2)
-
-
-def create_key_collection(identity_scope):
-    key_set = [master_key, site_key]
-    return EncryptionKeysCollection(key_set, identity_scope, site_id, 1,
-                             99999, 86400)
 
 
 def generate_uid_token(identity_scope, version, raw_uid=example_uid, created_at=None, expires_at=None):

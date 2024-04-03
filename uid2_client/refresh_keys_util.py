@@ -15,7 +15,7 @@ def _make_dt(timestamp):
 def _parse_keys_json(resp_body):
     keys = []
     identity_scope = IdentityScope.UID2
-    if resp_body["identity_scope"] == "EUID":
+    if resp_body.get("identity_scope") == "EUID":
         identity_scope = IdentityScope.EUID
     for key in resp_body["keys"]:
         keyset_id = key.get("keyset_id")
