@@ -18,7 +18,6 @@ class EncryptionDataResponse:
     @property
     def encrypted_data(self):
         return self._encrypted_data
-    #uid = encrypted_data
 
     @property
     def status(self):

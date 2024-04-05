@@ -30,7 +30,7 @@ client = Uid2ClientFactory.create(base_url, auth_key, secret_key)
 client.refresh_keys()
 decrypt_result = client.decrypt(ad_token)
 
-print('UID =', decrypt_result.uid)
+print('UID2 =', decrypt_result.uid2)
 print('Established =', decrypt_result.established)
 print('Site ID =', decrypt_result.site_id)
 print('Site Key Site ID =', decrypt_result.site_key_site_id)

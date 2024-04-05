@@ -42,7 +42,7 @@ class SharingClient:
         return encrypt(uid2, None, self._keys, keyset_id, now=now)
 
     def _decrypt_token_into_raw_uid(self, token, now=None):
-        return decrypt_token(token, self._keys, None, ClientType.Sharing, now)
+        return decrypt_token(token, self._keys, None, ClientType.SHARING, now)
 
     def encrypt_raw_uid_into_token(self, uid2, keyset_id=None):
         """ Encrypt a UID2 into a sharing token

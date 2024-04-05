@@ -18,7 +18,7 @@ class BidstreamClient:
 
         Methods:
             refresh_keys: Refresh encryption keys from UID2 servers
-            decrypt_ad_token_into_raw_uid: decrypt an advertising token
+            decrypt_token_into_raw_uid: decrypt an advertising token
     """
 
     def __init__(self, base_url, auth_key, secret_key):
@@ -38,7 +38,7 @@ class BidstreamClient:
         self._secret_key = base64.b64decode(secret_key)
 
     def _decrypt_token_into_raw_uid(self, token, domain_name, now=None):
-        return decrypt_token(token, self._keys, domain_name, ClientType.Bidstream, now)
+        return decrypt_token(token, self._keys, domain_name, ClientType.BIDSTREAM, now)
 
     def decrypt_token_into_raw_uid(self, token, domain_name):
         """Decrypt advertising token to extract UID2 details.
@@ -61,7 +61,7 @@ class BidstreamClient:
 
         This will synchronously connect to the corresponding UID2 service and fetch the latest
         set of encryption keys which can then be used to decrypt advertising tokens using
-        the decrypt_token function.
+        the decrypt_token_into_raw_uid() function.
 
         Returns:
             EncryptionKeysCollection containing the keys

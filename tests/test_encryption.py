@@ -184,24 +184,24 @@ class TestEncryptionFunctions(unittest.TestCase):
     def test_decrypt_token_2_invalid_lifetime_exception(self):
         test_cases = [
             # expires 30s AFTER max
-            [self._generate_v2_token(dt.timedelta(seconds=60)), 30, 3600, ClientType.Bidstream],
-            [self._generate_v4_token(dt.timedelta(seconds=60)), 30, 3600, ClientType.Bidstream],
-            [self._generate_v2_token(dt.timedelta(seconds=60)), 3600, 30, ClientType.Sharing],
-            [self._generate_v4_token(dt.timedelta(seconds=60)), 3600, 30, ClientType.Sharing],
+            [self._generate_v2_token(dt.timedelta(seconds=60)), 30, 3600, ClientType.BIDSTREAM],
+            [self._generate_v4_token(dt.timedelta(seconds=60)), 30, 3600, ClientType.BIDSTREAM],
+            [self._generate_v2_token(dt.timedelta(seconds=60)), 3600, 30, ClientType.SHARING],
+            [self._generate_v4_token(dt.timedelta(seconds=60)), 3600, 30, ClientType.SHARING],
             # expires 1s AFTER max
-            [self._generate_v2_token(dt.timedelta(seconds=60)), 59, 3600, ClientType.Bidstream],
-            [self._generate_v4_token(dt.timedelta(seconds=60)), 59, 3600, ClientType.Bidstream],
-            [self._generate_v2_token(dt.timedelta(seconds=60)), 3600, 59, ClientType.Sharing],
-            [self._generate_v4_token(dt.timedelta(seconds=60)), 3600, 59, ClientType.Sharing],
+            [self._generate_v2_token(dt.timedelta(seconds=60)), 59, 3600, ClientType.BIDSTREAM],
+            [self._generate_v4_token(dt.timedelta(seconds=60)), 59, 3600, ClientType.BIDSTREAM],
+            [self._generate_v2_token(dt.timedelta(seconds=60)), 3600, 59, ClientType.SHARING],
+            [self._generate_v4_token(dt.timedelta(seconds=60)), 3600, 59, ClientType.SHARING],
             # expires 1 day AFTER max
             [self._generate_v2_token(dt.timedelta(days=3)), dt.timedelta(days=2).seconds, dt.timedelta(days=4).seconds,
-             ClientType.Bidstream],
+             ClientType.BIDSTREAM],
             [self._generate_v4_token(dt.timedelta(days=3)), dt.timedelta(days=2).seconds,
-             dt.timedelta(days=4).seconds, ClientType.Bidstream],
+             dt.timedelta(days=4).seconds, ClientType.BIDSTREAM],
             [self._generate_v2_token(dt.timedelta(days=3)), dt.timedelta(days=4).seconds, dt.timedelta(days=2).seconds,
-             ClientType.Sharing],
+             ClientType.SHARING],
             [self._generate_v4_token(dt.timedelta(days=3)), dt.timedelta(days=4).seconds,
-             dt.timedelta(days=2).seconds, ClientType.Sharing]
+             dt.timedelta(days=2).seconds, ClientType.SHARING]
         ]
         for token, max_bidstream_lifetime_seconds, max_sharing_lifetime_seconds, client_type in test_cases:
             with self.subTest(token=token,
@@ -218,15 +218,15 @@ class TestEncryptionFunctions(unittest.TestCase):
         seconds_since_established = 3600  # from UID2TokenGenerator.generate_uid2_token_v4
         test_cases = [
             # expires 30s before max
-            [self._generate_v2_token(dt.timedelta(seconds=30)), seconds_since_established + 60, 60, ClientType.Bidstream],
-            [self._generate_v4_token(dt.timedelta(seconds=30)), seconds_since_established + 60, 60, ClientType.Bidstream],
-            [self._generate_v2_token(dt.timedelta(seconds=30)), 30, seconds_since_established + 30, ClientType.Sharing],
-            [self._generate_v4_token(dt.timedelta(seconds=30)), 30, seconds_since_established + 30, ClientType.Sharing],
+            [self._generate_v2_token(dt.timedelta(seconds=30)), seconds_since_established + 60, 60, ClientType.BIDSTREAM],
+            [self._generate_v4_token(dt.timedelta(seconds=30)), seconds_since_established + 60, 60, ClientType.BIDSTREAM],
+            [self._generate_v2_token(dt.timedelta(seconds=30)), 30, seconds_since_established + 30, ClientType.SHARING],
+            [self._generate_v4_token(dt.timedelta(seconds=30)), 30, seconds_since_established + 30, ClientType.SHARING],
             # expires exactly at max
-            [self._generate_v2_token(dt.timedelta(seconds=30)), seconds_since_established + 30, 30, ClientType.Bidstream],
-            [self._generate_v4_token(dt.timedelta(seconds=30)), seconds_since_established + 30, 30, ClientType.Bidstream],
-            [self._generate_v2_token(dt.timedelta(seconds=30)), 60, seconds_since_established + 60, ClientType.Sharing],
-            [self._generate_v4_token(dt.timedelta(seconds=30)), 60, seconds_since_established + 60, ClientType.Sharing]
+            [self._generate_v2_token(dt.timedelta(seconds=30)), seconds_since_established + 30, 30, ClientType.BIDSTREAM],
+            [self._generate_v4_token(dt.timedelta(seconds=30)), seconds_since_established + 30, 30, ClientType.BIDSTREAM],
+            [self._generate_v2_token(dt.timedelta(seconds=30)), 60, seconds_since_established + 60, ClientType.SHARING],
+            [self._generate_v4_token(dt.timedelta(seconds=30)), 60, seconds_since_established + 60, ClientType.SHARING]
         ]
         for token, max_bidstream_lifetime_seconds, max_sharing_lifetime_seconds, client_type in test_cases:
             with self.subTest(token=token,

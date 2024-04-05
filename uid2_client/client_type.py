@@ -2,6 +2,6 @@ from enum import Enum
 
 
 class ClientType(Enum):
-    Sharing = 1,
-    Bidstream = 2,
-    LegacyWithoutDomainCheck = 3
+    SHARING = 1,
+    BIDSTREAM = 2,
+    LEGACY_WITHOUT_DOMAIN_CHECK = 3

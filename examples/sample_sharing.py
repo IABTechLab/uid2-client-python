@@ -27,7 +27,7 @@ raw_uid = sys.argv[4]
 # client = EuidClientFactory.create(base_url, auth_key, secret_key)
 # for UID2 use:
 client = Uid2ClientFactory.create(base_url, auth_key, secret_key)
-client.refresh()
+client.refresh_keys()
 new_ad_token = client.encrypt(raw_uid)
 
 print('New Ad Token =', new_ad_token)

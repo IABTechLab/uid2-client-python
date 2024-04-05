@@ -38,8 +38,8 @@ class _PayloadType(Enum):
 base64_url_special_chars = {"-", "_"}
 
 
-# DEPRECATED, DO NOT CALL DIRECTLY. For DSPs PLEASE USE BidStreamClient's decrypt_ad_token_into_raw_uid()
-# for Sharers USE SharingClient's decrypt_sharing_token_into_raw_uid()
+# DEPRECATED, DO NOT CALL DIRECTLY. For DSPs PLEASE USE BidstreamClient's decrypt_token_into_raw_uid()
+# for Sharers USE SharingClient's decrypt_token_into_raw_uid()
 def decrypt(token, keys, now=None):
     """Decrypt advertising token to extract UID2 details.
 
@@ -57,7 +57,7 @@ def decrypt(token, keys, now=None):
     """
 
     try:
-        decrypted_token = _decrypt_token(token, keys, None, ClientType.LegacyWithoutDomainCheck, now)
+        decrypted_token = _decrypt_token(token, keys, None, ClientType.LEGACY_WITHOUT_DOMAIN_CHECK, now)
         if decrypted_token.status != DecryptionStatus.SUCCESS:
             raise EncryptionError(str(decrypted_token.status))
         else:
@@ -88,7 +88,7 @@ def decrypt_token(token, keys, domain_name, client_type, now=None):
 
     try:
         decrypted_token = _decrypt_token(token, keys, domain_name, client_type, now)
-        if client_type == ClientType.LegacyWithoutDomainCheck and decrypted_token.status != DecryptionStatus.SUCCESS:
+        if client_type == ClientType.LEGACY_WITHOUT_DOMAIN_CHECK and decrypted_token.status != DecryptionStatus.SUCCESS:
             raise EncryptionError(str(decrypted_token.status))
         else:
             return decrypted_token
@@ -125,9 +125,9 @@ def _decrypt_token(token, keys, domain_name, client_type, now):
 
 
 def _token_has_valid_lifetime(keys, client_type, established, expires, now):
-    if client_type is ClientType.Bidstream:
+    if client_type is ClientType.BIDSTREAM:
         max_life_time_seconds = keys.get_max_bidstream_lifetime_seconds()
-    elif client_type is ClientType.Sharing:
+    elif client_type is ClientType.SHARING:
         max_life_time_seconds = keys.get_max_sharing_lifetime_seconds()
     else:
         return True  # Skip check for legacy clients
@@ -566,6 +566,10 @@ class DecryptedToken:
     @property
     def success(self):
         return self.status == DecryptionStatus.SUCCESS
+
+    @property
+    def uid2(self):  # for backward compatibility
+        return self.uid
 
     @staticmethod
     def make_error(decryption_status):
