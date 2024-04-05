@@ -11,7 +11,7 @@ from .refresh_keys_util import refresh_bidstream_keys, parse_keys_json
 
 
 class BidstreamClient:
-    """Client for interacting with UID2 BidStream services
+    """Client for interacting with UID2 Bidstream services
 
         You will need to have the base URL of the endpoint and a client API key
         and secret to consume web services.
@@ -22,7 +22,7 @@ class BidstreamClient:
     """
 
     def __init__(self, base_url, auth_key, secret_key):
-        """Create a new BidStreamClient client.
+        """Create a new BidstreamClient client.
 
         Args:
             base_url (str): base URL for all requests to UID2 services (e.g. 'https://prod.uidapi.com')

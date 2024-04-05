@@ -257,7 +257,7 @@ class TestBidStreamClient(unittest.TestCase):
         self.assertEqual(result.identity_scope, IdentityScope.UID2)
         self.assertEqual(result.advertising_token_version, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
 
-    @patch('uid2_client.bid_stream_client.refresh_bidstream_keys')
+    @patch('uid2_client.bidstream_client.refresh_bidstream_keys')
     def test_refresh_keys(self, mock_refresh_bidstream_keys):
         mock_refresh_bidstream_keys.return_value = RefreshResponse.make_success(create_default_key_collection([master_key]))
         self._client.refresh()
