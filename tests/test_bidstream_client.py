@@ -249,7 +249,7 @@ class TestBidStreamClient(unittest.TestCase):
                                    created_at=created_at, expires_at=expires_at)
         result = self._client._decrypt_token_into_raw_uid(token, None, expires_at + dt.timedelta(seconds=1))
         self.assertFalse(result.success)
-        self.assertEqual(result.status, DecryptionStatus.TOKEN_EXPIRED)
+        self.assertEqual(result.status, DecryptionStatus.EXPIRED_TOKEN)
         self.assertEqual(result.expiry, expires_at)
 
         result = self._client._decrypt_token_into_raw_uid(token, None, expires_at - dt.timedelta(seconds=1))

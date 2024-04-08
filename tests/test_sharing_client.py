@@ -278,7 +278,7 @@ class TestSharingClient(unittest.TestCase):
 
         future_decryption_result = self._client._decrypt_token_into_raw_uid(encryption_data_response.encrypted_data, now + dt.timedelta(seconds=3))
         self.assertFalse(future_decryption_result.success)
-        self.assertEqual(DecryptionStatus.TOKEN_EXPIRED, future_decryption_result.status)
+        self.assertEqual(DecryptionStatus.EXPIRED_TOKEN, future_decryption_result.status)
         self.assertEqual(now + dt.timedelta(seconds=2), future_decryption_result.expiry)
 
     def test_encrypt_key_expired(self):  #EncryptKeyExpired

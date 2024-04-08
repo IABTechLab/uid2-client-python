@@ -10,5 +10,5 @@ class DecryptionStatus(Enum):
     NOT_AUTHORIZED_FOR_MASTER_KEY = "not authorized for master key"
     NOT_INITIALIZED = "keys not initialized"
     SUCCESS = "success"
-    TOKEN_EXPIRED = "token expired"
+    EXPIRED_TOKEN = "token expired"
     VERSION_NOT_SUPPORTED = "token version not supported"
