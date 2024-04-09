@@ -1,14 +1,52 @@
 import base64
-
-from datetime import timezone
 import os
-from uid2_client import encryption_block_size
-from uid2_client.advertising_token_version import AdvertisingTokenVersion
-from uid2_client.encryption import _encrypt_data_v1, _encrypt_gcm, _PayloadType
+from enum import Enum
+
+from Crypto.Cipher import AES
+from datetime import timezone
+import datetime as dt
 from uid2_client.identity_scope import IdentityScope
+
+
+from uid2_client.advertising_token_version import AdvertisingTokenVersion
 from uid2_client.identity_type import IdentityType
-from uid2_client.keys import *
 from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
+
+encryption_block_size = AES.block_size
+"""int: block size for encryption routines
+
+This determines the size of initialization vectors (IV), required data padding, etc.
+"""
+
+
+class _PayloadType(Enum):
+    """Enum for types of payload that can be encoded in opaque strings"""
+    ENCRYPTED_DATA = 128
+    ENCRYPTED_DATA_V3 = 96
+
+
+def _add_pkcs7_padding(data, block_size):
+    pad_len = block_size - (len(data) % block_size)
+    return data + bytes([pad_len]) * pad_len
+
+
+def _encrypt_gcm(data, iv, secret):
+    if iv is None:
+        iv = os.urandom(12)
+    elif len(iv) != 12:
+        raise ValueError("iv must be 12 bytes")
+    cipher = AES.new(secret, AES.MODE_GCM, nonce=iv)
+    ciphertext, tag = cipher.encrypt_and_digest(data)
+    return cipher.nonce + ciphertext + tag
+
+
+def _encrypt(data, iv, key):
+    cipher = AES.new(key.secret, AES.MODE_CBC, IV=iv)
+    return cipher.encrypt(_add_pkcs7_padding(data, AES.block_size))
+
+
+def _encrypt_data_v1(data, key, iv):
+    return int.to_bytes(key.key_id, 4, 'big') + iv + _encrypt(data, iv, key)
 
 
 class Params:
@@ -26,6 +64,7 @@ def default_params():
 
 
 class UID2TokenGenerator:
+
     @staticmethod
     def generate_uid2_token_v2(id_str, master_key, site_id, site_key, params = default_params(), version=2):
         id = bytes(id_str, 'utf-8')
@@ -48,12 +87,12 @@ class UID2TokenGenerator:
         return base64.b64encode(token).decode('ascii')
 
     @staticmethod
-    def generate_uid2_token_v3(id_str, master_key, site_id, site_key, params = default_params()):
+    def generate_uid2_token_v3(id_str, master_key, site_id, site_key, params=default_params()):
         return UID2TokenGenerator.generate_uid2_token_with_debug_info(id_str, master_key, site_id, site_key, params,
                                                     AdvertisingTokenVersion.ADVERTISING_TOKEN_V3.value)
 
     @staticmethod
-    def generate_uid2_token_v4(id_str, master_key, site_id, site_key, params = default_params()):
+    def generate_uid2_token_v4(id_str, master_key, site_id, site_key, params=default_params()):
         return UID2TokenGenerator.generate_uid2_token_with_debug_info(id_str, master_key, site_id, site_key, params,
                                                     AdvertisingTokenVersion.ADVERTISING_TOKEN_V4.value)
 
