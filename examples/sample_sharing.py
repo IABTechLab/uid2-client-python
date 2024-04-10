@@ -1,3 +1,6 @@
+# THIS FILE IS DEPRECATED!
+# To learn how to encrypt and decrypt a UID2 sharing token, see sample_sharing_client.py (For sharers. See sample_bidstream_client.py for DSPs)
+
 import sys
 
 from uid2_client import EuidClientFactory
@@ -31,7 +34,7 @@ print('New Ad Token =', new_ad_token)
 
 decrypt_result = client.decrypt(new_ad_token)
 
-print('Decrypted UID2 =', decrypt_result.uid2)
+print('Decrypted UID =', decrypt_result.uid)
 print('Established =', decrypt_result.established)
 print('Site ID =', decrypt_result.site_id)
 print('Site Key Site ID =', decrypt_result.site_key_site_id)

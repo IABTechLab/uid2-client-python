@@ -6,7 +6,7 @@ test:
 shell:
 	docker run -it -w $(PWD) -v $(PWD):$(PWD) -u `id -u`:`id -g` $(DOCKERIMAGE) /bin/bash
 
-examples: example_client example_auto_refresh example_sharing example_publisher
+examples: example_client example_auto_refresh example_sharing example_publisher example_bidstream_client example_sharing_client
 
 example_client:
 	docker run -w $(PWD) -v $(PWD):$(PWD) -u `id -u`:`id -g` -e PYTHONPATH=$(PWD) $(DOCKERIMAGE) python3 examples/sample_client.py "$(BASE_URL)" "$(AUTH_KEY)" "$(SECRET_KEY)" "$(AD_TOKEN)"
@@ -22,6 +22,12 @@ example_sharing:
 
 example_publisher:
 	docker run -w $(PWD) -v $(PWD):$(PWD) -u `id -u`:`id -g` -e PYTHONPATH=$(PWD) $(DOCKERIMAGE) python3 examples/sample_token_generate_refresh.py "$(BASE_URL)" "$(AUTH_KEY)" "$(SECRET_KEY)"
+
+example_bidstream_client:
+	docker run -w $(PWD) -v $(PWD):$(PWD) -u `id -u`:`id -g` -e PYTHONPATH=$(PWD) $(DOCKERIMAGE) python3 examples/sample_bidstream_client.py "$(BASE_URL)" "$(AUTH_KEY)" "$(SECRET_KEY)" "$(DOMAIN)" "$(AD_TOKEN)"
+
+example_sharing_client:
+	docker run -w $(PWD) -v $(PWD):$(PWD) -u `id -u`:`id -g` -e PYTHONPATH=$(PWD) $(DOCKERIMAGE) python3 examples/sample_sharing_client.py "$(BASE_URL)" "$(AUTH_KEY)" "$(SECRET_KEY)" "$(RAW_UID)"
 
 docker:
 	docker build -t $(DOCKERIMAGE) -f Dockerfile.dev .

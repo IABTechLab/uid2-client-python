@@ -5,12 +5,11 @@ from uid2_client import Uid2Client, IdentityScope
 from uid2_client import encrypt_data, decrypt_data
 
 # THIS FILE IS DEPRECATED!
-# To learn how to encrypt and decrypt a UID2 advertising token, see sample_sharing.py (For sharers. See sample_client.py for DSPs)
+# To learn how to encrypt and decrypt a UID2 sharing token, see sample_sharing_client.py (For sharers. See sample_bidstream_client.py for DSPs)
 
 def _usage():
     print('Usage: python3 sample_encryption.py <base_url> <auth_key> <secret_key> <ad_token> <data>', file=sys.stderr)
     sys.exit(1)
-
 
 if len(sys.argv) <= 5:
     _usage()
