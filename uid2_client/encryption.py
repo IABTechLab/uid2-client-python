@@ -286,7 +286,7 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
     if identity_scope is None:
         identity_scope = keys.get_identity_scope()
     try:
-        params = Params(expiry=token_expiry, identity_scope=identity_scope, token_created_at=now)
+        params = Params(expiry=token_expiry, identity_scope=identity_scope, token_generated_at=now)
         return EncryptionDataResponse.make_success(UID2TokenGenerator.generate_uid2_token_v4(uid2, master_key, site_id, key, params))
     except Exception:
         return EncryptionDataResponse.make_error(EncryptionStatus.ENCRYPTION_FAILURE)
