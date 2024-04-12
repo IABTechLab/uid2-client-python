@@ -116,29 +116,29 @@ class UID2TokenGenerator:
 
     @staticmethod
     def generate_uid2_token_with_debug_info(id_str, master_key, site_id, site_key, params, version):
-        id = base64.b64decode(id_str)
 
-        site_payload = int.to_bytes(site_id, 4, 'big')
-        site_payload += int.to_bytes(0, 8, 'big')  # publisher id
-        site_payload += int.to_bytes(0, 4, 'big')  # client key id
+        # Publisher Data
+        site_payload = int.to_bytes(site_id, length=4, byteorder='big')
+        site_payload += int.to_bytes(0, length=8, byteorder='big')  # publisher id
+        site_payload += int.to_bytes(0, length=4, byteorder='big')  # client key id
 
-        site_payload += int.to_bytes(0, 4, 'big')  # privacy bits
-        created = params.token_generated_at
-        site_payload += int.to_bytes(int(created.timestamp()) * 1000, 8, 'big')  # established
-        site_payload += int.to_bytes(int(created.timestamp()) * 1000, 8, 'big')  # refreshed
-        site_payload += id
+        # User Identity Data
+        site_payload += int.to_bytes(0, length=4, byteorder='big')  # privacy bits
+        generated_at_timestamp = int(params.token_generated_at.timestamp()) * 1000
+        site_payload += int.to_bytes(generated_at_timestamp, length=8, byteorder='big')  # established
+        site_payload += int.to_bytes(generated_at_timestamp, length=8, byteorder='big')  # last refreshed/generated
+        site_payload += base64.b64decode(id_str)
 
-        expiry = params.token_expiry
+        master_payload = int.to_bytes(int(params.token_expiry.timestamp()) * 1000, length=8, byteorder='big')  # expiry
+        master_payload += int.to_bytes(generated_at_timestamp, length=8, byteorder='big')  # created
 
-        master_payload = int.to_bytes(int(expiry.timestamp()) * 1000, 8, 'big')
-        master_payload += int.to_bytes(int(created.timestamp()) * 1000, 8, 'big')  # created
+        # Operator Identity Data
+        master_payload += int.to_bytes(0, length=4, byteorder='big')  # site id
+        master_payload += int.to_bytes(1, length=1, byteorder='big')  # operator type
+        master_payload += int.to_bytes(0, length=4, byteorder='big')  # operator version
+        master_payload += int.to_bytes(0, length=4, byteorder='big')  # operator key id
 
-        master_payload += int.to_bytes(0, 4, 'big')  # operator site id
-        master_payload += int.to_bytes(0, 1, 'big')  # operator type
-        master_payload += int.to_bytes(0, 4, 'big')  # operator version
-        master_payload += int.to_bytes(0, 4, 'big')  # operator key id
-
-        master_payload += int.to_bytes(site_key.key_id, 4, 'big')
+        master_payload += int.to_bytes(site_key.key_id, length=4, byteorder='big')  # Site Key ID
         master_payload += _encrypt_gcm(site_payload, None, site_key.secret)
 
         first_char = id_str[0]
@@ -147,9 +147,9 @@ class UID2TokenGenerator:
         if (first_char == 'F') or (first_char == 'B'):
             identity_type = IdentityType.Phone.value
 
-        token = int.to_bytes((params.identity_scope << 4 | identity_type << 2) | 3, 1, 'big')
-        token += int.to_bytes(version, 1, 'big')
-        token += int.to_bytes(master_key.key_id, 4, 'big')
+        token = int.to_bytes((params.identity_scope << 4 | identity_type << 2) | 3, length=1, byteorder='big')
+        token += int.to_bytes(version, length=1, byteorder='big')
+        token += int.to_bytes(master_key.key_id, length=4, byteorder='big')
         token += _encrypt_gcm(master_payload, None, master_key.secret)
 
         if version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4.value:
