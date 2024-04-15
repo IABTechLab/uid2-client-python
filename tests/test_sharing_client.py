@@ -98,10 +98,11 @@ class TestSharingClient(unittest.TestCase):
                 self._test_bidstream_client.assert_fails(result, expected_version, expected_scope)
 
     def test_token_generated_in_the_future_to_simulate_clock_skew(self):  # TokenGeneratedInTheFutureToSimulateClockSkew
+        # Note V2 does not have a "token generated" field, therefore v2 tokens can't have a future "token generated" date and are excluded from this test.
         created_at_future = dt.datetime.now(tz=timezone.utc) + dt.timedelta(minutes=31)  #max allowed clock skew is 30m
-        for expected_scope, expected_version in test_cases_all_scopes_all_versions:
+        for expected_scope, expected_version in test_cases_all_scopes_v3_v4_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
-                token = generate_uid_token(expected_scope, expected_version, created_at=created_at_future)
+                token = generate_uid_token(expected_scope, expected_version, generated_at=created_at_future)
                 refresh_response = self._client._refresh_json(key_sharing_response_json_default_keys(
                     expected_scope))
                 self.assertTrue(refresh_response.success)
@@ -151,7 +152,7 @@ class TestSharingClient(unittest.TestCase):
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 legacy_client.refresh_json(key_sharing_response_json_default_keys(
                     expected_scope))
-                token = generate_uid_token(expected_scope, expected_version, created_at=created_at_future)
+                token = generate_uid_token(expected_scope, expected_version, generated_at=created_at_future)
                 result = legacy_client.decrypt(token)
                 self._test_bidstream_client.assert_success(result, expected_version, expected_scope)
 

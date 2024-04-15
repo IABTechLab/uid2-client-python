@@ -51,10 +51,12 @@ def _encrypt_data_v1(data, key, iv):
 
 class Params:
     def __init__(self, expiry=dt.datetime.now(tz=timezone.utc) + dt.timedelta(hours=1),
-                 identity_scope=IdentityScope.UID2.value, token_generated_at=dt.datetime.now(tz=timezone.utc)):
-        self.identity_scope = identity_scope
+                 identity_scope=IdentityScope.UID2.value, token_generated=dt.datetime.now(tz=timezone.utc),
+                 identity_established=dt.datetime.now(tz=timezone.utc)):
         self.token_expiry = expiry
-        self.token_generated_at = token_generated_at
+        self.identity_scope = identity_scope
+        self.token_generated = token_generated
+        self.identity_established = identity_established
         if not isinstance(expiry, dt.datetime):
             self.token_expiry = dt.datetime.now(tz=timezone.utc) + expiry
 
@@ -66,15 +68,14 @@ def default_params():
 class UID2TokenGenerator:
 
     @staticmethod
-    def generate_uid2_token_v2(id_str, master_key, site_id, site_key, params = default_params(), version=2):
+    def generate_uid2_token_v2(id_str, master_key, site_id, site_key, params=default_params(), version=2):
         id = bytes(id_str, 'utf-8')
         identity = int.to_bytes(site_id, 4, 'big')
         identity += int.to_bytes(len(id), 4, 'big')
         identity += id
         # old privacy_bits
         identity += int.to_bytes(0, 4, 'big')
-        created = params.token_generated_at
-        identity += int.to_bytes(int(created.timestamp()) * 1000, 8, 'big')
+        identity += int.to_bytes(int(params.identity_established.timestamp()) * 1000, 8, 'big')
         identity_iv = bytes([10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         expiry = params.token_expiry
         master_payload = int.to_bytes(int(expiry.timestamp()) * 1000, 8, 'big')
@@ -98,11 +99,13 @@ class UID2TokenGenerator:
 
     @staticmethod
     def generate_uid_token(id_str, master_key, site_id, site_key, identity_scope, token_version,
-                           created_at=None, expires_at=None):
+                           identity_established_at=None, generated_at=None, expires_at=None):
         params = default_params()
         params.identity_scope = identity_scope
-        if created_at is not None:
-            params.token_generated_at = created_at
+        if identity_established_at is not None:
+            params.identity_established = identity_established_at
+        if generated_at is not None:
+            params.token_generated = generated_at
         if expires_at is not None:
             params.token_expiry = expires_at
         if token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V2:
@@ -124,13 +127,13 @@ class UID2TokenGenerator:
 
         # User Identity Data
         site_payload += int.to_bytes(0, length=4, byteorder='big')  # privacy bits
-        generated_at_timestamp = int(params.token_generated_at.timestamp()) * 1000
-        site_payload += int.to_bytes(generated_at_timestamp, length=8, byteorder='big')  # established
+        site_payload += int.to_bytes(int(params.identity_established.timestamp()) * 1000, length=8, byteorder='big')  # established
+        generated_at_timestamp = int(params.token_generated.timestamp()) * 1000
         site_payload += int.to_bytes(generated_at_timestamp, length=8, byteorder='big')  # last refreshed/generated
         site_payload += base64.b64decode(id_str)
 
         master_payload = int.to_bytes(int(params.token_expiry.timestamp()) * 1000, length=8, byteorder='big')  # expiry
-        master_payload += int.to_bytes(generated_at_timestamp, length=8, byteorder='big')  # created
+        master_payload += int.to_bytes(generated_at_timestamp, length=8, byteorder='big')  # generated
 
         # Operator Identity Data
         master_payload += int.to_bytes(0, length=4, byteorder='big')  # site id

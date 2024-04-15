@@ -124,10 +124,11 @@ class TestBidStreamClient(unittest.TestCase):
                 self.assert_fails(result, expected_version, expected_scope)
 
     def test_token_generated_in_the_future_to_simulate_clock_skew(self):  # TokenGeneratedInTheFutureToSimulateClockSkew
+        # Note V2 does not have a "token generated" field, therefore v2 tokens can't have a future "token generated" date and are excluded from this test.
         created_at_future = dt.datetime.now(tz=timezone.utc) + dt.timedelta(minutes=31)  #max allowed clock skew is 30m
-        for expected_scope, expected_version in test_cases_all_scopes_all_versions:
+        for expected_scope, expected_version in test_cases_all_scopes_v3_v4_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
-                token = generate_uid_token(expected_scope, expected_version, created_at=created_at_future)
+                token = generate_uid_token(expected_scope, expected_version, generated_at=created_at_future)
                 refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys(
                     expected_scope))
                 self.assertTrue(refresh_response.success)
@@ -164,7 +165,7 @@ class TestBidStreamClient(unittest.TestCase):
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 legacy_client.refresh_json(key_bidstream_response_json_default_keys(
                     expected_scope))
-                token = generate_uid_token(expected_scope, expected_version, created_at=created_at_future)
+                token = generate_uid_token(expected_scope, expected_version, generated_at=created_at_future)
                 result = legacy_client.decrypt(token)
                 self.assert_success(result, expected_version, expected_scope)
 
@@ -246,7 +247,7 @@ class TestBidStreamClient(unittest.TestCase):
         expires_at = now - dt.timedelta(days=60)
         created_at = expires_at - dt.timedelta(minutes=1)
         token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4,
-                                   created_at=created_at, expires_at=expires_at)
+                                   identity_established_at=created_at, expires_at=expires_at)
         result = self._client._decrypt_token_into_raw_uid(token, None, expires_at + dt.timedelta(seconds=1))
         self.assertFalse(result.success)
         self.assertEqual(result.status, DecryptionStatus.EXPIRED_TOKEN)

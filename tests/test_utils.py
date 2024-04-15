@@ -114,6 +114,6 @@ def create_default_key_collection(key_set):
                                     99999, 2)
 
 
-def generate_uid_token(identity_scope, version, raw_uid=example_uid, created_at=None, expires_at=None):
-    return UID2TokenGenerator.generate_uid_token(raw_uid, master_key, site_id, site_key,
-                                                 identity_scope, version, created_at, expires_at)
+def generate_uid_token(identity_scope, version, raw_uid=example_uid, identity_established_at=None, generated_at=None, expires_at=None):
+    return UID2TokenGenerator.generate_uid_token(raw_uid, master_key, site_id, site_key, identity_scope, version,
+                                                 identity_established_at, generated_at, expires_at)

@@ -418,7 +418,7 @@ class TestEncryptionFunctions(unittest.TestCase):
         token_expiry = now + dt.timedelta(days=30) if keys.get_token_expiry_seconds() is None \
             else now + dt.timedelta(seconds=int(keys.get_token_expiry_seconds()))
         result = UID2TokenGenerator.generate_uid2_token_v3(uid2, _master_key, _site_id, _site_key,
-                                                           Params(expiry=token_expiry, token_generated_at=now))
+                                                           Params(expiry=token_expiry, token_generated=now))
         final = decrypt(result, keys, now=now)
 
         self.assertEqual(uid2, final.uid)
