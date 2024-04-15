@@ -10,8 +10,8 @@ from bitarray import bitarray
 from datetime import timezone
 import os
 from Crypto.Cipher import AES
-from enum import Enum
 
+from uid2_client.uid2_token_generator import Params, UID2TokenGenerator, _encrypt_gcm, _PayloadType
 from uid2_client.advertising_token_version import AdvertisingTokenVersion
 from uid2_client.client_type import ClientType
 from uid2_client.decryption_status import DecryptionStatus
@@ -20,19 +20,6 @@ from uid2_client.encryption_status import EncryptionStatus
 from uid2_client.uid2_base64_url_coder import Uid2Base64UrlCoder
 from uid2_client.identity_type import IdentityType
 from uid2_client.identity_scope import IdentityScope
-
-
-encryption_block_size = AES.block_size
-"""int: block size for encryption routines
-
-This determines the size of initialization vectors (IV), required data padding, etc.
-"""
-
-
-class _PayloadType(Enum):
-    """Enum for types of payload that can be encoded in opaque strings"""
-    ENCRYPTED_DATA = 128
-    ENCRYPTED_DATA_V3 = 96
 
 
 base64_url_special_chars = {"-", "_"}
@@ -255,48 +242,6 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_ve
                           keys.get_identity_scope(), identity_type, token_version, is_client_side_generated, expires)
 
 
-def _encrypt_token(uid2, identity_scope, master_key, site_key, site_id, now, token_expiry, ad_token_version):
-    site_payload = bytearray(128)
-    # Publisher Data
-    site_payload[0:4] = int.to_bytes(site_id, byteorder='big', length=4)  # Site id
-    site_payload[4:12] = int.to_bytes(0, byteorder='big', length=8)  # Publisher ID
-    site_payload[12:16] = int.to_bytes(0, byteorder='big', length=4)  # Client Key ID
-    # User Identity Data
-    site_payload[16:20] = int.to_bytes(0, byteorder='big', length=4)  # Privacy Bits
-    site_payload[20:28] = int.to_bytes(int(now.timestamp()) * 1000, byteorder='big',
-                                       length=8)  # Established
-    site_payload[28:36] = int.to_bytes(int(now.timestamp()) * 1000, byteorder='big', length=8)  # last refresh
-    site_payload[36:] = bytes(base64.b64decode(uid2))
-
-    id_payload = _encrypt_gcm(bytes(site_payload), None, site_key.secret)
-
-    # Operator Identity Data
-    master_payload = bytearray(256)
-    master_payload[:8] = int.to_bytes(int(token_expiry.timestamp()) * 1000, byteorder='big', length=8)  # Expiry
-    master_payload[8:16] = int.to_bytes(int(now.timestamp()), byteorder='big', length=8)  # Token Created
-    master_payload[16:20] = int.to_bytes(0, byteorder='big', length=4)  # Site ID
-    master_payload[20:21] = int.to_bytes(1, byteorder='big', length=1)  # Operator Type
-    master_payload[21:25] = int.to_bytes(0, byteorder='big', length=4)  # Operator Version
-    master_payload[25:29] = int.to_bytes(0, byteorder='big', length=4)  # Operator Key ID
-    master_payload[29:33] = int.to_bytes(site_key.key_id, byteorder='big', length=4)  # Site Key ID
-    master_payload[33:] = bytes(id_payload)
-
-    encrypted_master_payload = _encrypt_gcm(bytes(master_payload), None, master_key.secret)
-
-    root_writer = bytearray(len(encrypted_master_payload) + 6)
-    first_char = uid2[0]
-    identity_type = IdentityType.Phone if first_char == 'F' or first_char == 'B' else IdentityType.Email
-    root_writer[0:1] = int.to_bytes((int(identity_scope) << 4 | int(identity_type) << 2) | 3, byteorder='big', length=1)
-    root_writer[1:2] = int.to_bytes(ad_token_version.value, byteorder='big', length=1)
-    root_writer[2:6] = int.to_bytes(master_key.key_id, byteorder='big', length=4)
-    root_writer[6:] = bytes(encrypted_master_payload)
-
-    if ad_token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4:
-        return EncryptionDataResponse.make_success(Uid2Base64UrlCoder.encode(root_writer))
-
-    return EncryptionDataResponse.make_success(base64.b64encode(root_writer))
-
-
 # DEPRECATED, DO NOT CALL DIRECTLY. PLEASE USE Uid2Client's client.encrypt()
 def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
     """ Encrypt an UID2 into a sharing token
@@ -341,7 +286,8 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
     if identity_scope is None:
         identity_scope = keys.get_identity_scope()
     try:
-        return _encrypt_token(uid2, identity_scope, master_key, key, site_id, now, token_expiry, ad_token_version)
+        params = Params(expiry=token_expiry, identity_scope=identity_scope, token_generated_at=now)
+        return EncryptionDataResponse.make_success(UID2TokenGenerator.generate_uid2_token_v4(uid2, master_key, site_id, key, params))
     except Exception:
         return EncryptionDataResponse.make_error(EncryptionStatus.ENCRYPTION_FAILURE)
 
@@ -431,10 +377,6 @@ def encrypt_data(data, identity_scope, **kwargs):
     return base64.b64encode(result).decode('ascii')
 
 
-def _encrypt_data_v1(data, key, iv):
-    return int.to_bytes(key.key_id, 4, 'big') + iv + _encrypt(data, iv, key)
-
-
 # DEPRECATED, DO NOT CALL
 def decrypt_data(encrypted_data, keys):
     """Decrypt data encrypted with encrypt_data().
@@ -503,32 +445,12 @@ def _decrypt_data_v3(encrypted_bytes, keys):
     return DecryptedData(payload[12:], encrypted_at)
 
 
-def _add_pkcs7_padding(data, block_size):
-    pad_len = block_size - (len(data) % block_size)
-    return data + bytes([pad_len]) * pad_len
-
-
-def _encrypt(data, iv, key):
-    cipher = AES.new(key.secret, AES.MODE_CBC, IV=iv)
-    return cipher.encrypt(_add_pkcs7_padding(data, AES.block_size))
-
-
 def _decrypt(encrypted, iv, key):
     cipher = AES.new(key.secret, AES.MODE_CBC, iv=iv)
     data = cipher.decrypt(encrypted)
     # remove pkcs7 padding
     pad_len = data[-1]
     return data[:-pad_len]
-
-
-def _encrypt_gcm(data, iv, secret):
-    if iv is None:
-        iv = os.urandom(12)
-    elif len(iv) != 12:
-        raise ValueError("iv must be 12 bytes")
-    cipher = AES.new(secret, AES.MODE_GCM, nonce=iv)
-    ciphertext, tag = cipher.encrypt_and_digest(data)
-    return cipher.nonce + ciphertext + tag
 
 
 def _decrypt_gcm(encrypted, secret):

@@ -1,9 +1,7 @@
 import unittest
 
 from test_utils import *
-from tests.uid2_token_generator import Params
 from uid2_client import *
-from uid2_client.encryption import _encrypt_token
 
 _master_secret = bytes([139, 37, 241, 173, 18, 92, 36, 232, 165, 168, 23, 18, 38, 195, 123, 92, 160, 136, 185, 40, 91, 173, 165, 221, 168, 16, 169, 164, 38, 139, 8, 155])
 _site_secret =   bytes([32, 251, 7, 194, 132, 154, 250, 86, 202, 116, 104, 29, 131, 192, 139, 215, 48, 164, 11, 65, 226, 110, 167, 14, 108, 51, 254, 125, 65, 24, 23, 133])
@@ -417,12 +415,11 @@ class TestEncryptionFunctions(unittest.TestCase):
 
         keys = EncryptionKeysCollection([_master_key, _site_key, _keyset_key], default_keyset_id=20,
                                         master_keyset_id=9999, caller_site_id=20)
-
-        result = _encrypt_token(uid2, identity_scope, _master_key, _site_key, _site_id, now=now,
-                                token_expiry=now + dt.timedelta(days=30) if keys.get_token_expiry_seconds() is None \
-                                    else now + dt.timedelta(seconds=int(keys.get_token_expiry_seconds())),
-                         ad_token_version=AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
-        final = decrypt(result.encrypted_data, keys, now=now)
+        token_expiry = now + dt.timedelta(days=30) if keys.get_token_expiry_seconds() is None \
+            else now + dt.timedelta(seconds=int(keys.get_token_expiry_seconds()))
+        result = UID2TokenGenerator.generate_uid2_token_v3(uid2, _master_key, _site_id, _site_key,
+                                                           Params(expiry=token_expiry, token_generated_at=now))
+        final = decrypt(result, keys, now=now)
 
         self.assertEqual(uid2, final.uid)
 

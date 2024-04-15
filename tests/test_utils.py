@@ -2,9 +2,8 @@ import base64
 import datetime as dt
 from datetime import timezone
 
-from tests.uid2_token_generator import UID2TokenGenerator
 from uid2_client import EncryptionKey, encrypt, IdentityScope, IdentityType, EncryptionKeysCollection, \
-    AdvertisingTokenVersion
+    AdvertisingTokenVersion, UID2TokenGenerator
 
 master_secret = bytes(
     [139, 37, 241, 173, 18, 92, 36, 232, 165, 168, 23, 18, 38, 195, 123, 92, 160, 136, 185, 40, 91, 173, 165, 221, 168,
