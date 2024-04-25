@@ -73,6 +73,10 @@ class TestSharingClient(unittest.TestCase):
     def setUp(self):
         self._client = SharingClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
 
+    def refresh(self, refresh_json):
+        refresh_response = self._client._refresh_json(refresh_json)
+        self.assertTrue(refresh_response.success)
+
     def decrypt_and_assert_success(self, token, token_version, scope):
         decrypted = self._client.decrypt_token_into_raw_uid(token)
         self._test_bidstream_client.assert_success(decrypted, token_version, scope)
@@ -83,9 +87,8 @@ class TestSharingClient(unittest.TestCase):
                 token = generate_uid_token(expected_scope, expected_version,
                                            identity_established_at=now - dt.timedelta(days=120),
                                            generated_at=YESTERDAY, expires_at=now + dt.timedelta(days=29))
-                refresh_response = self._client._refresh_json(key_sharing_response_json_default_keys(
-                    expected_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(key_sharing_response_json_default_keys(expected_scope))
+
                 self.decrypt_and_assert_success(token, expected_version, expected_scope)
 
     def test_token_lifetime_too_long_for_sharing_but_remaining_lifetime_allowed(self):  # TokenLifetimeTooLongForSharingButRemainingLifetimeAllowed
@@ -95,9 +98,8 @@ class TestSharingClient(unittest.TestCase):
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, generated_at=generated,
                                            expires_at=expires_in_sec)
-                refresh_response = self._client._refresh_json(key_sharing_response_json_default_keys(
-                    expected_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(key_sharing_response_json_default_keys(expected_scope))
+
                 result = self._client.decrypt_token_into_raw_uid(token)
                 if expected_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V2:
                     self._test_bidstream_client.assert_success(result, expected_version, expected_scope)
@@ -109,9 +111,8 @@ class TestSharingClient(unittest.TestCase):
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, expires_at=expires_in_sec)
-                refresh_response = self._client._refresh_json(key_sharing_response_json_default_keys(
-                    expected_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(key_sharing_response_json_default_keys(expected_scope))
+
                 result = self._client.decrypt_token_into_raw_uid(token)
                 self._test_bidstream_client.assert_fails(result, expected_version, expected_scope)
 
@@ -121,9 +122,8 @@ class TestSharingClient(unittest.TestCase):
         for expected_scope, expected_version in test_cases_all_scopes_v3_v4_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, generated_at=created_at_future)
-                refresh_response = self._client._refresh_json(key_sharing_response_json_default_keys(
-                    expected_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(key_sharing_response_json_default_keys(expected_scope))
+
                 result = self._client.decrypt_token_into_raw_uid(token)
                 self._test_bidstream_client.assert_fails(result, expected_version, expected_scope)
 
@@ -132,17 +132,17 @@ class TestSharingClient(unittest.TestCase):
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, expires_at=created_at_future)
-                refresh_response = self._client._refresh_json(key_sharing_response_json_default_keys(
+                self.refresh(key_sharing_response_json_default_keys(
                     expected_scope))
-                self.assertTrue(refresh_response.success)
+
                 self.decrypt_and_assert_success(token, expected_version, expected_scope)
 
     def test_phone_uids(self):  # PhoneTest
         for expected_scope, expected_version in test_cases_all_scopes_v3_v4_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
-                refresh_response = self._client._refresh_json(key_sharing_response_json_default_keys(
+                self.refresh(key_sharing_response_json_default_keys(
                     expected_scope))
-                self.assertTrue(refresh_response.success)
+
                 token = generate_uid_token(expected_scope, expected_version, phone_uid)
                 self.assertEqual(IdentityType.Phone, get_identity_type(token))
                 result = self._client.decrypt_token_into_raw_uid(token)
@@ -155,8 +155,8 @@ class TestSharingClient(unittest.TestCase):
         test_cases = [AdvertisingTokenVersion.ADVERTISING_TOKEN_V2,
                       AdvertisingTokenVersion.ADVERTISING_TOKEN_V3,
                       AdvertisingTokenVersion.ADVERTISING_TOKEN_V4]
-        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([master_key, site_key]))
-        self.assertTrue(refresh_response.success)
+        self.refresh(keyset_to_json_for_sharing([master_key, site_key]))
+
         for token_version in test_cases:
             with self.subTest(token_version=token_version):
                 token = generate_uid_token(IdentityScope.UID2, token_version)
@@ -198,13 +198,11 @@ class TestSharingClient(unittest.TestCase):
     def test_client_produces_token_with_correct_prefix(self):  #ClientProducesTokenWithCorrectPrefix
         for expected_scope in [IdentityScope.UID2, IdentityScope.EUID]:
             with self.subTest(expected_scope=expected_scope):
-                refresh_response = self._client._refresh_json(keyset_to_json_for_sharing(identity_scope=expected_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(keyset_to_json_for_sharing(identity_scope=expected_scope))
                 self.sharing_encrypt(expected_scope)
 
     def sharing_setup_and_encrypt(self):
-        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([master_key, site_key]))
-        self.assertTrue(refresh_response.success)
+        self.refresh(keyset_to_json_for_sharing([master_key, site_key]))
         return self.sharing_encrypt()
 
     def test_can_encrypt_decrypt_for_sharing(self):  #CanEncryptAndDecryptForSharing
@@ -235,8 +233,7 @@ class TestSharingClient(unittest.TestCase):
         self.assertEqual("A", token[0])
 
     def test_raw_uid_produces_correct_identity_type_in_token(self):  #RawUidProducesCorrectIdentityTypeInToken
-        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing())
-        self.assertTrue(refresh_response.success)
+        self.refresh(keyset_to_json_for_sharing())
         raw_uids = [[IdentityType.Email, "Q4bGug8t1xjsutKLCNjnb5fTlXSvIQukmahYDJeLBtk="],  # v2 +12345678901
                     [IdentityType.Phone, "BEOGxroPLdcY7LrSiwjY52+X05V0ryELpJmoWAyXiwbZ"],  # v3 +12345678901
                     [IdentityType.Email, "oKg0ZY9ieD/CGMEjAA0kcq+8aUbLMBG0MgCT3kWUnJs="],  # v2 test@example.com
@@ -258,9 +255,7 @@ class TestSharingClient(unittest.TestCase):
                 self.assertEqual(identity_type, actual_identity_type)
 
     def test_multiple_keys_per_keyset(self):  # MultipleKeysPerKeyset
-        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([master_key, master_key2, site_key, site_key2]))
-        self.assertTrue(refresh_response.success)
-
+        self.refresh(keyset_to_json_for_sharing([master_key, master_key2, site_key, site_key2]))
         sharing_token = self._client.encrypt_raw_uid_into_token(example_uid)
 
         result = self._client.decrypt_token_into_raw_uid(sharing_token.encrypted_data)
@@ -268,25 +263,21 @@ class TestSharingClient(unittest.TestCase):
         self.assertEqual(example_uid, result.uid)
 
     def test_cannot_encrypt_if_no_key_from_default_keyset(self):  #CannotEncryptIfNoKeyFromTheDefaultKeyset
-        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([master_key]))
-        self.assertTrue(refresh_response.success)
-
+        self.refresh(keyset_to_json_for_sharing([master_key]))
         result = self._client.encrypt_raw_uid_into_token(example_uid)
         self.assertEqual(result.status, EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)
 
     def test_cannot_encrypt_if_theres_no_default_keyset_header(self):  #CannotEncryptIfTheresNoDefaultKeysetHeader
-        refresh_response = self._client._refresh_json(key_sharing_response_json([master_key, site_key], identity_scope=IdentityScope.UID2))
-        self.assertTrue(refresh_response.success)
+        self.refresh(key_sharing_response_json([master_key, site_key], identity_scope=IdentityScope.UID2))
         self._client.encrypt_raw_uid_into_token(example_uid)
 
         result = self._client.encrypt_raw_uid_into_token(example_uid)
         self.assertEqual(result.status, EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)
 
     def test_expiry_in_token_matches_expiry_in_response(self):  # ExpiryInTokenMatchesExpiryInResponse
-        refresh_response = self._client._refresh_json(
+        self.refresh(
             key_sharing_response_json([master_key, site_key], identity_scope=IdentityScope.UID2,
                                       default_keyset_id=99999, token_expiry_seconds=2))
-        self.assertTrue(refresh_response.success)
 
         encryption_data_response = self._client.encrypt_raw_uid_into_token(example_uid)
         self.assertEqual(encryption_data_response.status, EncryptionStatus.SUCCESS)
@@ -303,32 +294,28 @@ class TestSharingClient(unittest.TestCase):
 
     def test_encrypt_key_expired(self):  #EncryptKeyExpired
         expired_key = EncryptionKey(site_key_id, site_id, created=now, activates=now, expires=YESTERDAY, secret=site_secret)
-        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([master_key, expired_key]))
-        self.assertTrue(refresh_response.success)
+        self.refresh(keyset_to_json_for_sharing([master_key, expired_key]))
 
         result = self._client.encrypt_raw_uid_into_token(example_uid)
         self.assertEqual(result.status, EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)
 
     def test_encrypt_key_inactive(self):  #EncryptKeyInactive
         inactive_key = EncryptionKey(site_key_id, site_id, now, TOMORROW, IN_2_DAYS, site_secret)
-        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([master_key, inactive_key]))
-        self.assertTrue(refresh_response.success)
+        self.refresh(keyset_to_json_for_sharing([master_key, inactive_key]))
 
         result = self._client.encrypt_raw_uid_into_token(example_uid)
         self.assertEqual(result.status, EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)
 
     def test_encrypt_site_key_expired(self):  #EncryptSiteKeyExpired
         expired_key = EncryptionKey(site_key_id, site_id, created=now, activates=now, expires=YESTERDAY, secret=site_secret)
-        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([master_key, expired_key]))
-        self.assertTrue(refresh_response.success)
+        self.refresh(keyset_to_json_for_sharing([master_key, expired_key]))
 
         result = self._client.encrypt_raw_uid_into_token(example_uid)
         self.assertEqual(result.status, EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)
 
     def test_encrypt_site_key_inactive(self):  #EncryptSiteKeyInactive
         inactive_key = EncryptionKey(site_key_id, site_id, now, TOMORROW, IN_2_DAYS, site_secret)
-        refresh_response = self._client._refresh_json(keyset_to_json_for_sharing([master_key, inactive_key]))
-        self.assertTrue(refresh_response.success)
+        self.refresh(keyset_to_json_for_sharing([master_key, inactive_key]))
 
         result = self._client.encrypt_raw_uid_into_token(example_uid)
         self.assertEqual(result.status, EncryptionStatus.NOT_AUTHORIZED_FOR_KEY)

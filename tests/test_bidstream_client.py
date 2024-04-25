@@ -60,6 +60,10 @@ class TestBidStreamClient(unittest.TestCase):
     _CONST_BASE_URL = 'base_url'
     _CONST_API_KEY = 'api_key'
 
+    def refresh(self, refresh_json):
+        refresh_response = self._client._refresh_json(refresh_json)
+        self.assertTrue(refresh_response.success)
+
     def assert_success(self, decryption_response, token_version, scope):
         self.assertTrue(decryption_response.success)
         self.assertEqual(decryption_response.uid, example_uid)
@@ -95,17 +99,13 @@ class TestBidStreamClient(unittest.TestCase):
                                            identity_established_at=now - dt.timedelta(days=120),
                                            generated_at=YESTERDAY,
                                            expires_at=IN_2_DAYS)
-                refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys(
-                    expected_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(key_bidstream_response_json_default_keys(expected_scope))
                 self._decrypt_and_assert_success(token, expected_version, expected_scope)
 
     def test_phone_uids(self):  # PhoneTest
         for expected_scope, expected_version in test_cases_all_scopes_v3_v4_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
-                refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys(
-                    expected_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(key_bidstream_response_json_default_keys(expected_scope))
                 token = generate_uid_token(expected_scope, expected_version, phone_uid)
                 self.assertEqual(IdentityType.Phone, get_identity_type(token))
                 result = self._client.decrypt_token_into_raw_uid(token, None)
@@ -122,9 +122,7 @@ class TestBidStreamClient(unittest.TestCase):
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, generated_at=generated,
                                            expires_at=expires_in_sec)
-                refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys(
-                    expected_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(key_bidstream_response_json_default_keys(expected_scope))
                 result = self._client.decrypt_token_into_raw_uid(token, None)
                 if expected_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V2:
                     self.assert_success(result, expected_version, expected_scope)
@@ -138,9 +136,7 @@ class TestBidStreamClient(unittest.TestCase):
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, generated_at=generated,
                                            expires_at=expires_in_sec)
-                refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys(
-                    expected_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(key_bidstream_response_json_default_keys(expected_scope))
                 result = self._client.decrypt_token_into_raw_uid(token, None)
                 self.assert_fails(result, expected_version, expected_scope)
 
@@ -150,9 +146,7 @@ class TestBidStreamClient(unittest.TestCase):
         for expected_scope, expected_version in test_cases_all_scopes_v3_v4_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, generated_at=created_at_future)
-                refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys(
-                    expected_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(key_bidstream_response_json_default_keys(expected_scope))
                 result = self._client.decrypt_token_into_raw_uid(token, None)
                 self.assert_fails(result, expected_version, expected_scope)
                 self.assertEqual(result.status, DecryptionStatus.INVALID_TOKEN_LIFETIME)
@@ -162,17 +156,14 @@ class TestBidStreamClient(unittest.TestCase):
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, expires_at=created_at_future)
-                refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys(
-                    expected_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(key_bidstream_response_json_default_keys(expected_scope))
                 self._decrypt_and_assert_success(token, expected_version, expected_scope)
 
     def test_legacy_response_from_old_operator(self):
         test_cases = [AdvertisingTokenVersion.ADVERTISING_TOKEN_V2,
                       AdvertisingTokenVersion.ADVERTISING_TOKEN_V3,
                       AdvertisingTokenVersion.ADVERTISING_TOKEN_V4]
-        refresh_response = self._client._refresh_json(key_set_to_json_for_sharing([master_key, site_key]))
-        self.assertTrue(refresh_response.success)
+        self.refresh(key_set_to_json_for_sharing([master_key, site_key]))
         for token_version in test_cases:
             with self.subTest(token_version=token_version):
                 token = generate_uid_token(IdentityScope.UID2, token_version)
@@ -212,9 +203,7 @@ class TestBidStreamClient(unittest.TestCase):
         for uid, identity_scope, identity_type in test_cases:
             with self.subTest(identity_scope=identity_scope, identity_type=identity_type):
                 token = generate_uid_token(identity_scope, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
-                refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys(
-                    identity_scope))
-                self.assertTrue(refresh_response.success)
+                self.refresh(key_bidstream_response_json_default_keys(identity_scope))
                 self._decrypt_and_assert_success(token, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4, identity_scope)
 
     def test_empty_keys(self):  # EmptyKeyContainer
@@ -229,9 +218,7 @@ class TestBidStreamClient(unittest.TestCase):
         site_key_expired = EncryptionKey(site_key_id, site_id, created=now, activates=now - dt.timedelta(hours=2),
                                          expires=now - dt.timedelta(hours=1), secret=site_secret, keyset_id=99999)
 
-        refresh_response = self._client._refresh_json(key_bidstream_response_json(
-            [master_key_expired, site_key_expired]))
-        self.assertTrue(refresh_response.success)
+        self.refresh(key_bidstream_response_json([master_key_expired, site_key_expired]))
 
         result = self._client.decrypt_token_into_raw_uid(example_uid, None)
         self.assertFalse(result.success)
@@ -241,9 +228,7 @@ class TestBidStreamClient(unittest.TestCase):
 
         another_master_key = EncryptionKey(master_key_id + site_key_id + 1, -1, created=now, activates=now, expires=now + dt.timedelta(hours=1), secret=master_secret)
         another_site_key = EncryptionKey(master_key_id + site_key_id + 2, site_id, created=now, activates=now, expires=now + dt.timedelta(hours=1), secret=site_secret)
-        refresh_response = self._client._refresh_json(key_bidstream_response_json(
-            [another_master_key, another_site_key]))
-        self.assertTrue(refresh_response.success)
+        self.refresh(key_bidstream_response_json([another_master_key, another_site_key]))
         token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
 
         result = self._client.decrypt_token_into_raw_uid(token, None)
@@ -251,8 +236,7 @@ class TestBidStreamClient(unittest.TestCase):
         self.assertEqual(result.status, DecryptionStatus.NOT_AUTHORIZED_FOR_MASTER_KEY)
 
     def test_invalid_payload(self):  #InvalidPayload
-        refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys())
-        self.assertTrue(refresh_response.success)
+        self.refresh(key_bidstream_response_json_default_keys())
         token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
         payload = Uid2Base64UrlCoder.decode(token)
         bad_token = base64.urlsafe_b64encode(payload[:0])
@@ -262,8 +246,7 @@ class TestBidStreamClient(unittest.TestCase):
         self.assertEqual(result.status, DecryptionStatus.INVALID_PAYLOAD)
 
     def test_token_expiry_custom_decryption_time(self):  #TokenExpiryAndCustomNow
-        refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys())
-        self.assertTrue(refresh_response.success)
+        self.refresh(key_bidstream_response_json_default_keys())
 
         expires_at = now - dt.timedelta(days=60)
         created_at = expires_at - dt.timedelta(minutes=1)
