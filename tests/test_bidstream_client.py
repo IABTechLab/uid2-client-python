@@ -88,10 +88,13 @@ class TestBidStreamClient(unittest.TestCase):
     def setUp(self):
         self._client = BidstreamClient(self._CONST_BASE_URL, self._CONST_API_KEY, client_secret)
 
-    def test_smoke_test(self):  # SmokeTest
+    def test_smoke_test_for_bidstream(self):  # SmokeTestForBidstream
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
-                token = generate_uid_token(expected_scope, expected_version)
+                token = generate_uid_token(expected_scope, expected_version,
+                                           identity_established_at=now - dt.timedelta(days=120),
+                                           generated_at=YESTERDAY,
+                                           expires_at=IN_2_DAYS)
                 refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys(
                     expected_scope))
                 self.assertTrue(refresh_response.success)
@@ -112,11 +115,29 @@ class TestBidStreamClient(unittest.TestCase):
                 self.assertEqual(result.identity_scope, expected_scope)
                 self.assertEqual(result.advertising_token_version, expected_version)
 
-    def test_token_lifetime_too_long_for_bidstream(self):  # TokenLifetimeTooLongForBidstream
-        expires_in_sec = IN_3_DAYS + dt.timedelta(minutes=1)
+    def test_token_lifetime_too_long_for_bidstream_but_remaining_lifetime_allowed(self):  # TokenLifetimeTooLongForBidstreamButRemainingLifetimeAllowed
+        generated = YESTERDAY
+        expires_in_sec = generated + dt.timedelta(days=3) + dt.timedelta(minutes=1)
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
-                token = generate_uid_token(expected_scope, expected_version, expires_at=expires_in_sec)
+                token = generate_uid_token(expected_scope, expected_version, generated_at=generated,
+                                           expires_at=expires_in_sec)
+                refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys(
+                    expected_scope))
+                self.assertTrue(refresh_response.success)
+                result = self._client.decrypt_token_into_raw_uid(token, None)
+                if expected_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V2:
+                    self.assert_success(result, expected_version, expected_scope)
+                else:
+                    self.assert_fails(result, expected_version, expected_scope)
+
+    def test_token_remaining_lifetime_too_long_for_bidstream(self):  # TokenRemainingLifetimeTooLongForBidstream
+        generated = now
+        expires_in_sec = generated + dt.timedelta(days=3) + dt.timedelta(minutes=1)
+        for expected_scope, expected_version in test_cases_all_scopes_v3_v4_versions:
+            with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
+                token = generate_uid_token(expected_scope, expected_version, generated_at=generated,
+                                           expires_at=expires_in_sec)
                 refresh_response = self._client._refresh_json(key_bidstream_response_json_default_keys(
                     expected_scope))
                 self.assertTrue(refresh_response.success)

@@ -77,17 +77,35 @@ class TestSharingClient(unittest.TestCase):
         decrypted = self._client.decrypt_token_into_raw_uid(token)
         self._test_bidstream_client.assert_success(decrypted, token_version, scope)
 
-    def test_smoke_test(self):  # SmokeTest
+    def test_smoke_test_for_sharing(self):  # SmokeTestForSharing
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
-                token = generate_uid_token(expected_scope, expected_version)
+                token = generate_uid_token(expected_scope, expected_version,
+                                           identity_established_at=now - dt.timedelta(days=120),
+                                           generated_at=YESTERDAY, expires_at=now + dt.timedelta(days=29))
                 refresh_response = self._client._refresh_json(key_sharing_response_json_default_keys(
                     expected_scope))
                 self.assertTrue(refresh_response.success)
                 self.decrypt_and_assert_success(token, expected_version, expected_scope)
 
+    def test_token_lifetime_too_long_for_sharing_but_remaining_lifetime_allowed(self):  # TokenLifetimeTooLongForSharingButRemainingLifetimeAllowed
+        generated = YESTERDAY
+        expires_in_sec = generated + dt.timedelta(days=31)
+        for expected_scope, expected_version in test_cases_all_scopes_all_versions:
+            with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
+                token = generate_uid_token(expected_scope, expected_version, generated_at=generated,
+                                           expires_at=expires_in_sec)
+                refresh_response = self._client._refresh_json(key_sharing_response_json_default_keys(
+                    expected_scope))
+                self.assertTrue(refresh_response.success)
+                result = self._client.decrypt_token_into_raw_uid(token)
+                if expected_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V2:
+                    self._test_bidstream_client.assert_success(result, expected_version, expected_scope)
+                else:
+                    self._test_bidstream_client.assert_fails(result, expected_version, expected_scope)
+
     def test_token_lifetime_too_long_for_sharing(self):  # TokenLifetimeTooLongForSharing
-        expires_in_sec = dt.datetime.now(tz=timezone.utc) + dt.timedelta(days=31)
+        expires_in_sec = now + dt.timedelta(days=30) + dt.timedelta(minutes=1)
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, expires_at=expires_in_sec)
@@ -277,7 +295,8 @@ class TestSharingClient(unittest.TestCase):
         self.assertTrue(result.status)
         self.assertEqual(example_uid, result.uid)
 
-        future_decryption_result = self._client._decrypt_token_into_raw_uid(encryption_data_response.encrypted_data, now + dt.timedelta(seconds=3))
+        future_decryption_result = self._client._decrypt_token_into_raw_uid(encryption_data_response.encrypted_data,
+                                                                            now + dt.timedelta(seconds=3))
         self.assertFalse(future_decryption_result.success)
         self.assertEqual(DecryptionStatus.EXPIRED_TOKEN, future_decryption_result.status)
         self.assertEqual(now + dt.timedelta(seconds=2), future_decryption_result.expiry)
