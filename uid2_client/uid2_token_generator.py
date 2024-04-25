@@ -99,15 +99,15 @@ class UID2TokenGenerator:
 
     @staticmethod
     def generate_uid_token(id_str, master_key, site_id, site_key, identity_scope, token_version,
-                           identity_established_at=None, generated_at=None, expires_at=None):
+                           identity_established=None, token_generated=None, token_expiry=None):
         params = default_params()
         params.identity_scope = identity_scope
-        if identity_established_at is not None:
-            params.identity_established = identity_established_at
-        if generated_at is not None:
-            params.token_generated = generated_at
-        if expires_at is not None:
-            params.token_expiry = expires_at
+        if identity_established is not None:
+            params.identity_established = identity_established
+        if token_generated is not None:
+            params.token_generated = token_generated
+        if token_expiry is not None:
+            params.token_expiry = token_expiry
         if token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V2:
             return UID2TokenGenerator.generate_uid2_token_v2(id_str, master_key, site_id, site_key, params)
         elif token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V3:

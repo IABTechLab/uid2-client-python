@@ -247,7 +247,7 @@ class TestBidStreamClient(unittest.TestCase):
         expires_at = now - dt.timedelta(days=60)
         created_at = expires_at - dt.timedelta(minutes=1)
         token = generate_uid_token(IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4,
-                                   identity_established_at=created_at, expires_at=expires_at)
+                                   generated_at=created_at, expires_at=expires_at)
         result = self._client._decrypt_token_into_raw_uid(token, None, expires_at + dt.timedelta(seconds=1))
         self.assertFalse(result.success)
         self.assertEqual(result.status, DecryptionStatus.EXPIRED_TOKEN)
