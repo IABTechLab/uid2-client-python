@@ -119,7 +119,7 @@ class EncryptionKeysAutoRefresher(threading.Thread):
     def _try_refresh_keys(self):
         """Invoke UID2 client to refresh latest keys from the service."""
         try:
-            keys = self._client.refresh()
+            keys = self._client.refresh_keys()
             self._result = self._make_success_result(keys)
             return True
         except:

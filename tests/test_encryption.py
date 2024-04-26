@@ -70,6 +70,8 @@ class TestEncryptionFunctions(unittest.TestCase):
             self.assertEqual(-1, advertising_token_string.find("/"))
 
     def generate_uid2_token_v4(self, uid, master_key, site_id, site_key, params = Params(), identity_type = IdentityType.Email, identity_scope = IdentityScope.UID2):
+        if not isinstance(params.token_expiry, dt.datetime):
+            params.token_expiry = dt.datetime.now(tz=timezone.utc) + params.token_expiry
         advertising_token = UID2TokenGenerator.generate_uid2_token_v4(uid, master_key, site_id, site_key, params)
         self.validate_advertising_token(advertising_token, identity_scope, identity_type)
         return advertising_token
@@ -155,7 +157,7 @@ class TestEncryptionFunctions(unittest.TestCase):
             result = decrypt(token, keys)
 
     def test_decrypt_token_v4_invalid_version(self):
-        params = Params(dt.timedelta(hours=1))
+        params = Params(dt.datetime.now(tz=timezone.utc) + dt.timedelta(hours=1))
         token = UID2TokenGenerator.generate_uid2_token_with_debug_info(_example_id, _master_key, _site_id, _site_key, params, 1)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
@@ -174,7 +176,8 @@ class TestEncryptionFunctions(unittest.TestCase):
             result = decrypt(token, keys)
 
     def _generate_v2_token(self, expires_in_seconds):
-        return UID2TokenGenerator.generate_uid2_token_v2(_example_id, _master_key, _site_id, _site_key, Params(expires_in_seconds))
+        return UID2TokenGenerator.generate_uid2_token_v2(_example_id, _master_key, _site_id, _site_key,
+                                                         Params(dt.datetime.now(tz=timezone.utc) + expires_in_seconds))
 
     def _generate_v4_token(self, expires_in_seconds):
         return self.generate_uid2_token_v4(_example_id, _master_key, _site_id, _site_key, Params(expires_in_seconds))
@@ -297,7 +300,7 @@ class TestEncryptionFunctions(unittest.TestCase):
             result = decrypt(token, keys)
 
     def test_decrypt_token_v3_invalid_version(self):
-        params = Params(dt.timedelta(hours=1))
+        params = Params(dt.datetime.now(tz=timezone.utc) + dt.timedelta(hours=1))
         token = UID2TokenGenerator.generate_uid2_token_with_debug_info(_example_id, _master_key, _site_id, _site_key, params, 1)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
@@ -307,7 +310,7 @@ class TestEncryptionFunctions(unittest.TestCase):
 
 
     def test_decrypt_token_v3_expired(self):
-        params = Params(dt.timedelta(seconds=-1))
+        params = Params(dt.datetime.now(tz=timezone.utc) + dt.timedelta(seconds=-1))
         token = UID2TokenGenerator.generate_uid2_token_v3(_example_id, _master_key, _site_id, _site_key, params)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])
@@ -331,7 +334,7 @@ class TestEncryptionFunctions(unittest.TestCase):
 
 
     def test_decrypt_token_v3_invalid_payload(self):
-        params = Params(dt.timedelta(seconds=-1))
+        params = Params(dt.datetime.now(tz=timezone.utc) + dt.timedelta(seconds=-1))
         token = UID2TokenGenerator.generate_uid2_token_v3(_example_id, _master_key, _site_id, _site_key, params)
 
         keys = EncryptionKeysCollection([_master_key, _site_key])

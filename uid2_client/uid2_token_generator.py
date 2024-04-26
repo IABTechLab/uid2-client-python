@@ -50,25 +50,29 @@ def _encrypt_data_v1(data, key, iv):
 
 
 class Params:
-    def __init__(self, expiry=dt.datetime.now(tz=timezone.utc) + dt.timedelta(hours=1),
-                 identity_scope=IdentityScope.UID2.value, token_generated=dt.datetime.now(tz=timezone.utc),
-                 identity_established=dt.datetime.now(tz=timezone.utc)):
+    def __init__(self, expiry=None, identity_scope=IdentityScope.UID2.value, token_generated=None,
+                 identity_established=None):
+        now = dt.datetime.now(tz=timezone.utc)
+        if identity_established is None:
+            identity_established = now
+        if token_generated is None:
+            token_generated = now
+        if expiry is None:
+            expiry = now + dt.timedelta(hours=1)
+
+        self.identity_established = identity_established
+        self.token_generated = token_generated
         self.token_expiry = expiry
         self.identity_scope = identity_scope
-        self.token_generated = token_generated
-        self.identity_established = identity_established
-        if not isinstance(expiry, dt.datetime):
-            self.token_expiry = dt.datetime.now(tz=timezone.utc) + expiry
-
-
-def default_params():
-    return Params()
 
 
 class UID2TokenGenerator:
 
     @staticmethod
-    def generate_uid2_token_v2(id_str, master_key, site_id, site_key, params=default_params(), version=2):
+    def generate_uid2_token_v2(id_str, master_key, site_id, site_key, params=None, version=2):
+        if params is None:
+            params = Params()
+
         id = bytes(id_str, 'utf-8')
         identity = int.to_bytes(site_id, 4, 'big')
         identity += int.to_bytes(len(id), 4, 'big')
@@ -88,26 +92,19 @@ class UID2TokenGenerator:
         return base64.b64encode(token).decode('ascii')
 
     @staticmethod
-    def generate_uid2_token_v3(id_str, master_key, site_id, site_key, params=default_params()):
+    def generate_uid2_token_v3(id_str, master_key, site_id, site_key, params=None):
         return UID2TokenGenerator.generate_uid2_token_with_debug_info(id_str, master_key, site_id, site_key, params,
                                                     AdvertisingTokenVersion.ADVERTISING_TOKEN_V3.value)
 
     @staticmethod
-    def generate_uid2_token_v4(id_str, master_key, site_id, site_key, params=default_params()):
+    def generate_uid2_token_v4(id_str, master_key, site_id, site_key, params=None):
         return UID2TokenGenerator.generate_uid2_token_with_debug_info(id_str, master_key, site_id, site_key, params,
                                                     AdvertisingTokenVersion.ADVERTISING_TOKEN_V4.value)
 
     @staticmethod
     def generate_uid_token(id_str, master_key, site_id, site_key, identity_scope, token_version,
                            identity_established=None, token_generated=None, token_expiry=None):
-        params = default_params()
-        params.identity_scope = identity_scope
-        if identity_established is not None:
-            params.identity_established = identity_established
-        if token_generated is not None:
-            params.token_generated = token_generated
-        if token_expiry is not None:
-            params.token_expiry = token_expiry
+        params = Params(token_expiry, identity_scope, token_generated, identity_established)
         if token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V2:
             return UID2TokenGenerator.generate_uid2_token_v2(id_str, master_key, site_id, site_key, params)
         elif token_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V3:
@@ -119,6 +116,8 @@ class UID2TokenGenerator:
 
     @staticmethod
     def generate_uid2_token_with_debug_info(id_str, master_key, site_id, site_key, params, version):
+        if params is None:
+            params = Params()
 
         # Publisher Data
         site_payload = int.to_bytes(site_id, length=4, byteorder='big')
