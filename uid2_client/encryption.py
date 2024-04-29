@@ -111,7 +111,9 @@ def _decrypt_token(token, keys, domain_name, client_type, now):
         return DecryptedToken.make_error(DecryptionStatus.VERSION_NOT_SUPPORTED)
 
 
-def _token_has_valid_lifetime(keys, client_type, established, expires, now):
+def _token_has_valid_lifetime(keys, client_type, generated_or_now, expires, now):
+    #  generated_or_now allows "now" for token v2, since v2 does not contain a "token generated" field.
+    #  v2 therefore checks against remaining lifetime rather than total lifetime
     if client_type is ClientType.BIDSTREAM:
         max_life_time_seconds = keys.get_max_bidstream_lifetime_seconds()
     elif client_type is ClientType.SHARING:
@@ -119,10 +121,10 @@ def _token_has_valid_lifetime(keys, client_type, established, expires, now):
     else:
         return True  # Skip check for legacy clients
 
-    if (expires - established).total_seconds() > max_life_time_seconds:
+    if (expires - generated_or_now).total_seconds() > max_life_time_seconds:
         return False
-    elif established > now:
-        return (established - now).total_seconds() <= keys.get_allow_clock_skew_seconds()
+    elif generated_or_now > now:
+        return (generated_or_now - now).total_seconds() <= keys.get_allow_clock_skew_seconds()
     else:
         return True
 
@@ -165,7 +167,7 @@ def _decrypt_token_v2(token_bytes, keys, domain_name, client_type, now):
     established_ms = int.from_bytes(identity[idx:idx + 8], 'big')
     established = dt.datetime.fromtimestamp(established_ms / 1000.0, tz=timezone.utc)
 
-    if not _token_has_valid_lifetime(keys, client_type, established, expires, now):
+    if not _token_has_valid_lifetime(keys, client_type, now, expires, now):
         return DecryptedToken(DecryptionStatus.INVALID_TOKEN_LIFETIME, id_str, established, site_id, site_key.site_id,
                           keys.get_identity_scope(), None, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2, False, expires)
 
@@ -199,7 +201,7 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_ve
         return DecryptedToken(DecryptionStatus.EXPIRED_TOKEN, None, None, None, None,
                               keys.get_identity_scope(), identity_type, token_version, None, expires)
 
-    # created 8:16
+    generated_ms = int.from_bytes(master_payload[8:16], 'big')  # Token Generated
     # operator site id 16:20
     # operator type 20
     # operator version 21:25
@@ -219,6 +221,10 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_ve
     # privacy bits 16:20
     privacy_bits = bitarray()
     privacy_bits.frombytes(site_payload[16:20])
+    established_ms = int.from_bytes(site_payload[20:28], 'big')
+    id_bytes = site_payload[36:]
+    id_str = base64.b64encode(id_bytes).decode('ascii')
+
     is_client_side_generated = False
     if privacy_bits[1]:
         is_client_side_generated = True
@@ -227,16 +233,12 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_ve
         return DecryptedToken(DecryptionStatus.DOMAIN_NAME_CHECK_FAILED, None, None, site_id, site_key.site_id,
                           keys.get_identity_scope(), identity_type, token_version, is_client_side_generated, expires)
 
-    established_ms = int.from_bytes(site_payload[20:28], 'big')
     established = dt.datetime.fromtimestamp(established_ms / 1000.0, tz=timezone.utc)
-    # refreshed_ms 28:36
+    generated = dt.datetime.fromtimestamp(generated_ms / 1000.0, tz=timezone.utc)
 
-    if not _token_has_valid_lifetime(keys, client_type, established, expires, now):
+    if not _token_has_valid_lifetime(keys, client_type, generated, expires, now):
         return DecryptedToken(DecryptionStatus.INVALID_TOKEN_LIFETIME, None, established, site_id, site_key.site_id,
                           keys.get_identity_scope(), identity_type, token_version, is_client_side_generated, expires)
-
-    id_bytes = site_payload[36:]
-    id_str = base64.b64encode(id_bytes).decode('ascii')
 
     return DecryptedToken(DecryptionStatus.SUCCESS, id_str, established, site_id, site_key.site_id,
                           keys.get_identity_scope(), identity_type, token_version, is_client_side_generated, expires)
@@ -286,7 +288,7 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
     if identity_scope is None:
         identity_scope = keys.get_identity_scope()
     try:
-        params = Params(expiry=token_expiry, identity_scope=identity_scope, token_generated_at=now)
+        params = Params(expiry=token_expiry, identity_scope=identity_scope, token_generated=now)
         return EncryptionDataResponse.make_success(UID2TokenGenerator.generate_uid2_token_v4(uid2, master_key, site_id, key, params))
     except Exception:
         return EncryptionDataResponse.make_error(EncryptionStatus.ENCRYPTION_FAILURE)
