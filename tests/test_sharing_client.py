@@ -35,7 +35,9 @@ def encode_keys(keys):
     return key_json
 
 
-def key_sharing_response_json(keys, identity_scope=IdentityScope.UID2, caller_site_id=site_id, default_keyset_id=None, token_expiry_seconds=2592000):
+def key_sharing_response_json(keys, identity_scope=IdentityScope.UID2, caller_site_id=site_id, default_keyset_id=None, token_expiry_seconds=2592000, max_sharing_lifetime_seconds=None):
+    if max_sharing_lifetime_seconds is None:
+        max_sharing_lifetime_seconds = dt.timedelta(days=30).total_seconds()
     encoded_keys = encode_keys(keys)
     json_obj = {
         "body": {
@@ -44,7 +46,7 @@ def key_sharing_response_json(keys, identity_scope=IdentityScope.UID2, caller_si
             "token_expiry_seconds": token_expiry_seconds,
             "identity_scope": identity_scope.name,
             "allow_clock_skew_seconds": 1800,  # 30 mins
-            "max_sharing_lifetime_seconds": dt.timedelta(days=30).total_seconds(),
+            "max_sharing_lifetime_seconds": max_sharing_lifetime_seconds,
             "keys": encoded_keys,
             "unexpected_header_field": 12345  # ensure new fields can be handled by old SDK versions
         }
@@ -94,11 +96,13 @@ class TestSharingClient(unittest.TestCase):
     def test_token_lifetime_too_long_for_sharing_but_remaining_lifetime_allowed(self):  # TokenLifetimeTooLongForSharingButRemainingLifetimeAllowed
         generated = YESTERDAY
         expires_in_sec = generated + dt.timedelta(days=31)
+        max_sharing_lifetime_seconds = dt.timedelta(days=30).total_seconds()
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, generated_at=generated,
                                            expires_at=expires_in_sec)
-                self.refresh(key_sharing_response_json_default_keys(expected_scope))
+                self.refresh(key_sharing_response_json([master_key, site_key], expected_scope,
+                                                       max_sharing_lifetime_seconds=max_sharing_lifetime_seconds))
 
                 result = self._client.decrypt_token_into_raw_uid(token)
                 if expected_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V2:

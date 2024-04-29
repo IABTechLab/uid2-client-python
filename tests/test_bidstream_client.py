@@ -26,11 +26,15 @@ def encode_keys(keys):
     return key_json
 
 
-def key_bidstream_response_json(keys, identity_scope=IdentityScope.UID2):
+def key_bidstream_response_with_lifetime_json(keys, identity_scope, max_bidstream_lifetime_seconds):
+    if identity_scope is None:
+        identity_scope = IdentityScope.UID2
+    if max_bidstream_lifetime_seconds is None:
+        max_bidstream_lifetime_seconds = dt.timedelta(days=3).total_seconds()
     encoded_keys = encode_keys(keys)
     json_obj = {
         "body": {
-            "max_bidstream_lifetime_seconds": dt.timedelta(days=3).total_seconds(),
+            "max_bidstream_lifetime_seconds": max_bidstream_lifetime_seconds,
             "identity_scope": identity_scope.name,
             "allow_clock_skew_seconds": 1800,  # 30 mins
             "keys": encoded_keys,
@@ -52,8 +56,12 @@ def key_bidstream_response_json(keys, identity_scope=IdentityScope.UID2):
     return json.dumps(json_obj)
 
 
+def key_bidstream_response_json(keys, identity_scope=IdentityScope.UID2, max_bidstream_lifetime_seconds=None):
+    return key_bidstream_response_with_lifetime_json(keys, identity_scope, max_bidstream_lifetime_seconds)
+
+
 def key_bidstream_response_json_default_keys(identity_scope=IdentityScope.UID2):
-    return key_bidstream_response_json([master_key, site_key], identity_scope)
+    return key_bidstream_response_with_lifetime_json([master_key, site_key], identity_scope, None)
 
 
 class TestBidStreamClient(unittest.TestCase):
@@ -118,11 +126,13 @@ class TestBidStreamClient(unittest.TestCase):
     def test_token_lifetime_too_long_for_bidstream_but_remaining_lifetime_allowed(self):  # TokenLifetimeTooLongForBidstreamButRemainingLifetimeAllowed
         generated = YESTERDAY
         expires_in_sec = generated + dt.timedelta(days=3) + dt.timedelta(minutes=1)
+        max_bidstream_lifetime_seconds = dt.timedelta(days=3).total_seconds()
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, generated_at=generated,
                                            expires_at=expires_in_sec)
-                self.refresh(key_bidstream_response_json_default_keys(expected_scope))
+                self.refresh(key_bidstream_response_json([master_key, site_key], expected_scope,
+                                                         max_bidstream_lifetime_seconds))
                 result = self._client.decrypt_token_into_raw_uid(token, None)
                 if expected_version == AdvertisingTokenVersion.ADVERTISING_TOKEN_V2:
                     self.assert_success(result, expected_version, expected_scope)
