@@ -24,5 +24,6 @@ from .encryption_status import *
 from .encryption_data_response import *
 from .refresh_response import *
 from .uid2_token_generator import *
-
-
+from .identity_map_client import *
+from .identity_map_input import *
+from .identity_map_response import *
