@@ -8,7 +8,7 @@ from uid2_client import auth_headers, make_v2_request, post, parse_v2_response
 
 
 class IdentityMapClient:
-    """Client for interacting with UID2 Identity Map services
+    """Client for interacting with UID Identity Map services
 
         You will need to have the base URL of the endpoint and a client API key
         and secret to consume web services.
@@ -21,12 +21,12 @@ class IdentityMapClient:
         """Create a new IdentityMapClient client.
 
         Args:
-            base_url (str): base URL for all requests to UID2 services (e.g. 'https://prod.uidapi.com')
-            auth_key (str): authorization key for consuming the UID2 services
-            secret_key (str): secret key for consuming the UID2 services
+            base_url (str): base URL for all requests to UID services (e.g. 'https://prod.uidapi.com')
+            auth_key (str): authorization key for consuming the UID services
+            secret_key (str): secret key for consuming the UID services
 
         Note:
-            Your authorization key will determine which UID2 services you are allowed to use.
+            Your authorization key will determine which UID services you are allowed to use.
         """
         self._base_url = base_url
         self._auth_key = auth_key

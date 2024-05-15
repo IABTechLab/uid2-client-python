@@ -7,7 +7,8 @@ from uid2_client import IdentityMapClient, IdentityMapInput
 # which contains raw uid or the reason why it is unmapped
 
 def _usage():
-    print('Usage: python3 sample_sharing_client.py <base_url> <auth_key> <secret_key> <email_list>', file=sys.stderr)
+    print('Usage: python3 sample_sharing_client.py <base_url> <auth_key> <secret_key> <email_1> <email_2> ... <email_n>'
+          , file=sys.stderr)
     sys.exit(1)
 
 
@@ -35,4 +36,3 @@ else:
     unmapped_identity = unmapped_identities.get(first_email)
     reason = unmapped_identity.get_reason()
     print('reason =', reason)
-
