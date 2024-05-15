@@ -107,11 +107,11 @@ class IdentityMapIntegrationTests(unittest.TestCase):
         self.assert_unmapped(response, "optout", hashed_opted_out_email)
         self.assert_unmapped(response, "optout", duplicate_hashed_opted_out_email)
 
-    '''def test_identity_map_empty_input(self):
+    def test_identity_map_empty_input(self):
         identity_map_input = IdentityMapInput.from_emails([])
         response = self.identity_map_client.generate_identity_map(identity_map_input)
-        self.assertIsNone(response.mapped_identities)
-        self.assertIsNone(response.unmapped_identities)'''
+        self.assertTrue(len(response.mapped_identities) == 0)
+        self.assertTrue(len(response.unmapped_identities) == 0)
 
     def test_identity_map_phones(self):
         identity_map_input = IdentityMapInput.from_phones(["+12345678901", "+98765432109", "+00000000000"])

@@ -9,9 +9,10 @@ class IdentityMapInput:
 
     def __init__(self, identity_type, emails_or_phones, already_hashed):
         self.hashed_dii_to_raw_diis = {}
-        self.hashed_normalized_emails = []
-        self.hashed_normalized_phones = []
+        self.hashed_normalized_emails = None
+        self.hashed_normalized_phones = None
         if identity_type == IdentityType.Email:
+            self.hashed_normalized_emails = []
             for email in emails_or_phones:
                 if already_hashed:
                     self.hashed_normalized_emails.append(email)
@@ -20,6 +21,7 @@ class IdentityMapInput:
                     self._add_hashed_to_raw_dii_mapping(hashed_normalized_email, email)
                     self.hashed_normalized_emails.append(hashed_normalized_email)
         else:  # phone
+            self.hashed_normalized_phones = []
             for phone in emails_or_phones:
                 if already_hashed:
                     self.hashed_normalized_phones.append(phone)
@@ -58,4 +60,4 @@ class IdentityMapInput:
             "email_hash": self.hashed_normalized_emails,
             "phone_hash": self.hashed_normalized_phones
         }
-        return json.dumps({k: v for k, v in json_object.items() if v is not None and len(v) > 0})
+        return json.dumps({k: v for k, v in json_object.items() if v is not None})
