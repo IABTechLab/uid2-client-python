@@ -1,6 +1,7 @@
 import json
 
-from uid2_client import IdentityType, normalize_email_string, get_base64_encoded_hash, is_phone_number_normalized
+from uid2_client import IdentityType, normalize_email_string, get_base64_encoded_hash, is_phone_number_normalized, \
+    normalize_and_hash_email, normalize_and_hash_phone
 
 
 class IdentityMapInput:
@@ -15,20 +16,15 @@ class IdentityMapInput:
                 if already_hashed:
                     self.hashed_normalized_emails.append(email)
                 else:
-                    normalized_email = normalize_email_string(email)
-                    if normalized_email is None:
-                        raise ValueError("invalid email address")
-                    hashed_normalized_email = get_base64_encoded_hash(normalized_email)
-                    self.hashed_normalized_emails.append(hashed_normalized_email)
+                    hashed_normalized_email = normalize_and_hash_email(email)
                     self._add_hashed_to_raw_dii_mapping(hashed_normalized_email, email)
+                    self.hashed_normalized_emails.append(hashed_normalized_email)
         else:  # phone
             for phone in emails_or_phones:
                 if already_hashed:
                     self.hashed_normalized_phones.append(phone)
                 else:
-                    if not is_phone_number_normalized(phone):
-                        raise ValueError("phone number is not normalized: " + phone)
-                    hashed_normalized_phone = get_base64_encoded_hash(phone)
+                    hashed_normalized_phone = normalize_and_hash_phone(phone)
                     self._add_hashed_to_raw_dii_mapping(hashed_normalized_phone, phone)
                     self.hashed_normalized_phones.append(hashed_normalized_phone)
 
@@ -50,6 +46,12 @@ class IdentityMapInput:
 
     def _add_hashed_to_raw_dii_mapping(self, hashed_dii, raw_dii):
         self.hashed_dii_to_raw_diis.setdefault(hashed_dii, []).append(raw_dii)
+
+    def get_raw_diis(self, identifier):
+        if len(self.hashed_dii_to_raw_diis) <= 0:
+            return [identifier]
+        else:
+            return self.hashed_dii_to_raw_diis[identifier]
 
     def get_identity_map_input_as_json_string(self):
         json_object = {

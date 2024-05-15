@@ -32,7 +32,7 @@ class IdentityMapResponse:
     @staticmethod
     def _get_raw_diis(identity, identity_map_input):
         identifier = identity["identifier"]
-        return identity_map_input.hashed_dii_to_raw_diis[identifier]
+        return identity_map_input.get_raw_diis(identifier)
 
     def is_success(self):
         return self.status == "success"
