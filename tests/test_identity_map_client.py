@@ -86,10 +86,10 @@ class IdentityMapIntegrationTests(unittest.TestCase):
         mapped_identities = response.mapped_identities
         self.assertEqual(4, len(mapped_identities))
 
-        raw_uid = mapped_identities.get("JANE.SAOIRSE@gmail.com").get_raw_id()
-        self.assertEqual(raw_uid, mapped_identities.get("Jane.Saoirse@gmail.com").get_raw_id())
-        self.assertEqual(raw_uid, mapped_identities.get("JaneSaoirse+UID2@gmail.com").get_raw_id())
-        self.assertEqual(raw_uid, mapped_identities.get("janesaoirse@gmail.com").get_raw_id())
+        raw_uid = mapped_identities.get("JANE.SAOIRSE@gmail.com").get_raw_uid()
+        self.assertEqual(raw_uid, mapped_identities.get("Jane.Saoirse@gmail.com").get_raw_uid())
+        self.assertEqual(raw_uid, mapped_identities.get("JaneSaoirse+UID2@gmail.com").get_raw_uid())
+        self.assertEqual(raw_uid, mapped_identities.get("janesaoirse@gmail.com").get_raw_uid())
 
     def test_identity_map_duplicate_hashed_emails(self):
         hashed_email = normalize_and_hash_email("hopefully-not-opted-out@example.com")
@@ -154,7 +154,7 @@ class IdentityMapIntegrationTests(unittest.TestCase):
     def assert_mapped(self, response, ddi):
         mapped_identity = response.mapped_identities.get(ddi)
         self.assertIsNotNone(mapped_identity)
-        self.assertIsNotNone(mapped_identity.get_raw_id())
+        self.assertIsNotNone(mapped_identity.get_raw_uid())
         self.assertIsNotNone(mapped_identity.get_bucket_id())
 
         unmapped_identity = response.unmapped_identities.get(ddi)

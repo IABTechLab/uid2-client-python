@@ -7,7 +7,7 @@ from uid2_client import IdentityMapClient, IdentityMapInput
 # which contains raw uid or the reason why it is unmapped
 
 def _usage():
-    print('Usage: python3 sample_sharing_client.py <base_url> <auth_key> <secret_key> <email_1> <email_2> ... <email_n>'
+    print('Usage: python3 sample_sharing_client.py <base_url> <api_key> <client_secret> <email_1> <email_2> ... <email_n>'
           , file=sys.stderr)
     sys.exit(1)
 
@@ -16,12 +16,12 @@ if len(sys.argv) <= 4:
     _usage()
 
 base_url = sys.argv[1]
-auth_key = sys.argv[2]
-secret_key = sys.argv[3]
+api_key = sys.argv[2]
+client_secret = sys.argv[3]
 email_list = sys.argv[4:]
 first_email = sys.argv[4]
 
-client = IdentityMapClient(base_url, auth_key, secret_key)
+client = IdentityMapClient(base_url, api_key, client_secret)
 
 identity_map_response = client.generate_identity_map(IdentityMapInput.from_emails(email_list))
 
@@ -30,7 +30,7 @@ unmapped_identities = identity_map_response.unmapped_identities
 
 mapped_identity = mapped_identities.get(first_email)
 if mapped_identity is not None:
-    raw_uid = mapped_identity.get_raw_id()
+    raw_uid = mapped_identity.get_raw_uid()
     print('raw_uid =', raw_uid)
 else:
     unmapped_identity = unmapped_identities.get(first_email)

@@ -43,7 +43,7 @@ class MappedIdentity:
         self.raw_uid = raw_uid
         self.bucket_id = bucket_id
 
-    def get_raw_id(self):
+    def get_raw_uid(self):
         return self.raw_uid
 
     def get_bucket_id(self):

@@ -17,24 +17,24 @@ class IdentityMapClient:
             generate_identity_map: Generate identity map
     """
 
-    def __init__(self, base_url, auth_key, secret_key):
+    def __init__(self, base_url, api_key, client_secret):
         """Create a new IdentityMapClient client.
 
         Args:
             base_url (str): base URL for all requests to UID services (e.g. 'https://prod.uidapi.com')
-            auth_key (str): authorization key for consuming the UID services
-            secret_key (str): secret key for consuming the UID services
+            api_key (str): api key for consuming the UID services
+            client_secret (str): client secret for consuming the UID services
 
         Note:
             Your authorization key will determine which UID services you are allowed to use.
         """
         self._base_url = base_url
-        self._auth_key = auth_key
-        self._secret_key = base64.b64decode(secret_key)
+        self._api_key = api_key
+        self._client_secret = base64.b64decode(client_secret)
 
     def generate_identity_map(self, identity_map_input):
-        req, nonce = make_v2_request(self._secret_key, dt.datetime.now(tz=timezone.utc),
+        req, nonce = make_v2_request(self._client_secret, dt.datetime.now(tz=timezone.utc),
                                      identity_map_input.get_identity_map_input_as_json_string().encode())
-        resp = post(self._base_url, '/v2/identity/map', headers=auth_headers(self._auth_key), data=req)
-        resp_body = parse_v2_response(self._secret_key, resp.read(), nonce)
+        resp = post(self._base_url, '/v2/identity/map', headers=auth_headers(self._api_key), data=req)
+        resp_body = parse_v2_response(self._client_secret, resp.read(), nonce)
         return IdentityMapResponse(resp_body, identity_map_input)
