@@ -42,12 +42,6 @@ First, build the Docker image with Python 3.6 and all dev dependencies. This is 
 make docker
 ```
 
-Run unit tests:
-
-```
-Use PyCharm to run the test cases
-```
-
 Build a bdist wheel:
 
 ```
@@ -59,3 +53,4 @@ Get access to an interactive shell within the Python 3.6 Docker image:
 ```
 make shell
 ```
+Run unit tests: Use PyCharm to run the test cases
