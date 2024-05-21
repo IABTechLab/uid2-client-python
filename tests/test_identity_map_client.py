@@ -149,20 +149,20 @@ class IdentityMapIntegrationTests(unittest.TestCase):
         self.assertRaises(HTTPError, client.generate_identity_map,
                           identity_map_input)
 
-    def assert_mapped(self, response, ddi):
-        mapped_identity = response.mapped_identities.get(ddi)
+    def assert_mapped(self, response, dii):
+        mapped_identity = response.mapped_identities.get(dii)
         self.assertIsNotNone(mapped_identity)
         self.assertIsNotNone(mapped_identity.get_raw_uid())
         self.assertIsNotNone(mapped_identity.get_bucket_id())
 
-        unmapped_identity = response.unmapped_identities.get(ddi)
+        unmapped_identity = response.unmapped_identities.get(dii)
         self.assertIsNone(unmapped_identity)
 
-    def assert_unmapped(self, response, reason, ddi):
-        unmapped_identity = response.unmapped_identities.get(ddi)
+    def assert_unmapped(self, response, reason, dii):
+        unmapped_identity = response.unmapped_identities.get(dii)
         self.assertEqual(reason, unmapped_identity.get_reason())
 
-        mapped_identity = response.mapped_identities.get(ddi)
+        mapped_identity = response.mapped_identities.get(dii)
         self.assertIsNone(mapped_identity)
 
 

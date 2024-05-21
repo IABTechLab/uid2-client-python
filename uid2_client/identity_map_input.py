@@ -11,19 +11,19 @@ class IdentityMapInput:
         self.hashed_normalized_emails = None
         self.hashed_normalized_phones = None
         if identity_type == IdentityType.Email:
-            self.hashed_normalized_emails = []
             if already_hashed:
                 self.hashed_normalized_emails = emails_or_phones
             else:
+                self.hashed_normalized_emails = []
                 for email in emails_or_phones:
                     hashed_normalized_email = normalize_and_hash_email(email)
                     self._add_hashed_to_raw_dii_mapping(hashed_normalized_email, email)
                     self.hashed_normalized_emails.append(hashed_normalized_email)
         else:  # phone
-            self.hashed_normalized_phones = []
             if already_hashed:
                 self.hashed_normalized_phones = emails_or_phones
             else:
+                self.hashed_normalized_phones = []
                 for phone in emails_or_phones:
                     hashed_normalized_phone = normalize_and_hash_phone(phone)
                     self._add_hashed_to_raw_dii_mapping(hashed_normalized_phone, phone)

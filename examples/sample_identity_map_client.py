@@ -3,8 +3,8 @@ import sys
 from uid2_client import IdentityMapClient, IdentityMapInput
 
 
-# this sample client takes email addresses or phone numbers or hashed versions of either as input and generates
-# an IdentityMapResponse object which contains raw uid or the reason why it is unmapped
+# this sample client takes email addresses as input and generates an IdentityMapResponse object which contains raw uid
+# or the reason why it is unmapped
 
 def _usage():
     print('Usage: python3 sample_identity_map_client.py <base_url> <api_key> <client_secret> <email_1> <email_2> ... <email_n>'

@@ -48,14 +48,14 @@ class IdentityMapResponse:
 
 class MappedIdentity:
     def __init__(self, raw_uid, bucket_id):
-        self.raw_uid = raw_uid
-        self.bucket_id = bucket_id
+        self._raw_uid = raw_uid
+        self._bucket_id = bucket_id
 
     def get_raw_uid(self):
-        return self.raw_uid
+        return self._raw_uid
 
     def get_bucket_id(self):
-        return self.bucket_id
+        return self._bucket_id
 
     @staticmethod
     def from_json(json_obj):
