@@ -18,8 +18,6 @@ class IdentityMapIntegrationTests(unittest.TestCase):
         cls.UID2_API_KEY = os.getenv("UID2_API_KEY")
         cls.UID2_SECRET_KEY = os.getenv("UID2_SECRET_KEY")
 
-        print(cls.UID2_BASE_URL, cls.UID2_API_KEY, cls.UID2_SECRET_KEY)
-
         if cls.UID2_BASE_URL and cls.UID2_API_KEY and cls.UID2_SECRET_KEY:
             cls.identity_map_client = IdentityMapClient(cls.UID2_BASE_URL, cls.UID2_API_KEY, cls.UID2_SECRET_KEY)
         else:
