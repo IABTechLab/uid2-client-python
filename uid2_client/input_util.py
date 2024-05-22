@@ -106,3 +106,16 @@ def get_base64_encoded_hash(input):
 
 def get_sha256_bytes(input):
     return hashlib.sha256(input.encode()).digest()
+
+
+def normalize_and_hash_email(email):
+    normalized_email = normalize_email_string(email)
+    if normalized_email is None:
+        raise ValueError("invalid email address: " + email)
+    return get_base64_encoded_hash(normalized_email)
+
+
+def normalize_and_hash_phone(phone):
+    if not is_phone_number_normalized(phone):
+        raise ValueError("phone number is not normalized: " + phone)
+    return get_base64_encoded_hash(phone)

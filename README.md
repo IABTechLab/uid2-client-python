@@ -26,22 +26,12 @@ For documentation on usage, see the [UID2 SDK for Python Reference Guide](https:
 
 ## Example Usage
 
-To run all the example applications:
+
+You can run specific examples:
 
 ```
-make examples BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key SECRET_KEY=my-secret-key \
-	AD_TOKEN=AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A== \
-	RAW_UID=JCqmlLXpbbu/jTdpB2a1cNAVs8O72eMXPaQzC9Ic9mE= \
-	DOMAIN=example.com
-```
-
-Alternatively, you can run specific examples:
-
-```
-make example_client BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key SECRET_KEY=my-secret-key \
-	AD_TOKEN=AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A==
-make example_auto_refresh BASE_URL=https://prod.uidapi.com AUTH_KEY=my-auth-key SECRET_KEY=my-secret-key \
-	AD_TOKEN=AgAAAANRdREk+IWqqnQkZ2rZdK0TgSUP/owLryysSkUGZJT+Gy551L1WJMAZA/G2B1UMDQ20WAqwwTu6o9TexWyux0lg0HHIbmJjN6IYwo+42KC8ugaR+PX0y18qQ+3yzkxmJ/ee//4IGu/1Yq4AmO4ArXN6CeszPTxByTkysVqyQVNY2A==
+python examples/sample_bidstream_client.py BASE_URL=https://operator-integ.uidapi.com AUTH_KEY=my-auth-key SECRET_KEY=my-secret-key
+	DOMAIN_NAME=domain-name AD_TOKEN=ad-token
 ```
 
 ## Development
@@ -50,12 +40,6 @@ First, build the Docker image with Python 3.6 and all dev dependencies. This is 
 
 ```
 make docker
-```
-
-Run unit tests:
-
-```
-make test
 ```
 
 Build a bdist wheel:
@@ -69,3 +53,4 @@ Get access to an interactive shell within the Python 3.6 Docker image:
 ```
 make shell
 ```
+Run unit tests: Use PyCharm to run the test cases
