@@ -18,10 +18,15 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+requires-python = ">=3.6"
 dependencies = [
-    "pycryptodome"
+    "setuptools",
+    "pycryptodome",
+    "bitarray"
 ]
-
+keywords = ["uid2"]
+[project.license]
+file="LICENSE"
 [project.urls]
 "Homepage" = "https://github.com/IABTechLab/uid2-client-python"
 "Bug Tracker" = "https://github.com/IABTechLab/uid2-client-python/issues"
