@@ -1,7 +1,7 @@
 import base64
 from importlib.metadata import version
 import os
-from urllib import request
+import requests
 
 from uid2_client.encryption import _encrypt_gcm, _decrypt_gcm
 
@@ -41,5 +41,4 @@ def parse_v2_response(secret_key, encrypted, nonce):
 
 
 def post(base_url, path, headers, data):
-    req = request.Request(_make_url(base_url, path), headers=headers, method='POST', data=data)
-    return request.urlopen(req)
+    return requests.post(_make_url(base_url, path), data=data, headers=headers)
