@@ -1,5 +1,6 @@
 import base64
 import os
+import ssl
 from urllib import request
 
 import pkg_resources
@@ -43,4 +44,7 @@ def parse_v2_response(secret_key, encrypted, nonce):
 
 def post(base_url, path, headers, data):
     req = request.Request(_make_url(base_url, path), headers=headers, method='POST', data=data)
-    return request.urlopen(req)
+    uid2_ca_file = os.environ.get('UID2_CA_FILE')
+    uid2_ca_path = os.environ.get('UID2_CA_PATH')
+    uid2_ca_data = os.environ.get('UID2_CA_DATA')
+    return request.urlopen(req, context=ssl.create_default_context(cafile=uid2_ca_file, capath=uid2_ca_path, cadata=uid2_ca_data))
