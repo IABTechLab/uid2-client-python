@@ -70,6 +70,7 @@ class UID2TokenGenerator:
 
     @staticmethod
     def generate_uid2_token_v2(id_str, master_key, site_id, site_key, params=None, version=2):
+        """This function is only used by tests."""
         if params is None:
             params = Params()
 
@@ -80,11 +81,11 @@ class UID2TokenGenerator:
         # old privacy_bits
         identity += int.to_bytes(0, 4, 'big')
         identity += int.to_bytes(int(params.identity_established.timestamp()) * 1000, 8, 'big')
-        identity_iv = bytes([10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        identity_iv = os.urandom(16)
         expiry = params.token_expiry
         master_payload = int.to_bytes(int(expiry.timestamp()) * 1000, 8, 'big')
         master_payload += _encrypt_data_v1(identity, key=site_key, iv=identity_iv)
-        master_iv = bytes([21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36])
+        master_iv = os.urandom(16)
 
         token = int.to_bytes(version, 1, 'big')
         token += _encrypt_data_v1(master_payload, key=master_key, iv=master_iv)
