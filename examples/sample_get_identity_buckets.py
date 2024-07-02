@@ -30,9 +30,6 @@ client = IdentityMapClient(base_url, api_key, client_secret)
 
 identity_buckets_response = client.get_identity_buckets(datetime.datetime(year, month, day, hour, minute, second))
 
-if identity_buckets_response.buckets:
-    bucket = identity_buckets_response.buckets[0]
+for bucket in identity_buckets_response.buckets:
     print("The bucket id of the first bucket: ", bucket.get_bucket_id())
     print("The last updated timestamp of the first bucket: ", bucket.get_last_updated())
-else:
-    print("No buckets were returned for this datetime")

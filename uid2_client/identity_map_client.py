@@ -3,7 +3,7 @@ import datetime as dt
 import json
 from datetime import timezone
 
-from .Identity_buckets_response import IdentityBucketsResponse
+from .identity_buckets_response import IdentityBucketsResponse
 from .identity_map_response import IdentityMapResponse
 
 from uid2_client import auth_headers, make_v2_request, post, parse_v2_response, get_datetime_iso_format
@@ -44,7 +44,7 @@ class IdentityMapClient:
 
     def get_identity_buckets(self, since_timestamp):
         req, nonce = make_v2_request(self._client_secret, dt.datetime.now(tz=timezone.utc),
-                                     json.dumps({"since_timestamp": get_datetime_iso_format(since_timestamp)}).encode())
+                                     json.dumps({"since_timestamp": since_timestamp.isoformat()}).encode())
         resp = post(self._base_url, '/v2/identity/buckets', headers=auth_headers(self._api_key), data=req)
         resp.raise_for_status()
         resp_body = parse_v2_response(self._client_secret, resp.text, nonce)
