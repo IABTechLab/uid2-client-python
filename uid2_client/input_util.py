@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import base64
 
@@ -119,3 +120,11 @@ def normalize_and_hash_phone(phone):
     if not is_phone_number_normalized(phone):
         raise ValueError("phone number is not normalized: " + phone)
     return get_base64_encoded_hash(phone)
+
+
+def get_datetime_iso_format(timestamp):
+    if isinstance(timestamp, datetime.datetime):
+        return timestamp.isoformat()
+    else:
+        raise TypeError("timestamp is not in datetime format")
+

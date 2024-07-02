@@ -7,7 +7,7 @@ from uid2_client import IdentityMapClient, IdentityMapInput
 # or the reason why it is unmapped
 
 def _usage():
-    print('Usage: python3 sample_identity_map_client.py <base_url> <api_key> <client_secret> <email_1> <email_2> ... <email_n>'
+    print('Usage: python3 sample_generate_identity_map.py <base_url> <api_key> <client_secret> <email_1> <email_2> ... <email_n>'
           , file=sys.stderr)
     sys.exit(1)
 
