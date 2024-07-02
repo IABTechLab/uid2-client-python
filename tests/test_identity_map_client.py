@@ -174,7 +174,7 @@ class IdentityMapIntegrationTests(unittest.TestCase):
         self.assertIsNone(mapped_identity)
 
     def test_identity_buckets(self):
-        response = self.identity_map_client.get_identity_buckets(datetime.datetime.now() - datetime.timedelta(days=2))
+        response = self.identity_map_client.get_identity_buckets(datetime.datetime.now() - datetime.timedelta(days=90))
         self.assertTrue(len(response.buckets) > 0)
         self.assertTrue(response.is_success)
 

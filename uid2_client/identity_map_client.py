@@ -6,7 +6,7 @@ from datetime import timezone
 from .identity_buckets_response import IdentityBucketsResponse
 from .identity_map_response import IdentityMapResponse
 
-from uid2_client import auth_headers, make_v2_request, post, parse_v2_response, get_datetime_iso_format
+from uid2_client import auth_headers, make_v2_request, post, parse_v2_response
 
 
 class IdentityMapClient:
