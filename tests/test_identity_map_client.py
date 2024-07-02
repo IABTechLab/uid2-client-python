@@ -1,3 +1,4 @@
+import datetime
 import os
 import unittest
 
@@ -131,24 +132,28 @@ class IdentityMapIntegrationTests(unittest.TestCase):
 
         self.assert_unmapped(response, "optout", hashed_opted_out_phone)
 
-    def test_identity_map_bad_url(self):
+    def test_identity_map_client_bad_url(self):
         identity_map_input = IdentityMapInput.from_emails(
             ["hopefully-not-opted-out@example.com", "somethingelse@example.com", "optout@example.com"])
         client = IdentityMapClient("https://operator-bad-url.uidapi.com", os.getenv("UID2_API_KEY"), os.getenv("UID2_SECRET_KEY"))
         self.assertRaises(requests.exceptions.ConnectionError, client.generate_identity_map, identity_map_input)
+        self.assertRaises(requests.exceptions.ConnectionError, client.get_identity_buckets, datetime.datetime.now())
 
-    def test_identity_map_bad_api_key(self):
+    def test_identity_map_client_bad_api_key(self):
         identity_map_input = IdentityMapInput.from_emails(
             ["hopefully-not-opted-out@example.com", "somethingelse@example.com", "optout@example.com"])
         client = IdentityMapClient(os.getenv("UID2_BASE_URL"), "bad-api-key", os.getenv("UID2_SECRET_KEY"))
         self.assertRaises(requests.exceptions.HTTPError, client.generate_identity_map,identity_map_input)
+        self.assertRaises(requests.exceptions.HTTPError, client.get_identity_buckets, datetime.datetime.now())
 
-    def test_identity_map_bad_secret(self):
+    def test_identity_map_client_bad_secret(self):
         identity_map_input = IdentityMapInput.from_emails(
             ["hopefully-not-opted-out@example.com", "somethingelse@example.com", "optout@example.com"])
         client = IdentityMapClient(os.getenv("UID2_BASE_URL"), os.getenv("UID2_API_KEY"), "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg=")
         self.assertRaises(requests.exceptions.HTTPError, client.generate_identity_map,
                           identity_map_input)
+        self.assertRaises(requests.exceptions.HTTPError, client.get_identity_buckets,
+                          datetime.datetime.now())
 
     def assert_mapped(self, response, dii):
         mapped_identity = response.mapped_identities.get(dii)
@@ -165,6 +170,20 @@ class IdentityMapIntegrationTests(unittest.TestCase):
 
         mapped_identity = response.mapped_identities.get(dii)
         self.assertIsNone(mapped_identity)
+
+    def test_identity_buckets(self):
+        response = self.identity_map_client.get_identity_buckets(datetime.datetime.now() - datetime.timedelta(days=2))
+        self.assertTrue(len(response.buckets) > 0)
+        self.assertTrue(response.is_success)
+
+    def test_identity_buckets_empty_response(self):
+        response = self.identity_map_client.get_identity_buckets(datetime.datetime.now() + datetime.timedelta(days=1))
+        self.assertTrue(len(response.buckets) == 0)
+        self.assertTrue(response.is_success)
+
+    def test_identity_buckets_invalid_timestamp(self):
+        self.assertRaises(TypeError, self.identity_map_client.get_identity_buckets,
+                          "1234567890")
 
 
 if __name__ == '__main__':
