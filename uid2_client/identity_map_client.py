@@ -36,6 +36,5 @@ class IdentityMapClient:
         req, nonce = make_v2_request(self._client_secret, dt.datetime.now(tz=timezone.utc),
                                      identity_map_input.get_identity_map_input_as_json_string().encode())
         resp = post(self._base_url, '/v2/identity/map', headers=auth_headers(self._api_key), data=req)
-        resp.raise_for_status()
-        resp_body = parse_v2_response(self._client_secret, resp.text, nonce)
+        resp_body = parse_v2_response(self._client_secret, resp.read(), nonce)
         return IdentityMapResponse(resp_body, identity_map_input)
