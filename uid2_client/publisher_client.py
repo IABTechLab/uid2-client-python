@@ -50,14 +50,12 @@ class Uid2PublisherClient:
         req, nonce = make_v2_request(self._secret_key, dt.datetime.now(tz=timezone.utc),
                                      token_generate_input.get_as_json_string().encode())
         resp = post(self._base_url, '/v2/token/generate', headers=auth_headers(self._auth_key), data=req)
-        resp.raise_for_status()
-        resp_body = parse_v2_response(self._secret_key, resp.text, nonce)
+        resp_body = parse_v2_response(self._secret_key, resp.read(), nonce)
         return TokenGenerateResponse(resp_body)
 
     def refresh_token(self, current_identity):
         resp = post(self._base_url, '/v2/token/refresh', headers=auth_headers(self._auth_key),
                     data=current_identity.get_refresh_token().encode())
-        resp.raise_for_status()
-        resp_bytes = base64_to_byte_array(resp.text)
+        resp_bytes = base64_to_byte_array(resp.read())
         decrypted = _decrypt_gcm(resp_bytes, base64_to_byte_array(current_identity.get_refresh_response_key()))
         return TokenRefreshResponse(decrypted.decode(), dt.datetime.now(tz=timezone.utc))

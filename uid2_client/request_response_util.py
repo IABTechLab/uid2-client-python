@@ -1,7 +1,8 @@
 import base64
-from importlib.metadata import version
 import os
-import requests
+from urllib import request
+
+import pkg_resources
 
 from uid2_client.encryption import _encrypt_gcm, _decrypt_gcm
 
@@ -12,12 +13,12 @@ def _make_url(base_url, path):
 
 def auth_headers(auth_key):
     try:
-        client_version = version("uid2_client")
+        version = pkg_resources.get_distribution("uid2_client").version
     except Exception:
-        client_version = "non-packaged-mode"
+        version = "non-packaged-mode"
 
     return {'Authorization': 'Bearer ' + auth_key,
-            "X-UID2-Client-Version": "uid2-client-python-" + client_version}
+            "X-UID2-Client-Version": "uid2-client-python-" + version}
 
 
 def make_v2_request(secret_key, now, data=None):
@@ -41,4 +42,5 @@ def parse_v2_response(secret_key, encrypted, nonce):
 
 
 def post(base_url, path, headers, data):
-    return requests.post(_make_url(base_url, path), data=data, headers=headers)
+    req = request.Request(_make_url(base_url, path), headers=headers, method='POST', data=data)
+    return request.urlopen(req)
