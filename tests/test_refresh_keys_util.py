@@ -1,7 +1,6 @@
 import json
 import unittest
-
-import responses
+from unittest.mock import patch
 
 from uid2_client import refresh_keys_util
 from test_utils import *
@@ -9,6 +8,13 @@ from uid2_client.encryption import _encrypt_gcm, _decrypt_gcm
 
 
 class TestRefreshKeysUtil(unittest.TestCase):
+    class MockPostResponse:
+        def __init__(self, return_value):
+            self.return_value = return_value
+
+        def read(self):
+            return base64.b64encode(self.return_value)
+
     def _make_post_response(self, request_data, response_payload):
         d = base64.b64decode(request_data)[1:]
         d = _decrypt_gcm(d, client_secret_bytes)
@@ -19,11 +25,11 @@ class TestRefreshKeysUtil(unittest.TestCase):
         payload += response_payload
         envelope = _encrypt_gcm(payload, None, client_secret_bytes)
 
-        return 200, {}, base64.b64encode(envelope)
+        return self.MockPostResponse(envelope)
 
-    def _get_post_refresh_keys_response(self, request):
+    def _get_post_refresh_keys_response(self, base_url, path, headers, data):
         response_payload = key_set_to_json_for_sharing([master_key, site_key]).encode()
-        return self._make_post_response(request.body, response_payload)
+        return self._make_post_response(data, response_payload)
 
     def _validate_master_and_site_key(self, keys):
         self.assertEqual(len(keys.values()), 2)
@@ -49,29 +55,23 @@ class TestRefreshKeysUtil(unittest.TestCase):
         self.assertEqual(master_secret, master.secret)
         self.assertEqual(1, master.keyset_id)
 
-    @responses.activate
-    def test_refresh_sharing_keys(self):
-        responses.add_callback(
-            responses.POST,
-            "https://base_url/v2/key/sharing",
-            callback=self._get_post_refresh_keys_response,
-        )
-
-        refresh_response = refresh_keys_util.refresh_sharing_keys("https://base_url", "auth_key", base64.b64decode(client_secret))
+    @patch('uid2_client.refresh_keys_util.post')
+    def test_refresh_sharing_keys(self, mock_post):
+        mock_post.side_effect = self._get_post_refresh_keys_response
+        refresh_response = refresh_keys_util.refresh_sharing_keys("base_url", "auth_key", base64.b64decode(client_secret))
         self.assertTrue(refresh_response.success)
         self._validate_master_and_site_key(refresh_response.keys)
+        mock_post.assert_called_once()
+        self.assertEqual(mock_post.call_args[0], ('base_url', '/v2/key/sharing'))
 
-    @responses.activate
-    def test_refresh_bidstream_keys(self):
-        responses.add_callback(
-            responses.POST,
-            "https://base_url/v2/key/bidstream",
-            callback=self._get_post_refresh_keys_response,
-        )
-
-        refresh_response = refresh_keys_util.refresh_bidstream_keys("https://base_url", "auth_key", base64.b64decode(client_secret))
+    @patch('uid2_client.refresh_keys_util.post')
+    def test_refresh_bidstream_keys(self, mock_post):
+        mock_post.side_effect = self._get_post_refresh_keys_response
+        refresh_response = refresh_keys_util.refresh_bidstream_keys("base_url", "auth_key", base64.b64decode(client_secret))
         self.assertTrue(refresh_response.success)
         self._validate_master_and_site_key(refresh_response.keys)
+        mock_post.assert_called_once()
+        self.assertEqual(mock_post.call_args[0], ('base_url', '/v2/key/bidstream'))
 
     def test_parse_keys_json_identity(self):
         response_body_str = key_set_to_json_for_sharing([master_key, site_key])

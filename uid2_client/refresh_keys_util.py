@@ -38,8 +38,7 @@ def _fetch_keys(base_url, path, auth_key, secret_key):
     try:
         req, nonce = make_v2_request(secret_key, dt.datetime.now(tz=timezone.utc))
         resp = post(base_url, path, headers=auth_headers(auth_key), data=req)
-        resp.raise_for_status()
-        resp_body = json.loads(parse_v2_response(secret_key, resp.text, nonce)).get('body')
+        resp_body = json.loads(parse_v2_response(secret_key, resp.read(), nonce)).get('body')
         keys = _parse_keys_json(resp_body)
         return RefreshResponse.make_success(keys)
     except Exception as exc:
