@@ -1,6 +1,8 @@
 import hashlib
 import base64
 
+import pytz
+
 
 def is_phone_number_normalized(phone_number):
     min_phone_number_digits = 10
@@ -119,3 +121,9 @@ def normalize_and_hash_phone(phone):
     if not is_phone_number_normalized(phone):
         raise ValueError("phone number is not normalized: " + phone)
     return get_base64_encoded_hash(phone)
+
+
+def get_datetime_utc_iso_format(timestamp):
+    dt_utc = timestamp.astimezone(pytz.utc)
+    dt_utc_without_tz = dt_utc.replace(tzinfo=None)
+    return dt_utc_without_tz.isoformat()
