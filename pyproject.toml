@@ -22,7 +22,8 @@ requires-python = ">=3.6"
 dependencies = [
     "setuptools",
     "pycryptodome",
-    "bitarray"
+    "bitarray",
+    "pytz"
 ]
 keywords = ["uid2"]
 [project.license]
