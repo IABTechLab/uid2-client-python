@@ -5,19 +5,7 @@ from uid2_client import IdentityMapClient, get_datetime_utc_iso_format
 
 
 class IdentityMapUnitTests(unittest.TestCase):
-    UID2_BASE_URL = None
-    UID2_API_KEY = None
-    UID2_SECRET_KEY = None
-
-    identity_map_client = None
-
-    @classmethod
-    def setUpClass(cls):
-        cls.UID2_BASE_URL = "UID2_BASE_URL"
-        cls.UID2_API_KEY = "UID2_API_KEY"
-        cls.UID2_SECRET_KEY = "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg="
-
-        cls.identity_map_client = IdentityMapClient(cls.UID2_BASE_URL, cls.UID2_API_KEY, cls.UID2_SECRET_KEY)
+    identity_map_client = IdentityMapClient("UID2_BASE_URL", "UID2_API_KEY", "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg=")
 
     def test_identity_buckets_invalid_timestamp(self):
         test_cases = ["1234567890",
