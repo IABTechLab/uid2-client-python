@@ -22,16 +22,18 @@ def is_phone_number_normalized(phone_number):
     return min_phone_number_digits <= total_digits <= max_phone_number_digits
 
 
+
+class EmailParsingState:
+    Starting = 1
+    Pre = 2
+    SubDomain = 3
+
+
 def normalize_email_string(email):
     pre_sb = []
     pre_sb_specialized = []
     sb = []
     ws_buffer = []
-
-    class EmailParsingState:
-        Starting = 1
-        Pre = 2
-        SubDomain = 3
 
     parsing_state = EmailParsingState.Starting
 
