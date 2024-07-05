@@ -6,6 +6,7 @@ from typing import Optional
 
 import requests
 
+import uid2_client
 from uid2_client.encryption import _decrypt_gcm, _encrypt_gcm
 
 
@@ -51,6 +52,7 @@ def __default_new_session(threadlocal=threading.local()):
 
 
 def post(base_url, path, headers, data, session: Optional[requests.Session] = None):
-    session = session or __default_new_session()
+    session = (session or uid2_client.default_new_session()
+               ) or __default_new_session()
 
     return session.post(_make_url(base_url, path), data=data, headers=headers, timeout=5)
