@@ -1,9 +1,12 @@
 import base64
-from importlib.metadata import version
 import os
+import threading
+from importlib.metadata import version
+from typing import Optional
+
 import requests
 
-from uid2_client.encryption import _encrypt_gcm, _decrypt_gcm
+from uid2_client.encryption import _decrypt_gcm, _encrypt_gcm
 
 
 def _make_url(base_url, path):
@@ -40,5 +43,14 @@ def parse_v2_response(secret_key, encrypted, nonce):
     return payload[16:]
 
 
-def post(base_url, path, headers, data):
-    return requests.post(_make_url(base_url, path), data=data, headers=headers)
+def __default_new_session(threadlocal=threading.local()):
+    if getattr(threadlocal, 'session', None) is None:
+        threadlocal.session = requests.Session()
+
+    return threadlocal.session
+
+
+def post(base_url, path, headers, data, session: Optional[requests.Session] = None):
+    session = session or __default_new_session()
+
+    return session.post(_make_url(base_url, path), data=data, headers=headers, timeout=5)
