@@ -22,16 +22,21 @@ def is_phone_number_normalized(phone_number):
     return min_phone_number_digits <= total_digits <= max_phone_number_digits
 
 
+# Accessing an enum member is ~3x slower than accessing a non-enum member in Python 3.11.
+# This was improved in Python 3.12 but there's still a performance overhead (~44% slower).
+# That's why this class isn't an enum.
+# https://github.com/python/cpython/issues/93910#issuecomment-1165503032
+class EmailParsingState:
+    Starting = 1
+    Pre = 2
+    SubDomain = 3
+
+
 def normalize_email_string(email):
     pre_sb = []
     pre_sb_specialized = []
     sb = []
     ws_buffer = []
-
-    class EmailParsingState:
-        Starting = 1
-        Pre = 2
-        SubDomain = 3
 
     parsing_state = EmailParsingState.Starting
 
