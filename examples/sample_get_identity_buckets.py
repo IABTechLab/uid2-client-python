@@ -6,7 +6,7 @@ from uid2_client import IdentityMapClient
 
 # this sample client takes timestamp string as input and generates an IdentityBucketsResponse object which contains
 # a list of buckets, the timestamp string in the format YYYY-MM-DD[*HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]],
-# for example: UTC: 2024-07-02, 2024-07-02T14:30:15.123456+00:00 and EST: 2024-07-02T14:30:15.123456-05:00
+# for example: local timezone: 2024-07-02, UTC: 2024-07-02T14:30:15.123456+00:00, EST: 2024-07-02T14:30:15.123456-05:00
 
 def _usage():
     print('Usage: python3 sample_get_identity_buckets.py <base_url> <api_key> <client_secret> <timestamp>'
