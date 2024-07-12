@@ -1,3 +1,4 @@
+import base64
 import json
 import unittest
 import datetime as dt
@@ -7,7 +8,7 @@ from uid2_client import IdentityMapClient, get_datetime_utc_iso_format
 
 
 class IdentityMapUnitTests(unittest.TestCase):
-    UID2_SECRET_KEY = "wJ0hP19QU4hmpB64Y3fV2dAed8t/mupw3sjN5jNRFzg="
+    UID2_SECRET_KEY = base64.b64encode(b"UID2_CLIENT_SECRET").decode()
     identity_map_client = IdentityMapClient("UID2_BASE_URL", "UID2_API_KEY", UID2_SECRET_KEY)
 
     def test_identity_buckets_invalid_timestamp(self):
@@ -37,8 +38,7 @@ class IdentityMapUnitTests(unittest.TestCase):
     @patch('uid2_client.identity_map_client.post')
     @patch('uid2_client.identity_map_client.parse_v2_response')
     def test_identity_buckets_request(self, mock_parse_v2_response, mock_post, mock_make_v2_request):
-        expected_timestamp = "2024-07-02T14:30:15.123456+00:00"
-        expected_req = json.dumps({"since_timestamp": get_datetime_utc_iso_format(dt.datetime.fromisoformat(expected_timestamp))}).encode()
+        expected_req = b'{"since_timestamp": "2024-07-02T14:30:15.123456"}'
         test_cases = ["2024-07-02T14:30:15.123456+00:00", "2024-07-02 09:30:15.123456-05:00",
                       "2024-07-02T08:30:15.123456-06:00", "2024-07-02T10:30:15.123456-04:00",
                       "2024-07-02T06:30:15.123456-08:00", "2024-07-02T23:30:15.123456+09:00",
@@ -50,7 +50,6 @@ class IdentityMapUnitTests(unittest.TestCase):
         mock_response.read.return_value = b'{"mocked": "response"}'
         mock_post.return_value = mock_response
         mock_parse_v2_response.return_value = b'{"body":[],"status":"success"}'
-        print(expected_req)
         for timestamp in test_cases:
             self.identity_map_client.get_identity_buckets(dt.datetime.fromisoformat(timestamp))
             called_args, called_kwargs = mock_make_v2_request.call_args
