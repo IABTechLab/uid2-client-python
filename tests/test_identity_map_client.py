@@ -7,6 +7,12 @@ from urllib.error import URLError, HTTPError
 from uid2_client import IdentityMapClient, IdentityMapInput, normalize_and_hash_email, normalize_and_hash_phone
 
 
+@unittest.skipIf(
+    os.getenv("UID2_BASE_URL") == None
+    or os.getenv("UID2_API_KEY") == None
+    or os.getenv("UID2_SECRET_KEY") == None,
+    reason="Environment variables UID2_BASE_URL, UID2_API_KEY, and UID2_SECRET_KEY must be set",
+)
 class IdentityMapIntegrationTests(unittest.TestCase):
     UID2_BASE_URL = None
     UID2_API_KEY = None
