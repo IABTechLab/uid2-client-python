@@ -11,14 +11,7 @@ class Uid2Base64UrlCoder:
         encoded_token = base64.urlsafe_b64encode(input).decode('ascii')
         # urlsafe_b64encode doesn't remove the '=' padding per the spec so we should remove it
         # as '=' is a reserved char in URL spec
-        count = 0
-        for i in range(3):
-            if encoded_token[len(encoded_token) - 1 - i] == '=':
-                count = count + 1
-        # encoded_token[:-0] will empty the whole string!
-        if count > 0:
-            return encoded_token[:-count]
-        return encoded_token
+        return encoded_token.rstrip('=')
 
     @staticmethod
     def decode(token):
