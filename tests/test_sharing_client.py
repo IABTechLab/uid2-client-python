@@ -283,7 +283,7 @@ class TestSharingClient(unittest.TestCase):
             key_sharing_response_json([master_key, site_key], identity_scope=IdentityScope.UID2,
                                       default_keyset_id=99999, token_expiry_seconds=2))
 
-        encryption_data_response = self._client.encrypt_raw_uid_into_token(example_uid)
+        encryption_data_response = self._client._encrypt_raw_uid_into_token(example_uid, now=now)
         self.assertEqual(encryption_data_response.status, EncryptionStatus.SUCCESS)
 
         result = self._client._decrypt_token_into_raw_uid(encryption_data_response.encrypted_data, now + dt.timedelta(seconds=1))
