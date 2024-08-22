@@ -15,7 +15,7 @@ class Uid2Base64UrlCoder:
 
     @staticmethod
     def decode(token):
-        input_size_mod4 = len(token) % 4;
+        input_size_mod4 = len(token) % 4
         if input_size_mod4 > 0:
             padding_needed = 4 - input_size_mod4
             padding = ""
