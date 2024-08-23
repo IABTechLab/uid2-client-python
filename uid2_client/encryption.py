@@ -105,10 +105,23 @@ def _decrypt_token(token, keys, domain_name, client_type, now):
     elif token_bytes[1] == AdvertisingTokenVersion.ADVERTISING_TOKEN_V3.value:
         return _decrypt_token_v3(base64.b64decode(token), keys, domain_name, client_type, now, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3)
     elif token_bytes[1] == AdvertisingTokenVersion.ADVERTISING_TOKEN_V4.value:
-        # same as V3 but use Base64URL encoding
-        return _decrypt_token_v3(Uid2Base64UrlCoder.decode(token), keys, domain_name, client_type, now, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
+        # Accept either base64 or base64url encoding.
+        return _decrypt_token_v3(base64.b64decode(_base64url_to_base64(token)), keys, domain_name, client_type, now, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
     else:
         return DecryptedToken.make_error(DecryptionStatus.VERSION_NOT_SUPPORTED)
+
+
+def _base64url_to_base64(value):
+    value = value.replace('-', '+').replace('_', '/')
+    input_size_mod4 = len(value) % 4
+    if input_size_mod4 == 0:
+        return value
+    elif input_size_mod4 == 2:
+        return value + '=='
+    elif input_size_mod4 == 3:
+        return value + '='
+    else:
+        raise EncryptionError('invalid payload')
 
 
 def _token_has_valid_lifetime(keys, client_type, generated_or_now, expires, now):
@@ -292,7 +305,6 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
         return EncryptionDataResponse.make_success(UID2TokenGenerator.generate_uid2_token_v4(uid2, master_key, site_id, key, params))
     except Exception:
         return EncryptionDataResponse.make_error(EncryptionStatus.ENCRYPTION_FAILURE)
-
 
 
 # DEPRECATED, DO NOT CALL

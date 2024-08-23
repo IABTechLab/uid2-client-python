@@ -8,6 +8,12 @@ from uid2_client.identity_tokens import IdentityTokens
 from urllib.request import HTTPError
 
 
+@unittest.skipIf(
+    os.getenv("EUID_BASE_URL") == None
+    or os.getenv("EUID_API_KEY") == None
+    or os.getenv("EUID_SECRET_KEY") == None,
+    reason="Environment variables EUID_BASE_URL, EUID_API_KEY, and EUID_SECRET_KEY must be set",
+)
 class PublisherEuidIntegrationTests(unittest.TestCase):
 
     EUID_SECRET_KEY = None
@@ -61,6 +67,12 @@ class PublisherEuidIntegrationTests(unittest.TestCase):
         self.assertFalse(token_generate_response.is_success())
         self.assertIsNone(token_generate_response.get_identity())
 
+@unittest.skipIf(
+    os.getenv("UID2_BASE_URL") == None
+    or os.getenv("UID2_API_KEY") == None
+    or os.getenv("UID2_SECRET_KEY") == None,
+    reason="Environment variables UID2_BASE_URL, UID2_API_KEY, and UID2_SECRET_KEY must be set",
+)
 class PublisherUid2IntegrationTests(unittest.TestCase):
 
     UID2_SECRET_KEY = None

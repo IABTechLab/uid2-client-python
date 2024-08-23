@@ -1,5 +1,11 @@
 *.swp
 .idea/*
 *__pycache__*
-dist/*
-*egg-info/*
+
+# Distribution / packaging
+build/
+dist/
+*egg-info/
+
+# Environments
+.venv

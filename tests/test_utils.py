@@ -39,19 +39,18 @@ example_phone_raw_uid2_v2 = "BFOsW2SkK0egqbfyiALtpti5G/cG+PcEvjkoHl56rEV8"
 phone_uid = "BEOGxroPLdcY7LrSiwjY52+X05V0ryELpJmoWAyXiwbZ"
 
 test_cases_all_scopes_all_versions = [
-    [IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2],
-    [IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3],
-    [IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4],
-    [IdentityScope.EUID, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2],
-    [IdentityScope.EUID, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3],
-    [IdentityScope.EUID, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4]
+    [scope, version]
+    for scope in IdentityScope
+    for version in AdvertisingTokenVersion
 ]
 
 test_cases_all_scopes_v3_v4_versions = [
-    [IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3],
-    [IdentityScope.UID2, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4],
-    [IdentityScope.EUID, AdvertisingTokenVersion.ADVERTISING_TOKEN_V3],
-    [IdentityScope.EUID, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4]
+    [scope, version]
+    for scope in IdentityScope
+    for version in [
+        AdvertisingTokenVersion.ADVERTISING_TOKEN_V3,
+        AdvertisingTokenVersion.ADVERTISING_TOKEN_V4,
+    ]
 ]
 
 YESTERDAY = now + dt.timedelta(days=-1)

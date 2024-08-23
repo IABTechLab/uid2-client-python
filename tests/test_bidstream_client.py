@@ -280,5 +280,19 @@ class TestBidStreamClient(unittest.TestCase):
                                                             client_secret_bytes)
 
 
+    def test_decrypt_v4_token_encoded_as_base64(self):
+        for scope in IdentityScope:
+            with self.subTest(scope=scope):
+                self.refresh(key_bidstream_response_json_default_keys(identity_scope=scope))
+
+                while True:
+                    token = generate_uid_token(scope, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4)
+                    token = base64.b64encode(Uid2Base64UrlCoder.decode(token)).decode('utf-8')
+                    if ("=" in token) and ("/" in token) and ("+" in token):
+                        break
+            
+                self._decrypt_and_assert_success(token, AdvertisingTokenVersion.ADVERTISING_TOKEN_V4, scope)
+
+
 if __name__ == '__main__':
     unittest.main()
