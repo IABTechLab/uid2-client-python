@@ -34,12 +34,15 @@ class IdentityMapClient:
         self._api_key = api_key
         self._client_secret = base64.b64decode(client_secret)
 
-    def generate_identity_map(self, identity_map_input):
-        req, nonce = make_v2_request(self._client_secret, dt.datetime.now(tz=timezone.utc),
+    def generate_identity_map(self, identity_map_input, timestamp):
+        req, nonce = make_v2_request(self._client_secret, timestamp,
                                      identity_map_input.get_identity_map_input_as_json_string().encode())
         resp = post(self._base_url, '/v2/identity/map', headers=auth_headers(self._api_key), data=req)
         resp_body = parse_v2_response(self._client_secret, resp.read(), nonce)
         return IdentityMapResponse(resp_body, identity_map_input)
+    
+    def generate_identity_map(self, identity_map_input):
+        return self.generate_identity_map(identity_map_input, dt.datetime.now(tz=timezone.utc))
 
     def get_identity_buckets(self, since_timestamp):
         req, nonce = make_v2_request(self._client_secret, dt.datetime.now(tz=timezone.utc),
