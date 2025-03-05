@@ -1,10 +1,12 @@
 import base64
+import importlib.metadata
 import os
-from urllib import request
+import threading
+from typing import Optional
+import requests
 
-import pkg_resources
-
-from uid2_client.encryption import _encrypt_gcm, _decrypt_gcm
+import uid2_client
+from uid2_client.encryption import _decrypt_gcm, _encrypt_gcm
 
 
 def _make_url(base_url, path):
@@ -13,12 +15,12 @@ def _make_url(base_url, path):
 
 def auth_headers(auth_key):
     try:
-        version = pkg_resources.get_distribution("uid2_client").version
+        client_version = importlib.metadata.version("uid2_client")
     except Exception:
-        version = "non-packaged-mode"
+        client_version = "non-packaged-mode"
 
     return {'Authorization': 'Bearer ' + auth_key,
-            "X-UID2-Client-Version": "uid2-client-python-" + version}
+            "X-UID2-Client-Version": "uid2-client-python-" + client_version}
 
 
 def make_v2_request(secret_key, now, data=None):
@@ -41,6 +43,15 @@ def parse_v2_response(secret_key, encrypted, nonce):
     return payload[16:]
 
 
-def post(base_url, path, headers, data):
-    req = request.Request(_make_url(base_url, path), headers=headers, method='POST', data=data)
-    return request.urlopen(req)
+def __default_new_session(threadlocal=threading.local()):
+    if getattr(threadlocal, 'session', None) is None:
+        threadlocal.session = requests.Session()
+
+    return threadlocal.session
+
+
+def post(base_url, path, headers, data, session: Optional[requests.Session] = None):
+    session = (session or uid2_client.default_new_session()
+               ) or __default_new_session()
+
+    return session.post(_make_url(base_url, path), data=data, headers=headers, timeout=5)

@@ -1,11 +1,11 @@
 import os
 import unittest
 
+import requests
+
 from uid2_client import Uid2PublisherClient
 from uid2_client import TokenGenerateInput
-from uid2_client import TokenGenerateResponse
 from uid2_client.identity_tokens import IdentityTokens
-from urllib.request import HTTPError
 
 
 @unittest.skipIf(
@@ -187,7 +187,7 @@ class PublisherUid2IntegrationTests(unittest.TestCase):
 
         expired_respose = "{\"advertising_token\":\"AgAAAAN6QZRCFTau+sfOlMMUY2ftElFMq2TCrcu1EAaD9WmEfoT2BWm2ZKz1tumbT00tWLffRDQ/9POXfA0O/Ljszn7FLtG5EzTBM3HYs4f5irkqeEvu38DhVCxUEpI+gZZZkynRap1oYx6AmC/ip3rk+7pmqa3r3saDs1mPRSSTm+Nh6A==\",\"user_token\":\"AgAAAAL6aleYI4BubI5ZXMBshqmMEfCkbCJF4fLeg1sdI0BTLzj9sXsSISjkG0lMC743diC2NVy3ElkbO1lLysd+Lm6alkqevPrcuWDisQ1939YdoH6LqpwBH3FNSE4/xa3Q+94=\",\"refresh_token\":\"AAAAAARomrP3NjjH+8mt5djfTHbmRZXjOMnAN8WpjJoe30AhUCvYksO/xoDSj77GzWv4M99DhnPl2cVco8CZFTcE10nauXI4Barr890ILnH0IIacOei5Zjwh6DycFkoXkAAuHY1zjmxb7niGLfSP2RctWkZdRVGWQv/UW/grw6+paU9bnKEWPzVvLwwdW2NgjDKu+szE6A+b5hkY+I3voKoaz8/kLDmX8ddJGLy/YOh/LIveBspSAvEg+v89OuUCwAqm8L3Rt8PxDzDnt0U4Na+AUawvvfsIhmsn/zMpRRks6GHhIAB/EQUHID8TedU8Hv1WFRsiraG9Dfn1Kc5/uYnDJhEagWc+7RgTGT+U5GqI6+afrAl5091eBLbmvXnXn9ts\",\"identity_expires\":1668059799628,\"refresh_expires\":1668142599628,\"refresh_from\":1668056202628,\"refresh_response_key\":\"P941vVeuyjaDRVnFQ8DPd0AZnW4bPeiJPXER2K9QXcU=\"}"
         current_identity = IdentityTokens.from_json_string(expired_respose)
-        with self.assertRaises(HTTPError):
+        with self.assertRaises(requests.exceptions.HTTPError):
             self.publisher_client.refresh_token(current_identity)
 
         with self.assertRaises(TypeError):
@@ -197,15 +197,15 @@ class PublisherUid2IntegrationTests(unittest.TestCase):
             self.publisher_client.refresh_token(None)
 
         bad_url_client = Uid2PublisherClient("https://www.something.com", self.UID2_API_KEY, self.UID2_SECRET_KEY)
-        with self.assertRaises(HTTPError):
+        with self.assertRaises(requests.exceptions.HTTPError):
             bad_url_client.generate_token(TokenGenerateInput.from_email("test@example.com"))
 
         bad_secret_client = Uid2PublisherClient(self.UID2_BASE_URL, self.UID2_API_KEY, "badSecretKeypB64Y3fV2dAed8t/mupw3sjN5jNRFzg=")
-        with self.assertRaises(HTTPError):
+        with self.assertRaises(requests.exceptions.HTTPError):
             bad_secret_client.generate_token(TokenGenerateInput.from_email("test@example.com"))
 
         bad_api_client = Uid2PublisherClient(self.UID2_BASE_URL, "not-real-key", self.UID2_SECRET_KEY)
-        with self.assertRaises(HTTPError):
+        with self.assertRaises(requests.exceptions.HTTPError):
             bad_secret_client.generate_token(TokenGenerateInput.from_email("test@example.com"))
 
 
