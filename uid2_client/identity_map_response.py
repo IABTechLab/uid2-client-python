@@ -5,13 +5,13 @@ class IdentityMapResponse:
     def __init__(self, response, identity_map_input):
         self._mapped_identities = {}
         self._unmapped_identities = {}
-        response_json = json.loads(response)
-        self._status = response_json["status"]
+        self.response_json = json.loads(response)
+        self._status = self.response_json["status"]
 
         if not self.is_success():
             raise ValueError("Got unexpected identity map status: " + self._status)
 
-        body = response_json["body"]
+        body = self.response_json["body"]
 
         for identity in body.get("mapped", []):
             raw_diis = self._get_raw_diis(identity, identity_map_input)
@@ -44,6 +44,9 @@ class IdentityMapResponse:
     @property
     def status(self):
         return self._status
+    
+    def response_json(self):
+        return self.response_json
 
 
 class MappedIdentity:
