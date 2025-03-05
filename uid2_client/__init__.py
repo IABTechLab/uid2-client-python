@@ -7,6 +7,7 @@ Functions:
     decrypt_token: decrypt and advertising token to extract advertising ID from it
 """
 
+default_new_session = lambda: None
 
 from .auto_refresh import *
 from .client import *
