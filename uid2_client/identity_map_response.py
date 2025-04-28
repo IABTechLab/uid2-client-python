@@ -2,11 +2,16 @@ import json
 
 
 class IdentityMapResponse:
-    def __init__(self, response, identity_map_input):
+    def __init__(self, response, identity_map_input, elapsed_time=None):
         self._mapped_identities = {}
         self._unmapped_identities = {}
+        self._response = response
+        self._elapsed_time = None
         response_json = json.loads(response)
         self._status = response_json["status"]
+
+        if elapsed_time is not None:
+            self._elapsed_time = elapsed_time
 
         if not self.is_success():
             raise ValueError("Got unexpected identity map status: " + self._status)
@@ -44,6 +49,14 @@ class IdentityMapResponse:
     @property
     def status(self):
         return self._status
+    
+    @property
+    def elapsed_time(self):
+        return self._elapsed_time
+
+    @property
+    def response(self):
+        return self._response
 
 
 class MappedIdentity:
