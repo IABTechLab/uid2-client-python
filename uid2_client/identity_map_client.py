@@ -1,6 +1,7 @@
 import base64
 import datetime as dt
 import json
+import time
 from datetime import timezone
 
 from .identity_buckets_response import IdentityBucketsResponse
@@ -37,9 +38,12 @@ class IdentityMapClient:
     def generate_identity_map(self, identity_map_input):
         req, nonce = make_v2_request(self._client_secret, dt.datetime.now(tz=timezone.utc),
                                      identity_map_input.get_identity_map_input_as_json_string().encode())
+        start_time = time.time()
         resp = post(self._base_url, '/v2/identity/map', headers=auth_headers(self._api_key), data=req)
         resp_body = parse_v2_response(self._client_secret, resp.read(), nonce)
-        return IdentityMapResponse(resp_body, identity_map_input)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        return IdentityMapResponse(resp_body, identity_map_input, elapsed_time)
 
     def get_identity_buckets(self, since_timestamp):
         req, nonce = make_v2_request(self._client_secret, dt.datetime.now(tz=timezone.utc),
