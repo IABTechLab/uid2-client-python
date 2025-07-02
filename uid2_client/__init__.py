@@ -27,3 +27,8 @@ from .uid2_token_generator import *
 from .identity_map_client import *
 from .identity_map_input import *
 from .identity_map_response import *
+from .identity_map_v3_client import *
+from .identity_map_v3_input import *
+from .identity_map_v3_response import *
+from .unmapped_identity_reason import *
+from .uid2_response import *

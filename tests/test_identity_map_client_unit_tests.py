@@ -1,10 +1,9 @@
 import base64
-import json
 import unittest
 import datetime as dt
 from unittest.mock import patch, MagicMock
 
-from uid2_client import IdentityMapClient, get_datetime_utc_iso_format
+from uid2_client import IdentityMapClient, get_datetime_utc_iso_format, Uid2Response, Envelope
 
 
 class IdentityMapUnitTests(unittest.TestCase):
@@ -34,10 +33,10 @@ class IdentityMapUnitTests(unittest.TestCase):
             iso_format_timestamp = get_datetime_utc_iso_format(timestamp)
             self.assertEqual(expected_timestamp, iso_format_timestamp)
 
-    @patch('uid2_client.identity_map_client.make_v2_request')
-    @patch('uid2_client.identity_map_client.post')
-    @patch('uid2_client.identity_map_client.parse_v2_response')
-    def test_identity_buckets_request(self, mock_parse_v2_response, mock_post, mock_make_v2_request):
+    @patch('uid2_client.identity_map_client.create_envelope')
+    @patch('uid2_client.identity_map_client.make_request')
+    @patch('uid2_client.identity_map_client.parse_response')
+    def test_identity_buckets_request(self, mock_parse_response, mock_make_request, mock_create_envelope):
         expected_req = b'{"since_timestamp": "2024-07-02T14:30:15.123456"}'
         test_cases = ["2024-07-02T14:30:15.123456+00:00", "2024-07-02 09:30:15.123456-05:00",
                       "2024-07-02T08:30:15.123456-06:00", "2024-07-02T10:30:15.123456-04:00",
@@ -45,12 +44,11 @@ class IdentityMapUnitTests(unittest.TestCase):
                       "2024-07-03T00:30:15.123456+10:00", "2024-07-02T20:00:15.123456+05:30"]
         mock_req = b'mocked_request_data'
         mock_nonce = 'mocked_nonce'
-        mock_make_v2_request.return_value = (mock_req, mock_nonce)
-        mock_response = MagicMock()
-        mock_response.read.return_value = b'{"mocked": "response"}'
-        mock_post.return_value = mock_response
-        mock_parse_v2_response.return_value = b'{"body":[],"status":"success"}'
+        mock_create_envelope.return_value = Envelope(mock_req, mock_nonce)
+        mock_response = '{"mocked": "response"}'
+        mock_make_request.return_value = Uid2Response.from_string(mock_response)
+        mock_parse_response.return_value = b'{"body":[],"status":"success"}'
         for timestamp in test_cases:
             self.identity_map_client.get_identity_buckets(dt.datetime.fromisoformat(timestamp))
-            called_args, called_kwargs = mock_make_v2_request.call_args
+            called_args, called_kwargs = mock_create_envelope.call_args
             self.assertEqual(expected_req, called_args[2])

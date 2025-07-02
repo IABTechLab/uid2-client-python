@@ -98,7 +98,7 @@ class PublisherUid2IntegrationTests(unittest.TestCase):
     def test_integration_generate_and_refresh(self):
 
         token_generate_response = self.publisher_client.generate_token(
-            TokenGenerateInput.from_email("test@example.com"))
+            TokenGenerateInput.from_email("hopefully-not-opted-out@example.com"))
 
         self.assertFalse(token_generate_response.is_optout())
 
