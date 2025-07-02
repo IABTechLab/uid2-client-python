@@ -17,7 +17,7 @@ class TestRefreshKeysUtil(unittest.TestCase):
         payload += nonce
         payload += response_payload
         encrypted_payload = _encrypt_gcm(payload, None, client_secret_bytes)
-        encrypted_string = base64.b64encode(encrypted_payload).decode('utf-8')
+        encrypted_string = base64.b64encode(encrypted_payload)
         return Uid2Response.from_string(encrypted_string)
 
     def _get_post_refresh_keys_response(self, base_url, path, headers, envelope):

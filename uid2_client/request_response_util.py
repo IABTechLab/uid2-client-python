@@ -51,8 +51,7 @@ def parse_response(secret_key, uid2_response: Uid2Response, nonce):
         return _decrypt_payload(secret_key, uid2_response.as_bytes, nonce)
     else:
         encrypted_string = base64.b64decode(uid2_response.as_string)
-        decrypted_string = _decrypt_payload(secret_key, encrypted_string, nonce).decode('utf-8')
-        return decrypted_string
+        return _decrypt_payload(secret_key, encrypted_string, nonce)
 
 def _decrypt_payload(secret_key, encrypted, nonce):
     payload = _decrypt_gcm(encrypted, secret_key)
