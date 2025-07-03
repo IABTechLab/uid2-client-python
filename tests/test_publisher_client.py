@@ -7,7 +7,12 @@ from uid2_client import TokenGenerateResponse
 from uid2_client.identity_tokens import IdentityTokens
 from urllib.request import HTTPError
 
-
+@unittest.skipIf(
+    os.getenv("EUID_BASE_URL") == None
+    or os.getenv("EUID_API_KEY") == None
+    or os.getenv("EUID_SECRET_KEY") == None,
+    reason="Environment variables EUID_BASE_URL, EUID_API_KEY, and EUID_SECRET_KEY must be set",
+)
 class PublisherEuidIntegrationTests(unittest.TestCase):
 
     EUID_SECRET_KEY = None
