@@ -57,14 +57,18 @@ class ApiResponse:
 
     @classmethod
     def from_json(cls, data) -> 'ApiResponse':
+        if not set(data['body'].keys()).issubset(['email', 'phone', 'email_hash', 'phone_hash']):
+            raise ValueError("api response body does not contain correct keys")
+
         api_body: Dict[Literal['email_hash', 'phone_hash'], List['ApiIdentity']] = {
-            'email_hash': [ApiIdentity.from_json(item) for item in data.get('body').get('email_hash', [])] if data.get('body').get('email_hash') else [],
-            'phone_hash': [ApiIdentity.from_json(item) for item in data.get('body').get('phone_hash', [])] if data.get('body').get('phone_hash') else [],
+            'email_hash': [ApiIdentity.from_json(item) for item in data['body']['email_hash']] if data['body'].get('email_hash') else [],
+            'phone_hash': [ApiIdentity.from_json(item) for item in data['body']['phone_hash']] if data['body'].get('phone_hash') else [],
         }
         return cls(
-            status=data.get("status"),
+            status=data['status'],
             body=api_body
         )
+
 
 class ApiIdentity:
     def __init__(self, current_uid: Optional[str], previous_uid: Optional[str], 
