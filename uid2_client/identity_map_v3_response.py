@@ -80,6 +80,11 @@ class ApiIdentity:
 
     @classmethod
     def from_json(cls, data: Dict[str, Any]) -> 'ApiIdentity':
+        mapped_identity = data.keys().__contains__("u") and data.keys().__contains__("p") and data.keys().__contains__("r")
+        unmapped_identity = data.keys().__contains__("e")
+        if not mapped_identity and not unmapped_identity:
+            raise ValueError("api identity does not contain the correct keys")
+
         return cls(
             current_uid=data.get("u"),
             previous_uid=data.get("p"),
