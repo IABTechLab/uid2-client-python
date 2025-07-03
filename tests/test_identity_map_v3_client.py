@@ -8,12 +8,6 @@ from uid2_client import IdentityMapV3Client, IdentityMapV3Input, IdentityMapV3Re
 from uid2_client.unmapped_identity_reason import UnmappedIdentityReason
 
 
-@unittest.skipIf(
-    os.getenv("UID2_BASE_URL") == None
-    or os.getenv("UID2_API_KEY") == None
-    or os.getenv("UID2_SECRET_KEY") == None,
-    reason="Environment variables UID2_BASE_URL, UID2_API_KEY, and UID2_SECRET_KEY must be set",
-)
 class IdentityMapV3IntegrationTests(unittest.TestCase):
     UID2_BASE_URL = None
     UID2_API_KEY = None

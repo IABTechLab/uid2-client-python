@@ -7,19 +7,19 @@ class Uid2Response:
         self._as_bytes = as_bytes
 
     @classmethod
-    def from_string(cls, as_string: str):
+    def from_string(cls, as_string: str) -> 'Uid2Response':
         return cls(as_string, None)
 
     @classmethod
-    def from_bytes(cls, as_bytes: bytes):
+    def from_bytes(cls, as_bytes: bytes) -> 'Uid2Response':
         return cls(None, as_bytes)
 
     @property
-    def as_string(self) -> str:
+    def as_string(self) -> Optional[str]:
         return self._as_string
 
     @property
-    def as_bytes(self) -> bytes:
+    def as_bytes(self) -> Optional[bytes]:
         return self._as_bytes
 
     def is_binary(self) -> bool:

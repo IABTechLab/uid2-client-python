@@ -1,30 +1,31 @@
 import json
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Literal
 
+from .identity_map_v3_input import IdentityMapV3Input
 from .unmapped_identity_reason import UnmappedIdentityReason
 
 
 class IdentityMapV3Response:
-    def __init__(self, response: str, identity_map_input):
+    def __init__(self, response: str, identity_map_input: IdentityMapV3Input):
         self._mapped_identities: Dict[str, MappedIdentity] = {}
         self._unmapped_identities: Dict[str, UnmappedIdentity] = {}
+
         response_json = json.loads(response)
-        self._status = response_json["status"]
+        api_response = ApiResponse.from_json(response_json)
+        self._status = api_response.status
         
         if not self.is_success():
             raise ValueError("Got unexpected identity map status: " + self._status)
 
-        body = response_json["body"]
-        self._populate_identities(body, identity_map_input)
+        self._populate_identities(api_response.body, identity_map_input)
 
-    def _populate_identities(self, api_response: Dict[str, List[Dict]], identity_map_input):
+    def _populate_identities(self, api_response: Dict[Literal['email_hash', 'phone_hash'], List['ApiIdentity']], identity_map_input: IdentityMapV3Input) -> None:
         for identity_type, identities in api_response.items():
             self._populate_identities_for_type(identity_map_input, identity_type, identities)
 
-    def _populate_identities_for_type(self, identity_map_input, identity_type: str, identities: List[Dict]):
-        for i, api_identity_data in enumerate(identities):
-            api_identity = ApiIdentity.from_json(api_identity_data)
+    def _populate_identities_for_type(self, identity_map_input: IdentityMapV3Input, identity_type: Literal['email_hash', 'phone_hash'], identities: List['ApiIdentity']) -> None:
+        for i, api_identity in enumerate(identities):
             input_diis = identity_map_input.get_input_diis(identity_type, i)
             
             for input_dii in input_diis:
@@ -48,6 +49,22 @@ class IdentityMapV3Response:
     def status(self) -> str:
         return self._status
 
+
+class ApiResponse:
+    def __init__(self, status: str, body: Dict[Literal['email_hash', 'phone_hash'], List['ApiIdentity']]):
+        self.status = status
+        self.body = body
+
+    @classmethod
+    def from_json(cls, data) -> 'ApiResponse':
+        api_body: Dict[Literal['email_hash', 'phone_hash'], List['ApiIdentity']] = {
+            'email_hash': [ApiIdentity.from_json(item) for item in data.get('body').get('email_hash', [])] if data.get('body').get('email_hash') else [],
+            'phone_hash': [ApiIdentity.from_json(item) for item in data.get('body').get('phone_hash', [])] if data.get('body').get('phone_hash') else [],
+        }
+        return cls(
+            status=data.get("status"),
+            body=api_body
+        )
 
 class ApiIdentity:
     def __init__(self, current_uid: Optional[str], previous_uid: Optional[str], 
@@ -74,7 +91,9 @@ class MappedIdentity:
         self._refresh_from = refresh_from_seconds
 
     @classmethod
-    def from_api_identity(cls, api_identity: ApiIdentity):
+    def from_api_identity(cls, api_identity: ApiIdentity) -> 'MappedIdentity':
+        if api_identity.current_uid is None or api_identity.refresh_from_seconds is None:
+            raise ValueError("Mapped identity cannot be created from API identity with missing current_uid or refresh_from_seconds")
         return cls(api_identity.current_uid,
                               api_identity.previous_uid,
                               datetime.fromtimestamp(api_identity.refresh_from_seconds, tz=timezone.utc))

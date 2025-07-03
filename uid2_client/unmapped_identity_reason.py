@@ -7,7 +7,7 @@ class UnmappedIdentityReason(Enum):
     UNKNOWN = "unknown"
     
     @classmethod
-    def from_string(cls, reason_str):
+    def from_string(cls, reason_str: str) -> 'UnmappedIdentityReason':
         try:
             return cls(reason_str)
         except ValueError:
