@@ -51,7 +51,8 @@ class SharingClient:
                 uid2: the UID2 or EUID to be encrypted
                 keyset_id (int) : An optional keyset id to use for the encryption. Will use default keyset if left blank
 
-            Returns (str): Sharing Token
+            Returns:
+                EncryptionDataResponse: Sharing Token
             """
         return self._encrypt_raw_uid_into_token(uid2, keyset_id, dt.datetime.now(tz=dt.timezone.utc))
 
