@@ -34,8 +34,8 @@ if mapped_identity is not None:
     previous_uid = mapped_identity.previous_raw_uid
     refresh_from = mapped_identity.refresh_from
     print('current_uid =', current_uid)
-    print('previous_uid =', previous_uid)
-    print('refresh_from =', refresh_from)
+    print('previous_uid =', str(previous_uid))
+    print('refresh_from =', str(refresh_from))
 else:
     unmapped_identity = unmapped_identities.get(first_email)
     reason = unmapped_identity.reason
