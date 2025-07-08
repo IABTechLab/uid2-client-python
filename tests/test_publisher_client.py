@@ -97,7 +97,8 @@ class PublisherUid2IntegrationTests(unittest.TestCase):
     def test_integration_generate_and_refresh(self):
 
         token_generate_response = self.publisher_client.generate_token(
-            TokenGenerateInput.from_email("hopefully-not-opted-out@example.com"))
+            TokenGenerateInput.from_email("hopefully-not-opted-out@example.com").do_not_generate_tokens_for_opted_out()
+        )
 
         self.assertFalse(token_generate_response.is_optout())
 
@@ -145,9 +146,9 @@ class PublisherUid2IntegrationTests(unittest.TestCase):
 
     # this test requires these env vars to be configured: UID2_BASE_URL, UID2_API_KEY, UID2_SECRET_KEY
     def test_integration_phone(self):
-
         token_generate_response = self.publisher_client.generate_token(
-            TokenGenerateInput.from_phone("+12345678901"))
+            TokenGenerateInput.from_phone("+12345678901").do_not_generate_tokens_for_opted_out()
+        )
 
         self.assertFalse(token_generate_response.is_optout())
         identity = token_generate_response.get_identity()
