@@ -111,7 +111,7 @@ class TestSharingClient(unittest.TestCase):
                     self._test_bidstream_client.assert_fails(result, expected_version, expected_scope)
 
     def test_token_lifetime_too_long_for_sharing(self):  # TokenLifetimeTooLongForSharing
-        expires_in_sec = now + dt.timedelta(days=30) + dt.timedelta(minutes=1)
+        expires_in_sec = dt.datetime.now(tz=timezone.utc) + dt.timedelta(days=30) + dt.timedelta(minutes=1)
         for expected_scope, expected_version in test_cases_all_scopes_all_versions:
             with self.subTest(expected_scope=expected_scope, expected_version=expected_version):
                 token = generate_uid_token(expected_scope, expected_version, expires_at=expires_in_sec)

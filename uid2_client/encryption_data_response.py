@@ -16,6 +16,10 @@ class EncryptionDataResponse:
         return EncryptionDataResponse(encryption_status, None)
 
     @property
+    def success(self):
+        return self._encryption_status == EncryptionStatus.SUCCESS
+
+    @property
     def encrypted_data(self):
         return self._encrypted_data
 

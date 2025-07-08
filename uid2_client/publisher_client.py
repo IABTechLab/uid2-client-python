@@ -47,10 +47,10 @@ class Uid2PublisherClient:
         self._secret_key = base64.b64decode(secret_key)
 
     def generate_token(self, token_generate_input):
-        req, nonce = make_v2_request(self._secret_key, dt.datetime.now(tz=timezone.utc),
+        envelope = create_envelope(self._secret_key, dt.datetime.now(tz=timezone.utc),
                                      token_generate_input.get_as_json_string().encode())
-        resp = post(self._base_url, '/v2/token/generate', headers=auth_headers(self._auth_key), data=req)
-        resp_body = parse_v2_response(self._secret_key, resp.read(), nonce)
+        uid2_response = make_request(self._base_url, '/v2/token/generate', headers=auth_headers(self._auth_key), envelope=envelope)
+        resp_body = parse_response(self._secret_key, uid2_response, envelope.nonce)
         return TokenGenerateResponse(resp_body)
 
     def refresh_token(self, current_identity):
