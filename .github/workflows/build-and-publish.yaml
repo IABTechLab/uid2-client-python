@@ -21,7 +21,7 @@ on:
 jobs:
   build-and-pubish:
     name: Build and publish Python packages to PyPi
-    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-to-pypi-versioned.yaml@v2
+    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-to-pypi-versioned.yaml@v3
     with:
       release_type: ${{ inputs.release_type }}
       publish_vulnerabilities: ${{ inputs.publish_vulnerabilities }}
