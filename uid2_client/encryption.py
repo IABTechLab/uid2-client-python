@@ -270,7 +270,7 @@ def encrypt(uid2, identity_scope, keys, keyset_id=None, **kwargs):
     Keyword Args:
         now (Datetime): the datettime to use for now. Defaults to utc now
 
-    Returns (str): Sharing Token
+    Returns (EncryptionDataResponse): Sharing Token
 
     """
     now = kwargs.get("now")

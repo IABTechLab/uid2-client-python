@@ -17,7 +17,7 @@ class EncryptionDataResponse:
 
     @property
     def success(self):
-        return self._encryption_status == EncryptionStatus.SUCCESS
+        return self.status == EncryptionStatus.SUCCESS
 
     @property
     def encrypted_data(self):

@@ -2,7 +2,7 @@ import sys
 
 from uid2_client import IdentityMapClient, IdentityMapInput
 
-
+# !! Note: This is for an older version of identity map. For the latest version, see sample_generate_identity_map_v3.py
 # this sample client takes email addresses as input and generates an IdentityMapResponse object which contains raw uid
 # or the reason why it is unmapped
 
