@@ -3,8 +3,7 @@ import os
 from datetime import datetime
 from typing import Dict, Optional
 from urllib import request
-
-import pkg_resources
+from importlib import metadata
 
 from uid2_client.encryption import _encrypt_gcm, _decrypt_gcm
 from .envelope import Envelope
@@ -12,12 +11,14 @@ from .uid2_response import Uid2Response
 
 BINARY = 'application/octet-stream'
 
+
 def _make_url(base_url: str, path: str) -> str:
     return base_url + path
 
+
 def auth_headers(auth_key: str) -> Dict[str, str]:
     try:
-        version = pkg_resources.get_distribution("uid2_client").version
+        version = metadata.version("uid2_client")
     except Exception:
         version = "non-packaged-mode"
 
