@@ -2,9 +2,9 @@ import json
 import unittest
 from unittest.mock import patch
 
-from test_utils import *
-from test_bidstream_client import TestBidStreamClient
-from test_encryption import TestEncryptionFunctions
+from .test_utils import *
+from .test_bidstream_client import TestBidStreamClient
+from .test_encryption import TestEncryptionFunctions
 from uid2_client import SharingClient, DecryptionStatus, Uid2ClientFactory
 from uid2_client.encryption_status import EncryptionStatus
 from uid2_client.refresh_response import RefreshResponse

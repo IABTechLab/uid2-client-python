@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 
 from uid2_client import refresh_keys_util, Uid2Response
-from test_utils import *
+from .test_utils import *
 from uid2_client.encryption import _encrypt_gcm, _decrypt_gcm
 
 

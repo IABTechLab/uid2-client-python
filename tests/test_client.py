@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from test_utils import *
+from .test_utils import *
 from uid2_client import *
 from uid2_client.euid_client_factory import EuidClientFactory
 from uid2_client.refresh_response import RefreshResponse

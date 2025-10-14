@@ -2,7 +2,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-from test_utils import *
+from .test_utils import *
 from uid2_client import BidstreamClient, Uid2Base64UrlCoder, DecryptionStatus, Uid2ClientFactory
 from uid2_client.refresh_response import RefreshResponse
 
