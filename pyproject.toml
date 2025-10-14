@@ -24,11 +24,17 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-    "setuptools",
     "pycryptodome",
     "bitarray"
 ]
-keywords = ["uid2"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "unittest-xml-reporting"
+]
+keywords = ["uid2","euid"]
 [project.license]
 file="LICENSE"
 [project.urls]
