@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from uid2_client import *
-from test_utils import *
+from .test_utils import *
 
 import datetime as dt
 

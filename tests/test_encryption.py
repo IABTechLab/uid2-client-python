@@ -1,6 +1,6 @@
 import unittest
 
-from test_utils import *
+from .test_utils import *
 from uid2_client import *
 
 _master_secret = bytes([139, 37, 241, 173, 18, 92, 36, 232, 165, 168, 23, 18, 38, 195, 123, 92, 160, 136, 185, 40, 91, 173, 165, 221, 168, 16, 169, 164, 38, 139, 8, 155])
