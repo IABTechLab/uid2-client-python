@@ -162,40 +162,76 @@ if input_arg.endswith('.xlsx') and os.path.exists(input_arg):
     # Read UID2s from Excel file
     print(f"Reading UID2s from Excel file: {input_arg}", file=sys.stderr)
     try:
-        df = pd.read_excel(input_arg, sheet_name='GAM')
+        # Check if this is the specific file "Sample LR envelopes 20251113_updt.xlsx"
+        excel_filename = os.path.basename(input_arg)
+        is_specific_file = excel_filename == "Sample LR envelopes 20251113_updt.xlsx"
         
-        # Get the UID2 column (it's called 'UID' in the file)
-        if 'UID' not in df.columns:
-            print(f"Error: 'UID' column not found in GAM sheet. Available columns: {df.columns.tolist()}", file=sys.stderr)
-            sys.exit(1)
-        
-        # Filter out invalid entries (like "Bad Envelope")
-        uid2_tokens = df['UID'].dropna().astype(str)
-        uid2_tokens = uid2_tokens[uid2_tokens != 'Bad Envelope']
-        uid2_tokens = uid2_tokens[uid2_tokens.str.strip() != ''].tolist()
+        if is_specific_file:
+            # Read from the first sheet (default) and get column C (index 2)
+            df = pd.read_excel(input_arg, sheet_name=0)
+            print(f"Reading from column C of {excel_filename}", file=sys.stderr)
+            
+            # Get column C (3rd column, index 2)
+            if df.shape[1] < 3:
+                print(f"Error: File does not have column C. Available columns: {df.shape[1]}", file=sys.stderr)
+                sys.exit(1)
+            
+            # Get column C by index (iloc[:, 2])
+            column_c = df.iloc[:, 2]
+            
+            # Filter out invalid entries (like "Bad Envelope", NaN, empty strings)
+            uid2_tokens = column_c.dropna().astype(str)
+            uid2_tokens = uid2_tokens[uid2_tokens != 'Bad Envelope']
+            uid2_tokens = uid2_tokens[uid2_tokens.str.strip() != ''].tolist()
+        else:
+            # Original behavior: Read from 'GAM' sheet, 'UID' column
+            df = pd.read_excel(input_arg, sheet_name='GAM')
+            
+            # Get the UID2 column (it's called 'UID' in the file)
+            if 'UID' not in df.columns:
+                print(f"Error: 'UID' column not found in GAM sheet. Available columns: {df.columns.tolist()}", file=sys.stderr)
+                sys.exit(1)
+            
+            # Filter out invalid entries (like "Bad Envelope")
+            uid2_tokens = df['UID'].dropna().astype(str)
+            uid2_tokens = uid2_tokens[uid2_tokens != 'Bad Envelope']
+            uid2_tokens = uid2_tokens[uid2_tokens.str.strip() != ''].tolist()
         
         print(f"Found {len(uid2_tokens)} valid UID2 tokens to decrypt", file=sys.stderr)
         
         # Decrypt each token sequentially
         results = []
         for idx, token in enumerate(uid2_tokens):
-            # Print the last 6 characters of the token first
+            # Print the first 10 characters of the token from column C
+            token_prefix = token[:10] if len(token) >= 10 else token
             token_suffix = token[-6:] if len(token) >= 6 else token
-            print(f"\nProcessing token {idx + 1}/{len(uid2_tokens)} (last 6 chars: {token_suffix})...", file=sys.stderr)
+            
+            if is_specific_file:
+                print(f"\nDecrypting token {idx + 1}/{len(uid2_tokens)} (first 10 chars: {token_prefix})...", file=sys.stderr)
+            else:
+                print(f"\nProcessing token {idx + 1}/{len(uid2_tokens)} (last 6 chars: {token_suffix})...", file=sys.stderr)
+            
             try:
                 result = decrypt_token(client, token, domain_name, index=idx)
                 results.append(result)
                 
                 # Print one-line error summary if failed, otherwise full result
                 if result['error'] is not None:
-                    print(f"Token #{idx + 1} ({token_suffix}) FAILED: {result['error']}")
+                    if is_specific_file:
+                        print(f"Token #{idx + 1} ({token_prefix}) FAILED: {result['error']}")
+                    else:
+                        print(f"Token #{idx + 1} ({token_suffix}) FAILED: {result['error']}")
                 elif result['status'] is not None and result['status'] != DecryptionStatus.SUCCESS:
-                    print(f"Token #{idx + 1} ({token_suffix}) FAILED: {result['status'].value}")
+                    if is_specific_file:
+                        print(f"Token #{idx + 1} ({token_prefix}) FAILED: {result['status'].value}")
+                    else:
+                        print(f"Token #{idx + 1} ({token_suffix}) FAILED: {result['status'].value}")
                 else:
                     print_result(result)
             except Exception as e:
                 # Catch any unexpected errors during processing
                 token_suffix = token[-6:] if len(token) >= 6 else token
+                token_prefix = token[:10] if len(token) >= 10 else token
                 error_summary = get_error_summary(e)
                 error_result = {
                     'index': idx,
@@ -211,7 +247,10 @@ if input_arg.endswith('.xlsx') and os.path.exists(input_arg):
                     'error': error_summary,
                 }
                 results.append(error_result)
-                print(f"Token #{idx + 1} ({token_suffix}) FAILED: {error_summary}")
+                if is_specific_file:
+                    print(f"Token #{idx + 1} ({token_prefix}) FAILED: {error_summary}")
+                else:
+                    print(f"Token #{idx + 1} ({token_suffix}) FAILED: {error_summary}")
         
         # Print summary
         print(f"\n{'='*60}")
