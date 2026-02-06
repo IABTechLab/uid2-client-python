@@ -9,7 +9,6 @@ class TokenGenerateInput:
         self.email_or_phone = email_or_phone
         self.need_hash = need_hash
         self.already_hashed = already_hashed
-        self.generate_for_opted_out = True
         self.transparency_and_consent_string = None
 
     @staticmethod
@@ -36,9 +35,9 @@ class TokenGenerateInput:
         self.need_hash = False
         return self
 
-    # Always use .do_not_generate_tokens_for_opted_out(), which applies policy=1. Support for policy=0 will be removed soon.
     def do_not_generate_tokens_for_opted_out(self):
-        self.generate_for_opted_out = False
+        # DEPRECATED: The optout_check param has been removed from /token/generate
+        # This method will be removed in a future version.
         return self
 
     def get_as_json_string(self):
@@ -52,18 +51,16 @@ class TokenGenerateInput:
     def create_json_request_for_generate_token(self):
         property = "email" if self.identity_type == IdentityType.Email else "phone"
         return self._create_json_request_for_generate_token(property, self.email_or_phone,
-                                                            self.transparency_and_consent_string,
-                                                            self.generate_for_opted_out)
+                                                            self.transparency_and_consent_string)
 
     @staticmethod
-    def _create_json_request_for_generate_token(property, value, tc_string, generate_for_opted_out):
+    def _create_json_request_for_generate_token(property, value, tc_string):
         json_object = {
             property: value
         }
         if tc_string is not None:
             json_object["tcf_consent_string"] = tc_string
-        if not generate_for_opted_out:
-            json_object["policy"] = 1
+
         return json.dumps(json_object)
 
     def create_hashed_json_request_for_generate_token(self):
@@ -75,22 +72,18 @@ class TokenGenerateInput:
                 raise ValueError("invalid email address")
             hashed_normalized_email = get_base64_encoded_hash(normalized_email)
             return self._create_json_request_for_generate_token("email_hash", hashed_normalized_email,
-                                                                self.transparency_and_consent_string,
-                                                                self.generate_for_opted_out)
+                                                                self.transparency_and_consent_string)
         else:  # phone
             if not is_phone_number_normalized(self.email_or_phone):
                 raise ValueError("phone number is not normalized")
             hashed_normalized_phone = get_base64_encoded_hash(self.email_or_phone)
             return self._create_json_request_for_generate_token("phone_hash", hashed_normalized_phone,
-                                                                self.transparency_and_consent_string,
-                                                                self.generate_for_opted_out)
+                                                                self.transparency_and_consent_string)
 
     def create_already_hashed_json_request_for_generate_token(self):
         if self.identity_type == IdentityType.Email:
             return self._create_json_request_for_generate_token("email_hash", self.email_or_phone,
-                                                                self.transparency_and_consent_string,
-                                                                self.generate_for_opted_out)
+                                                                self.transparency_and_consent_string)
         else:  # phone
             return self._create_json_request_for_generate_token("phone_hash", self.email_or_phone,
-                                                                self.transparency_and_consent_string,
-                                                                self.generate_for_opted_out)
+                                                                self.transparency_and_consent_string)
