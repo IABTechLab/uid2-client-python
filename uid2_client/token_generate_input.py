@@ -36,7 +36,7 @@ class TokenGenerateInput:
         return self
 
     def do_not_generate_tokens_for_opted_out(self):
-        # DEPRECATED: The optout_check param has been removed from /token/generate
+        # DEPRECATED: The optout_check/policy param has been removed from /token/generate
         # This method will be removed in a future version.
         return self
 
