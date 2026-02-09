@@ -49,14 +49,14 @@ class TestDocSampleCode(unittest.TestCase):
         client = Uid2PublisherClient(self.UID2_BASE_URL, self.UID2_API_KEY, self.UID2_SECRET_KEY)
 
         # Documentation sdk-ref-python.md Line 147: Generate token from email
-        token_generate_response = client.generate_token(TokenGenerateInput.from_email("user@example.com").do_not_generate_tokens_for_opted_out())
+        token_generate_response = client.generate_token(TokenGenerateInput.from_email("user@example.com"))
 
         self.assertIsNotNone(token_generate_response)
 
     def test_publisher_client_server_integration_example(self):
         """Test Publisher client-server integration from documentation"""
         client = Uid2PublisherClient(self.UID2_BASE_URL, self.UID2_API_KEY, self.UID2_SECRET_KEY)
-        token_generate_response = client.generate_token(TokenGenerateInput.from_email("user@example.com").do_not_generate_tokens_for_opted_out())
+        token_generate_response = client.generate_token(TokenGenerateInput.from_email("user@example.com"))
         
         # Documentation sdk-ref-python.md Line 165: Get identity JSON string
         identity_json_string = token_generate_response.get_identity_json_string()
@@ -66,7 +66,7 @@ class TestDocSampleCode(unittest.TestCase):
     def test_publisher_server_side_integration_example(self):
         """Test Publisher server-side integration from documentation"""
         client = Uid2PublisherClient(self.UID2_BASE_URL, self.UID2_API_KEY, self.UID2_SECRET_KEY)
-        token_generate_response = client.generate_token(TokenGenerateInput.from_email(self.mapped_email).do_not_generate_tokens_for_opted_out())
+        token_generate_response = client.generate_token(TokenGenerateInput.from_email(self.mapped_email))
         
         # Documentation sdk-ref-python.md Line 176: Store identity JSON string
         identity_json_string = token_generate_response.get_identity_json_string()
