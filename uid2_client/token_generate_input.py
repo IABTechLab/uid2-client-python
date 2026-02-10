@@ -1,4 +1,5 @@
 import json
+from typing_extensions import deprecated
 from .identity_type import IdentityType
 from .input_util import *
 
@@ -35,9 +36,8 @@ class TokenGenerateInput:
         self.need_hash = False
         return self
 
+    @deprecated("The optout_check/policy parameter has been removed from /token/generate")
     def do_not_generate_tokens_for_opted_out(self):
-        # DEPRECATED: The optout_check/policy param has been removed from /token/generate
-        # This method will be removed in a future version.
         return self
 
     def get_as_json_string(self):
