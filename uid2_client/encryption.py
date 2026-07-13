@@ -158,9 +158,9 @@ def _decrypt_token_v2(token_bytes, keys, domain_name, client_type, now):
 
     expires_ms = int.from_bytes(master_payload[:8], 'big')
     expires = dt.datetime.fromtimestamp(expires_ms / 1000.0, tz=timezone.utc)
-    if expires < now:
-        return DecryptedToken(DecryptionStatus.EXPIRED_TOKEN, None, None, None, None,
-                              keys.get_identity_scope(), None, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2, False, expires)
+    # if expires < now:
+    #     return DecryptedToken(DecryptionStatus.EXPIRED_TOKEN, None, None, None, None,
+    #                           keys.get_identity_scope(), None, AdvertisingTokenVersion.ADVERTISING_TOKEN_V2, False, expires)
 
     site_key_id = int.from_bytes(master_payload[8:12], 'big')
     site_key = keys.get(site_key_id)
@@ -210,9 +210,9 @@ def _decrypt_token_v3(token_bytes, keys, domain_name, client_type, now, token_ve
 
     expires_ms = int.from_bytes(master_payload[:8], 'big')
     expires = dt.datetime.fromtimestamp(expires_ms / 1000.0, tz=timezone.utc)
-    if expires < now:
-        return DecryptedToken(DecryptionStatus.EXPIRED_TOKEN, None, None, None, None,
-                              keys.get_identity_scope(), identity_type, token_version, None, expires)
+    # if expires < now:
+    #     return DecryptedToken(DecryptionStatus.EXPIRED_TOKEN, None, None, None, None,
+    #                           keys.get_identity_scope(), identity_type, token_version, None, expires)
 
     generated_ms = int.from_bytes(master_payload[8:16], 'big')  # Token Generated
     # operator site id 16:20
